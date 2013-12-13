@@ -42,9 +42,8 @@ import math
 from datetime import datetime, timedelta
 from Queue import Empty
 
-from shinken.log import logger
-
 try:
+    from shinken.log import logger
     import memcache
     from configobj import ConfigObj, Section
     from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
