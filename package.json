@@ -7,6 +7,10 @@
   "description": "SNMP module to improve SNMP checks",
   "contributors": [
     {
+      "name": "Francois Mikus",
+      "email": "fmikus@acktomic.com"
+    }
+    {
       "name": "Thibault Cohen",
       "email": "thibault.cohen@savoirfairelinux.com"
     }
