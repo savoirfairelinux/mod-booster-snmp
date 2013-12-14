@@ -1,3 +1,5 @@
+.. _snmpbooster_design_specification:
+
 ====================
 Design specification
 ====================
@@ -7,12 +9,11 @@ What is it
 
 The SnmpBooster module allows Shinken Pollers to directly manage SNMP data acquisition. This is an all Python cross-platform SNMP module. It is tightly integrated with the Shinken Poller, Scheduler and Arbiter daemons to provide the best possible user experience.
 
-  * Jump back to [[setup_active_module_checks|SnmpBooster documentation index]]
-
 Design specification summary
 ============================
 
-- STATUS - DESIGN SPEC PERFORMANCE
+* STATUS - DESIGN SPEC PERFORMANCE
+
   * [Done] Functions as an integrated Shinken Poller module
   * [Done] Necessary integration code commited to Shinken official release (Integrated starting at v1.2)
   * [Done] Ability to collect thousands of SNMP metrics per second
@@ -23,16 +24,24 @@ Design specification summary
   * [Done] On a restart, after the first collection, be able to pick up where the last check left and calculate derived values
   * [Done] Forced check are not allowed within 30 seconds of last SNMP query to the same host/check_interval, all other requests get data from the cache.
   * [Done] Only a single request to the host/check_interval via SNMP is allowed at a time, all other requests get data from the cache.
-- STATUS - DESIGN SPEC USABILITY
+
+* STATUS - DESIGN SPEC USABILITY
+
   * [Done] Usage documentation
   * [xxxx] SkonfUI and Discovery usage documentation
   * [xxxx] Provide sample configuration packs in Shinken
   * [Done] Provide sample config.ini with examples of all types of data
-    + SNMP OIDS, DATASOURCES, DSTEMPLATES, TRIGGERS and TRIGGERGROUPS
-  * [Done] Directly compatible for use with [[https://github.com/xkilian/genDevConfig|genDevConfig]] Shinken SNMP configuration generator
+
+    * SNMP OIDS, DATASOURCES, DSTEMPLATES, TRIGGERS and TRIGGERGROUPS
+
+  * [Done] Directly compatible for use with `genDevConfig`_ Shinken SNMP configuration generator
   * [Done] Provide meaningful feedback for users on errors
   * [Done] Capture all tracebacks and convert them to actual error or warning messages
-- STATUS - DESIGN SPEC FEATURES
+
+.. _genDevConfig: https://github.com/xkilian/genDevConfig
+
+* STATUS - DESIGN SPEC FEATURES
+
   * [Done] Return state and performance metrics
   * [Done] Performance metrics can be returned in a Weathermap compatible format
   * [Done] Configuration file format is ConfigObj INI
@@ -58,7 +67,9 @@ Design specification summary
   * [xxxx] Support Snmp version 2c GetNext if GetBulk is not supported
   * [xxxx] Support Snmp version 1 GetNext
   * [xxxx] Set Snmp Timeout as a check runtime option, instead of a hardcoded value at 5 seconds
-- STATUS - DESIGN SPEC MAINTAINABILITY
+
+* STATUS - DESIGN SPEC MAINTAINABILITY
+
   * [xxxx] Functions documented in the source code
   * [Done] Critical functions documented in the source code
   * [Done] Locking sections identified in the code
@@ -73,7 +84,8 @@ Design specification summary
 genDevConfig Plugins - Compatibility status with SnmpBooster
 ============================================================
 
-- STATUS - genDevConfig maintained Plugins
+* STATUS - genDevConfig maintained Plugins
+
   * [Done] Avaya ES switches
   * [Done] Avaya ERS routing switches
   * [Done] Cisco 29x0 switches
@@ -88,7 +100,8 @@ genDevConfig Plugins - Compatibility status with SnmpBooster
   * [Done] Packeteer devices ** Validation required**
   * [Done] Cisco CSS ** Validation required**
   * [InProgress] New Cisco Access points
-- STATUS - Other maintained Plugins
+
+* STATUS - Other maintained Plugins
 
 .. tip::
    * [xxxx] Denotes a specification that is planned but not implemented

@@ -42,8 +42,9 @@ import math
 from datetime import datetime, timedelta
 from Queue import Empty
 
+from shinken.log import logger
+
 try:
-    from shinken.log import logger
     import memcache
     from configobj import ConfigObj, Section
     from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
@@ -51,12 +52,8 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    try:
-        logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
-    except:
-        print "[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp"
-    else:
-        raise ImportError(e)
+    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    raise ImportError(e)
 
 from shinken.basemodule import BaseModule
 from shinken.check import Check

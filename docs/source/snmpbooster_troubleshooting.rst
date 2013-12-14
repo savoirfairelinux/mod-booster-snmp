@@ -1,8 +1,8 @@
+.. _snmpbooster_troubleshooting:
+
 ===========================
 SnmpBooster Troubleshooting
 ===========================
-
-  * Jump back to [[setup_active_module_checks|SnmpBooster documentation index]]
 
 Check your config
 =================
@@ -18,12 +18,14 @@ Software version consistency
 
 Shinken and SnmpBooster now require **the same Python and Pyro version on all hosts running a Shinken daemon**.
 
-If you cannot use the packaged version of Python and its modules (Pyro, memcached, etc.). Use [[http://pypi.python.org/pypi/virtualenv |virtualenv]] to declare a python version to use and install all required modules in that virtualenv.
+If you cannot use the packaged version of Python and its modules (Pyro, memcached, etc.). Use `virtualenv`_ to declare a python version to use and install all required modules in that virtualenv.
+
+.. _virtualenv: http://pypi.python.org/pypi/virtualenv
 
 Software version requirements
 =============================
 
-Have you verified that the [[setup_snmp_booster_module|requirements]] are met. Python, PySNMP, Shinken, Pyro, memcached, etc.
+Have you verified that the :ref:`requirements <setup_snmp_booster_module>` are met. Python, PySNMP, Shinken, Pyro, memcached, etc.
 
 Validate your check command arguments
 =====================================
@@ -35,18 +37,24 @@ Validate connectivity
 =====================
 
 Take a packet trace using a tool like Wireshark to validate that the remote host is responding.
+
   * Has the host responded
   * Is SnmpBooster repeating the request more often than the polling interval. 
+
         * If you are seeing repeated requests your device may have a compatibility issues. 
         * Save an snmpwalk of the device, get a packet trace using Wireshark, set the poller to debug and save the poller.log file (shinken/var/poller.log). Send all three to the SnmpBooster developers.
-      * Note: It is normal to see one or more bulkGet requests if you are getting large amounts of data. Ex. a 24 port switch will take 2-3 request packets.
+
+.. note::
+   It is normal to see one or more bulkGet requests if you are getting large amounts of data. Ex. a 24 port switch will take 2-3 request packets.
 
 Performance
 ===========
 
 Make sure you have a low latency connection to your memcache from the Poller. 
+
 Your memcache server can be replicated to all your poller hosts that should also run memcache instances.
-Check that memcached is running: netstat -a | grep memcached
+
+Check that memcached is running: ``netstat -a | grep memcached``
 
 Faulty Template
 ===============
@@ -66,10 +74,12 @@ The Arbiter daemon can output initial configuration, loading of host keys and in
 The Scheduler daemon can output scheduling and alert related messages.
 The Poller daemon can output messages related to instance mapping, acquisition timeouts, invalid community strings, cache failures and more. These are available in the Web interface, as they are placed in the check results for the service.
 
-You can simply do a "grep SnmpBooster *" in your shinken/var directory to see the latest messages related to the SnmpBooster module. You can also sort messages by timestamp to make it easy to find where and when errors occurred.
+You can simply do a ``grep SnmpBooster *`` in your shinken/var directory to see the latest messages related to the SnmpBooster module. You can also sort messages by timestamp to make it easy to find where and when errors occurred.
 
-cd shinken/var
-grep SnmpBooster *
+::
+
+  cd shinken/var
+  grep SnmpBooster *
 
 
 memcache persistence
@@ -84,19 +94,25 @@ Common errors returned by SnmpBooster in the log file
 
 Errors should be fairly explicit and mean what they say, though there can be exceptions. Lets try to clear some of them.
 
-__Arbiter log errors__
+Arbiter log errors
+~~~~~~~~~~~~~~~~~~
 
-Missing ds_oid : This means that a variable in your OID definitions is missing, or your DATASOURCE is not named correctly or your ds_oid variable is missing. There is a typo in your ds_oid variable (ex. ds-oid, or ds_oid = $OidNameIncorrectFFFRA.%(instance)s).
+``Missing ds_oid``
+  This means that a variable in your OID definitions is missing, or your DATASOURCE is not named correctly or your ds_oid variable is missing. There is a typo in your ds_oid variable (ex. ds-oid, or ds_oid = $OidNameIncorrectFFFRA.%(instance)s).
 
-Datasource not defined : Your DSTEMPLATE uses a DATASOURCE that doesn't exist check the [DataSourceName] you are referring to. Does it contain the expected OID variable, $OidName.
+``Datasource not defined``
+  Your DSTEMPLATE uses a DATASOURCE that doesn't exist check the [DataSourceName] you are referring to. Does it contain the expected OID variable, $OidName.
 
-Missing ds_type : The DATASOURCE always needs to have a ds_type definition, GAUGE, COUNTER, DERIVE, TEXT, TIMETICK, DERIVE64, COUNTER64.
+``Missing ds_type``
+  The DATASOURCE always needs to have a ds_type definition, GAUGE, COUNTER, DERIVE, TEXT, TIMETICK, DERIVE64, COUNTER64.
 
-__Poller log errors__
+Poller log errors
+~~~~~~~~~~~~~~~~~
 
 Problems with calculations, repeated polling, hosts not responding, etc.
 
-__Memcached errors__
+Memcached errors
+~~~~~~~~~~~~~~~~
 
 memcachedb and memcached do not use the same default port. Configure the correct memcachedb port to match what is declared in your SnmpBooster module under shinken-specific.cfg.
 

@@ -1,12 +1,11 @@
+.. _snmpbooster_how_it_works:
+
 ===============================
 SNMP Booster: How does it works
 ===============================
 
 Overview
 ========
-
-* Jump back to [[setup_active_module_checks|SnmpBooster documentation index]]
-
 
 .. tip::
    module is now in public beta as of 2012-10-26! Have Fun!
@@ -52,7 +51,7 @@ Performance
 
 SnmpBooster uses SNMP v2c getbulk for high efficiency, unless forced to use SNMP v2c get-next or SNMPv1 get-next. GetBulk uses a single request PDU to ask for multiple OIDs or even entire tables, instead of sending one request PDU per OID. 
 
-For example: *A typical 24 port network switch with two uplinks might use 375 OIDS (8 OIDs per interface, plus general OIDs for chassis health, memory, cpu, fans, etc.). **SnmpBooster will only require around 4 request PDUs instead of 375 request PDUs**. Each PDU is a request packet which takes time to create, send get processed and return. More timeouts to manage, more connections, more impact on the remote device and more latency means much fewer checks per second.*
+For example: *A typical 24 port network switch with two uplinks might use 375 OIDS (8 OIDs per interface, plus general OIDs for chassis health, memory, cpu, fans, etc.).* **SnmpBooster will only require around 4 request PDUs instead of 375 request PDUs.** *Each PDU is a request packet which takes time to create, send get processed and return. More timeouts to manage, more connections, more impact on the remote device and more latency means much fewer checks per second.*
 
 The SnmpBooster module supports automatic instance mapping for OIDs. (Ex. Based on the interface name it will figure out that the SNMP index(or instance) is 136. This is automatically handled by genDevConfig and SnmpBooster, no user input required. :-)
 
@@ -75,7 +74,7 @@ SnmpBooster is not compatible with distributed pollers in multiple datacenters, 
 Design specification
 ====================
 
-[[snmpbooster_design_specification|SnmpBooster design specification]] and current development status.
+:ref:`SnmpBooster design specification <snmpbooster_design_specification>` and current development status.
 
 Data model
 ==========
@@ -85,6 +84,7 @@ The information required to define the data is split in two locations.
 The first location is the host and service Shinken configuration (You need to generate or write this)
 
 * Device specific information
+
   * IP addresses, host_names, device types, instance keys
   * A DSTEMPLATE must be referred to in the Service definition
   * A static SNMP instance could be referred to in the Service definition
@@ -94,38 +94,46 @@ The first location is the host and service Shinken configuration (You need to ge
 The second location is SNMP Defaults.* templates. (Here you can create new devices or add new data sources)
 
 * DATASOURCE information
+
   * SNMP OID
   * Type of data and how can it be interpreted (GAUGE, COUNTER, COUNTER64, DERIVE, DERIVE64, TEXT, TIMETICK)
   * Data format preparation (Scaling the data for example bits to bytes)
   * Is there an instance to append to the
+
 * Instance MAP function
+
   * Mapping the instance dynamically using a function
   * Data or rules related to the mapping function
+
 * DSTEMPLATEs to associate DATASOURCE to actual device classes
+
   * List of DATASOURCES associated with a, for example, Cisco 1900 router. Which in turn can be applied to a Shinken service
+
 * TRIGGER and TRIGGERGROUPS to apply thresholding rules
+
   * Define triggers and associate them with a TRIGGERGROUP name that can be applied to a Shinken Service
 
 
 A final location containes rules to build your Shinken configuration.
 
-  * genDevConfig plugins create Shinken configurations
+* genDevConfig plugins create Shinken configurations
 
 
 Installation and configuration
 ==============================
 
-[[setup_snmp_booster_module|SnmpBooster installation]]
+:ref:`SnmpBooster installation <setup_snmp_booster_module>`
 
 Reference Dictionnary
 =====================
 
-[[snmpbooster_dictionary|SnmpBooster reference dictionary ]]
+:ref:`SnmpBooster reference dictionary <snmpbooster_dictionary>`
+
 
 Troubleshooting
 ===============
 
-[[snmpbooster_troubleshooting|SnmpBooster troubleshooting]]
+:ref:`SnmpBooster troubleshooting <snmpbooster_troubleshooting>`
 
 Graph templates
 ===============
