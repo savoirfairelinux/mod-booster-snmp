@@ -191,11 +191,16 @@ class SNMPHost(object):
                 self.frequences[service.check_interval].services[service.key] = service
             else:
                 # service found, check if it needs update
-                if not self.frequences[service.check_interval].services[service.key] == service:
-                    self.frequences[service.check_interval].services[service.key] = service
-                else:
-                    # no changes
-                    pass
+                # FIXME We NEED a better object comparison
+                attrs = ['instance', 'instance_name', 'key', 'name', 'oids',
+                        'raw_instance', 'triggergroup', 'triggers']
+                for attr in attrs:
+                    if not getattr(self.frequences[service.check_interval].services[service.key], attr) == getattr(service, attr):
+                        self.frequences[service.check_interval].services[service.key] = service
+                        break;
+                    else:
+                        # no changes
+                        pass
             # TODO search service in other interval !!!
         else:
             # Interval not found
@@ -732,12 +737,24 @@ class SNMPAsyncClient(object):
         self.obj_key = str(self.hostname)
         try:
             # LOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+            # Get OID from memcache
             self.obj = self.memcached.get(self.obj_key)
         except ValueError, e:
             self.set_exit("Memcached error: `%s'"
                           % self.memcached.get(self.obj_key),
                           rc=3)
             return
+        #print "FREQUENCIES"
+        #for f,F in self.obj.frequences.items():
+        #    print f
+        #    print "\tSERVICES"
+        #    for s,S in F.services.items():
+        #        print "\t", s
+        #        print "\t\tOIDS"
+        #        for o,O in S.oids.items():
+        #            print "\t\t", o
+        #            print "\t\t\t", O.oid
+
         if not isinstance(self.obj, SNMPHost):
             logger.error('[SnmpBooster] Host not found in memcache: %s' % self.hostname)
             self.set_exit("Host not found in memcache: `%s'" % self.hostname,
@@ -1185,11 +1202,13 @@ class Snmp_poller(BaseModule):
                         self.datasource.merge(ctemp)
                         logger.info("[SnmpBooster] Reading input configuration file: %s" % f)
             else:
+                # Normal error with scheduler and poller module
+                # The configuration will be read in the memcached
                 raise IOError, "File or folder not found: %s" % self.datasource_file
             # Store config in memcache
             self.memcached.set('datasource', self.datasource, time=604800)
-        # TODO
-        # raise if reading error
+        # TODO Split arbiter/poller/scheduler init
+        # TODO raise if reading error
         except Exception, e:
             logger.error("[SnmpBooster] Datasource error while reading or merging : `%s'" % str(e))
             # Try to get it from memcache
