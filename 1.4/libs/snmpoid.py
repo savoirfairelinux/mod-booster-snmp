@@ -59,6 +59,8 @@ class SNMPOid(object):
         # Old value (after calculation)
         self.old_value = None
         self.perf = ""
+        # Set true if we don't have value
+        self.unknown = True
 
     # Zabbix functions
     # AMELIORER LES MESSAGES D ERREUR SUR LE CALCUL DU TRIGGER
@@ -87,6 +89,7 @@ class SNMPOid(object):
         """
         self.value = "%(raw_value)s" % self.__dict__
         self.out = "%(name)s: %(value)s%(unit)s" % self.__dict__
+        self.unknown = True
 
     def format_derive64_output(self, check_time, old_check_time):
         """ Format output for derive64 type
@@ -96,6 +99,7 @@ class SNMPOid(object):
     def format_derive_output(self, check_time, old_check_time, limit=4294967295):
         """ Format output for derive type
         """
+        self.unknown = True
         if self.raw_old_value == None:
             # Need more data to get derive
             self.out = "Waiting an additional check to calculate derive"
@@ -127,6 +131,8 @@ class SNMPOid(object):
                 self.value = float(self.value)
                 self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
                 self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+                self.unknown = False
+
     def format_counter64_output(self, check_time, old_check_time):
         """ Format output for counter64 type
         """
@@ -135,6 +141,7 @@ class SNMPOid(object):
     def format_counter_output(self, check_time, old_check_timei, limit=4294967295):
         """ Format output for counter type
         """
+        self.unknown = True
         if self.raw_value == None:
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
@@ -155,10 +162,12 @@ class SNMPOid(object):
             self.value = float(self.value)
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
             self.out = self.out % self.__dict__
+            self.unknown = False
 
     def format_gauge_output(self, check_time, old_check_time):
         """ Format output for gauge type
         """
+        self.unknown = True
         if self.raw_value == None:
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
@@ -174,6 +183,7 @@ class SNMPOid(object):
             self.value = float(self.value)
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
             self.perf = "%(name)s=%(out)s%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+            self.unknown = False
 
     def __eq__(self, other):
         """ equal reimplementation

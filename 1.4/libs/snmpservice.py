@@ -85,6 +85,9 @@ class SNMPService(object):
 
         # Get return code from trigger
         rc = self.get_trigger_result()
+        # Set return code to UNKNOW if one value are unknown
+        if any([snmpoid.unknown for snmpoid in self.oids.values()]):
+            rc = 3
         # Get perf from all oids
         perf = " ".join([snmpoid.perf for snmpoid in self.oids.values() if snmpoid.perf])
         # Get output from all oids
@@ -112,9 +115,12 @@ class SNMPService(object):
     def get_trigger_result(self):
         """ Get return code from trigger calculator
         """
-        errors = {'critical': 2,
-                  'warning' : 1,
-                  'ok'      : 0}
+        errors = {
+                  'unknown': 3,
+                  'critical': 2,
+                  'warning': 1,
+                  'ok': 0,
+                 }
 
         try:
             for error_name in ['critical', 'warning']:
