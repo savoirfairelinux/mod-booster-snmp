@@ -27,6 +27,7 @@ class SnmpBooster(BaseModule):
                                        self.memcached_port)
         self.max_repetitions = int(getattr(mod_conf, 'max_repetitions', 64))
         self.show_from_cache = bool(getattr(mod_conf, 'show_from_cache', False))
+        self.db_archive_freq = int(getattr(mod_conf, 'db_archive_freqency', 60))
         self.datasource = None
 
         # Called by poller to say 'let's prepare yourself guy'

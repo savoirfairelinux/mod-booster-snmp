@@ -1,4 +1,5 @@
 import shlex
+import socket
 
 from shinken.macroresolver import MacroResolver
 from shinken.log import logger
@@ -14,6 +15,7 @@ class SnmpBoosterArbiter(SnmpBooster):
     """
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
+        self.nb_tick = 0
 
     def hook_late_configuration(self, arb):
         """ Read config and fill memcached
@@ -73,3 +75,23 @@ class SnmpBoosterArbiter(SnmpBooster):
                                "Error related to: %s" % (obj_key, s.service_description, str(e)))
                     logger.error(message)
 
+    def hook_tick(self, brok):
+        """Each second the broker calls the hook_tick function
+           Every tick try to flush the buffer
+        """
+        if self.nb_tick > self.db_archive_freq:
+            try:
+                memcache_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                memcache_socket.connect(self.memcached_host, self.memcached_port)
+                logger.info("[SnmpBooster] Clear Memcachedb log")
+                memcache_socket.send('db_archive\r\n')
+                ret = memcache_socket.recv(1024)
+                if ret.find('OK') != -1:
+                    logger.info("[SnmpBooster] Memcachedb log cleared")
+                else:
+                    logger.error("[SnmpBooster] Memcachedb log not cleared")
+                self.nb_tick = 0
+            except Exception, e:
+                logger.error("[SnmpBooster] Memcachedb log not cleared. Error: %s" % str(e))
+        else:
+            self.nb_tick += 1
