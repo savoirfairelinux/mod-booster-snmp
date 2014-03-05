@@ -26,6 +26,7 @@ class SnmpBooster(BaseModule):
         self.memcached_address = "%s:%s" % (self.memcached_host,
                                        self.memcached_port)
         self.max_repetitions = int(getattr(mod_conf, 'max_repetitions', 64))
+        self.show_from_cache = bool(getattr(mod_conf, 'show_from_cache', False))
         self.datasource = None
 
         # Called by poller to say 'let's prepare yourself guy'
@@ -41,7 +42,7 @@ class SnmpBooster(BaseModule):
             return
 
         # Prepare memcached connection
-        self.memcached = memcache.Client(['127.0.0.1:11212', self.memcached_address], debug=0)
+        self.memcached = memcache.Client([self.memcached_address], debug=0)
         # Check if memcached server is available
         if not self.memcached.get_stats():
             logger.error("[SnmpBooster] Memcache server (%s) "

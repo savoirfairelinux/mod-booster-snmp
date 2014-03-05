@@ -71,7 +71,7 @@ class SnmpBoosterPoller(SnmpBooster):
                 # Ok we are good, we go on
                 n = SNMPAsyncClient(host, community, version, self.datasource,
                                     triggergroup, dstemplate, instance, instance_name,
-                                    self.memcached_address, self.max_repetitions)
+                                    self.memcached_address, self.max_repetitions, self.show_from_cache)
                 chk.con = n
 
     # Check the status of checks

@@ -40,7 +40,7 @@ class SNMPAsyncClient(object):
     """
     def __init__(self, host, community, version, datasource,
                  triggergroup, dstemplate, instance, instance_name,
-                 memcached_address, max_repetitions=64):
+                 memcached_address, max_repetitions=64, show_from_cache=False):
 
         self.hostname = host
         self.community = community
@@ -50,8 +50,9 @@ class SNMPAsyncClient(object):
         self.instance_name = instance_name
         self.triggergroup = triggergroup
         self.max_repetitions = max_repetitions
-        self.serv_key = (dstemplate, instance, instance_name)
+        self.show_from_cache = show_from_cache
 
+        self.serv_key = (dstemplate, instance, instance_name)
         self.interval_length = 60
         self.remaining_oids = None
         self.remaining_tablerow = []
@@ -140,7 +141,8 @@ class SNMPAsyncClient(object):
             data_validity = True
             message, rc = self.obj.format_output(self.check_interval, self.serv_key)
             logger.info('[SnmpBooster] FROM CACHE : Return code: %s - Message: %s' % (rc, message))
-            message = "FROM CACHE: " + message
+            if self.show_from_cache:
+                message = "FROM CACHE: " + message
             self.set_exit(message, rc=rc)
             self.memcached.set(self.obj_key, self.obj, time=604800)
             return
