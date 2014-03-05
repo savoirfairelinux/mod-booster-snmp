@@ -1,17 +1,35 @@
-from datetime import datetime, timedelta
+import os
+import re
+import sys
+import glob
+import signal
 import time
+import socket
+import struct
+import copy
+import binascii
+import getopt
+import shlex
+import operator
+import math
+from datetime import datetime, timedelta
+from Queue import Empty
 
 from shinken.log import logger
 
 try:
     import memcache
+    from configobj import ConfigObj, Section
     from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
     from pysnmp.carrier.asynsock.dgram import udp
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, pysnmp")
+    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
+
+from shinken.check import Check
+from shinken.macroresolver import MacroResolver
 
 from snmphost import SNMPHost
 
@@ -315,6 +333,12 @@ class SNMPAsyncClient(object):
                         else:
                             tableRow.append(oid.rsplit(".", 1)[0].strip(self.instance))
                             
+                    if self.hostname == '10.133.0.10':
+                        print '1S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-'
+                        print self.instance
+                        print oid
+
+
                     # LIMIT SNMP BULK to 120 OIDs in same request
                     if self.remaining_tablerow:
                         aBP.setVarBinds(self.reqPDU,

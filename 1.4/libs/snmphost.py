@@ -1,3 +1,37 @@
+import os
+import re
+import sys
+import glob
+import signal
+import time
+import socket
+import struct
+import copy
+import binascii
+import getopt
+import shlex
+import operator
+import math
+from datetime import datetime, timedelta
+from Queue import Empty
+
+from shinken.log import logger
+
+try:
+    import memcache
+    from configobj import ConfigObj, Section
+    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
+    from pysnmp.carrier.asynsock.dgram import udp
+    from pyasn1.codec.ber import encoder, decoder
+    from pysnmp.proto.api import v2c
+except ImportError, e:
+    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    raise ImportError(e)
+
+from shinken.check import Check
+from shinken.macroresolver import MacroResolver
+
+
 import re
 
 from snmpfrequence import SNMPFrequence
@@ -90,6 +124,23 @@ class SNMPHost(object):
                         logger.error("[SnmpBooster] Map name `%s' not found in datasource INI file" % base_oid_name)
 
         return base_oids
+
+    def get_oids_for_limits(self, interval):
+        """ Return all oids from an frequence in order to get data max values
+        """
+        return dict([(snmpoid.max_, snmpoid)
+                    for s in self.frequences[interval].services.values()
+                    for snmpoid in s.oids.values()
+                    if s.instance != "NOTFOUND" and isinstance(snmpoid.max_, str) and snmpoid.max_])
+        # TODO : Unreachable code, FIXME!!!
+        max_oids = []
+        for s in self.frequences[interval].services.values():
+            for snmpoid in s.oids.values():
+                if snmpoid.max_ and not isinstance(snmpoid.max_, float):
+                    oid_max, _ = snmpoid.max_.rsplit(".", 1) # DELETE ME PLEASE! :)
+                    max_oids.append(oid_max)
+
+        return max_oids
 
     def format_output(self, frequence, key):
         """ Prepare service output 

@@ -1003,6 +1003,11 @@ class SNMPAsyncClient(object):
                         else:
                             tableRow.append(oid.rsplit(".", 1)[0].strip(self.instance))
                             
+                    if self.hostname == '10.133.0.10':
+                        print '1S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-TIN-RDI-TT311S32-LABSTM-TR-'
+                        print self.instance
+                        print oid
+
                     # LIMIT SNMP BULK to 120 OIDs in same request
                     if self.remaining_tablerow:
                         aBP.setVarBinds(self.reqPDU,

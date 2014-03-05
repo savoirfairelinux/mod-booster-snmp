@@ -1,4 +1,38 @@
+import os
+import re
+import sys
+import glob
+import signal
+import time
+import socket
+import struct
+import copy
+import binascii
+import getopt
+import shlex
+import operator
+import math
+from datetime import datetime, timedelta
+from Queue import Empty
+
+from shinken.log import logger
+
+try:
+    import memcache
+    from configobj import ConfigObj, Section
+    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
+    from pysnmp.carrier.asynsock.dgram import udp
+    from pyasn1.codec.ber import encoder, decoder
+    from pysnmp.proto.api import v2c
+except ImportError, e:
+    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    raise ImportError(e)
+
+from shinken.check import Check
+from shinken.macroresolver import MacroResolver
+
 from snmpoid import SNMPOid
+from utils import rpn_calculator
 
 class SNMPService(object):
     """ SNMP service
@@ -148,6 +182,10 @@ class SNMPService(object):
     def set_oids(self, datasource):
         """ Get datas from datasource and set SNMPOid dict
         """
+        if not 'ds' in datasource['DSTEMPLATE'][self.dstemplate]:
+            logger.error("[SnmpBooster] no ds found in the DStemplate. Check your configuration" % source)
+            return
+
         ds = datasource['DSTEMPLATE'][self.dstemplate]['ds']
         if isinstance(ds, str):
             ds = [d.strip() for d in ds.split(",")]

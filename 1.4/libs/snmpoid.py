@@ -1,3 +1,39 @@
+import os
+import re
+import sys
+import glob
+import signal
+import time
+import socket
+import struct
+import copy
+import binascii
+import getopt
+import shlex
+import operator
+import math
+from datetime import datetime, timedelta
+from Queue import Empty
+
+from shinken.log import logger
+
+try:
+    import memcache
+    from configobj import ConfigObj, Section
+    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
+    from pysnmp.carrier.asynsock.dgram import udp
+    from pyasn1.codec.ber import encoder, decoder
+    from pysnmp.proto.api import v2c
+except ImportError, e:
+    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    raise ImportError(e)
+
+from shinken.check import Check
+from shinken.macroresolver import MacroResolver
+
+from utils import rpn_calculator
+
+
 class SNMPOid(object):
     """ OID created from datasource
         contains oids, values, max, ...

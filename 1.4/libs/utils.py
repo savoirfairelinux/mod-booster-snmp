@@ -20,17 +20,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
 
-import getopt
+import os
 import re
+import sys
+import glob
+import signal
+import time
+import socket
+import struct
+import copy
+import binascii
+import getopt
+import shlex
+import operator
+import math
+from datetime import datetime, timedelta
+from Queue import Empty
 
 from shinken.log import logger
-
-
-def get_instance(mod_conf):
-    """called by the plugin manager to get a poller"""
-    logger.info("[SnmpBooster] Get a snmp poller module for plugin %s" % mod_conf.get_name())
-    instance = Snmp_poller(mod_conf)
-    return instance
 
 def rpn_calculator(rpn_list):
     """ Reverse Polish notation calculator
