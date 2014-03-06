@@ -9,6 +9,7 @@ from libs.utils import parse_args
 from libs.snmphost import SNMPHost
 from libs.snmpservice import SNMPService
 
+
 class SnmpBoosterArbiter(SnmpBooster):
     """ SNMP Poller module class
         Improve SNMP checks
@@ -18,22 +19,23 @@ class SnmpBoosterArbiter(SnmpBooster):
         self.nb_tick = 0
 
     def hook_late_configuration(self, arb):
-        """ Read config and fill memcached
-        """
-        for s in arb.conf.services:
-            if s.check_command.command.module_type == 'snmp_booster':
-                c = s.check_command.command
-                m = MacroResolver()
-                m.init(arb.conf)
-                data = s.get_data_for_checks()
-                command_line = m.resolve_command(s.check_command, data)
+        """ Read config and fill memcached """
+        for serv in arb.conf.services:
+            if serv.check_command.command.module_type == 'snmp_booster':
+                chk = serv.check_command.command
+                mac_resol = MacroResolver()
+                mac_resol.init(arb.conf)
+                data = serv.get_data_for_checks()
+                command_line = mac_resol.resolve_command(serv.check_command,
+                                                         data)
 
                 # Clean command
                 clean_command = shlex.split(command_line.encode('utf8',
-                                                            'ignore'))
+                                                                'ignore'))
                 # If the command doesn't seem good
                 if len(clean_command) <= 1:
-                    logger.error("[SnmpBooster] Bad command detected: %s" % c.command)
+                    logger.error("[SnmpBooster] Bad command "
+                                 "detected: %s" % chk.command)
                     continue
 
                 # we do not want the first member, check_snmp thing
@@ -55,24 +57,33 @@ class SnmpBoosterArbiter(SnmpBooster):
                             # Update host
                             obj.community = new_obj.community
                             obj.version = new_obj.version
-                        new_serv = SNMPService(s, obj, triggergroup, dstemplate, instance, instance_name, s.service_description)
+                        new_serv = SNMPService(serv, obj, triggergroup,
+                                               dstemplate, instance,
+                                               instance_name,
+                                               serv.service_description)
                         new_serv.set_oids(self.datasource)
                         new_serv.set_triggers(self.datasource)
                         obj.update_service(new_serv)
-                        obj.frequences[s.check_interval].forced = False
+                        obj.frequences[serv.check_interval].forced = False
                         self.memcached.set(obj_key, obj, time=604800)
                     else:
                         # No old datas for this host
                         new_obj = SNMPHost(host, community, version)
-                        new_serv = SNMPService(s, new_obj, triggergroup, dstemplate, instance, instance_name, s.service_description)
+                        new_serv = SNMPService(serv, new_obj, triggergroup,
+                                               dstemplate, instance,
+                                               instance_name,
+                                               serv.service_description)
                         new_serv.set_oids(self.datasource)
                         new_serv.set_triggers(self.datasource)
                         new_obj.update_service(new_serv)
                         # Save new host in memcache
                         self.memcached.set(obj_key, new_obj, time=604800)
                 except Exception, e:
-                    message = ("[SnmpBooster] Error adding : Host %s - Service %s - "
-                               "Error related to: %s" % (obj_key, s.service_description, str(e)))
+                    message = ("[SnmpBooster] Error adding : "
+                               "Host %s - Service %s - Error related "
+                               "to: %s" % (obj_key,
+                                           serv.service_description,
+                                           str(e)))
                     logger.error(message)
 
     def hook_tick(self, brok):
@@ -81,8 +92,10 @@ class SnmpBoosterArbiter(SnmpBooster):
         """
         if self.nb_tick > self.db_archive_freq:
             try:
-                memcache_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                memcache_socket.connect(self.memcached_host, self.memcached_port)
+                memcache_socket = socket.socket(socket.AF_INET,
+                                                socket.SOCK_STREAM)
+                memcache_socket.connect(self.memcached_host,
+                                        self.memcached_port)
                 logger.info("[SnmpBooster] Clear Memcachedb log")
                 memcache_socket.send('db_archive\r\n')
                 ret = memcache_socket.recv(1024)
@@ -92,6 +105,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                     logger.error("[SnmpBooster] Memcachedb log not cleared")
                 self.nb_tick = 0
             except Exception, e:
-                logger.error("[SnmpBooster] Memcachedb log not cleared. Error: %s" % str(e))
+                logger.error("[SnmpBooster] Memcachedb log not cleared. "
+                             "Error: %s" % str(e))
         else:
             self.nb_tick += 1

@@ -25,7 +25,8 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    logger.error("[SnmpBooster] Import error. Maybe one of this module "
+                 "is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
 from shinken.check import Check
@@ -75,32 +76,27 @@ class SNMPOid(object):
     # End zabbix functions
 
     def calculation(self, value):
-        """ Get result from self.calc
-        """
-        return rpn_calculator([value,] + self.calc)
+        """ Get result from self.calc """
+        return rpn_calculator([value, ] + self.calc)
 
     def format_output(self, check_time, old_check_time):
-        """ Prepare service output 
-        """
+        """ Prepare service output """
         getattr(self, 'format_' + self.type_.lower() + '_output')(check_time, old_check_time)
 
     def format_text_output(self, check_time, old_check_time):
-        """ Format output for text type
-        """
+        """ Format output for text type """
         self.value = "%(raw_value)s" % self.__dict__
         self.out = "%(name)s: %(value)s%(unit)s" % self.__dict__
         self.unknown = True
 
     def format_derive64_output(self, check_time, old_check_time):
-        """ Format output for derive64 type
-        """
+        """ Format output for derive64 type """
         self.format_derive_output(check_time, old_check_time, limit=18446744073709551615)
 
     def format_derive_output(self, check_time, old_check_time, limit=4294967295):
-        """ Format output for derive type
-        """
+        """ Format output for derive type """
         self.unknown = True
-        if self.raw_old_value == None:
+        if self.raw_old_value is None:
             # Need more data to get derive
             self.out = "Waiting an additional check to calculate derive"
             self.perf = ''
@@ -114,7 +110,8 @@ class SNMPOid(object):
             # Get derive
             t_delta = check_time - old_check_time
             if t_delta.seconds == 0:
-                logger.error("[SnmpBooster] Time delta is 0s. We can not get derive for this OID %s" % self.oid)
+                logger.error("[SnmpBooster] Time delta is 0s. We can not get derive "
+                             "for this OID %s" % self.oid)
             else:
                 if self.raw_value < self.raw_old_value:
                     d_delta = float(raw_value)
@@ -134,15 +131,13 @@ class SNMPOid(object):
                 self.unknown = False
 
     def format_counter64_output(self, check_time, old_check_time):
-        """ Format output for counter64 type
-        """
+        """ Format output for counter64 type """
         self.format_counter_output(check_time, old_check_time, limit=18446744073709551615)
 
     def format_counter_output(self, check_time, old_check_timei, limit=4294967295):
-        """ Format output for counter type
-        """
+        """ Format output for counter type """
         self.unknown = True
-        if self.raw_value == None:
+        if self.raw_value is None:
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
             self.perf = ''
@@ -165,10 +160,9 @@ class SNMPOid(object):
             self.unknown = False
 
     def format_gauge_output(self, check_time, old_check_time):
-        """ Format output for gauge type
-        """
+        """ Format output for gauge type """
         self.unknown = True
-        if self.raw_value == None:
+        if self.raw_value is None:
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
             self.perf = ''
@@ -186,8 +180,7 @@ class SNMPOid(object):
             self.unknown = False
 
     def __eq__(self, other):
-        """ equal reimplementation
-        """
+        """ equal reimplementation """
         if isinstance(other, SNMPOid):
             result = []
             result.append(self.raw_oid == other.raw_oid)
@@ -198,5 +191,3 @@ class SNMPOid(object):
             result.append(self.calc == other.calc)
             return all(result)
         return NotImplemented
-
-

@@ -25,16 +25,15 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    logger.error("[SnmpBooster] Import error. Maybe one of this module "
+                 "is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
 from shinken.check import Check
 from shinken.macroresolver import MacroResolver
 
-
-import re
-
 from snmpfrequence import SNMPFrequence
+
 
 class SNMPHost(object):
     """ Host with SNMP checks
@@ -59,8 +58,7 @@ class SNMPHost(object):
         self.instances = {}
 
     def update_service(self, service):
-        """ Add or modify a service in service list
-        """
+        """ Add or modify a service in service list """
         if service.check_interval in self.frequences:
             # interval found
             if not service.key in self.frequences[service.check_interval].services:
@@ -70,11 +68,11 @@ class SNMPHost(object):
                 # service found, check if it needs update
                 # FIXME We NEED a better object comparison
                 attrs = ['instance', 'instance_name', 'key', 'name', 'oids',
-                        'raw_instance', 'triggergroup', 'triggers']
+                         'raw_instance', 'triggergroup', 'triggers']
                 for attr in attrs:
                     if not getattr(self.frequences[service.check_interval].services[service.key], attr) == getattr(service, attr):
                         self.frequences[service.check_interval].services[service.key] = service
-                        break;
+                        break
                     else:
                         # no changes
                         pass
@@ -92,7 +90,7 @@ class SNMPHost(object):
             get a service key and return its frequence
         """
         tmp = dict([(key, interval)
-                    for interval,f in self.frequences.items()
+                    for interval, f in self.frequences.items()
                     for key in f.services.keys()])
         if service_key in tmp:
             return tmp[service_key]
@@ -101,16 +99,14 @@ class SNMPHost(object):
             return None
 
     def get_oids_by_frequence(self, interval):
-        """ Return all oids from an frequence
-        """
+        """ Return all oids from an frequence """
         return dict([(snmpoid.oid, snmpoid)
                     for s in self.frequences[interval].services.values()
                     for snmpoid in s.oids.values()
                     if s.instance != "NOTFOUND"])
 
     def get_oids_for_instance_mapping(self, interval, datasource):
-        """ Return all oids from an frequence in order to map instances
-        """
+        """ Return all oids from an frequence in order to map instances """
         base_oids = {}
         for s in self.frequences[interval].services.values():
             if s.instance:
@@ -121,13 +117,13 @@ class SNMPHost(object):
                         oid = datasource['MAP'][base_oid_name]['base_oid']
                         base_oids[oid] = s.instance
                     else:
-                        logger.error("[SnmpBooster] Map name `%s' not found in datasource INI file" % base_oid_name)
+                        logger.error("[SnmpBooster] Map name `%s' not found "
+                                     "in datasource INI file" % base_oid_name)
 
         return base_oids
 
     def get_oids_for_limits(self, interval):
-        """ Return all oids from an frequence in order to get data max values
-        """
+        """ Return all oids from an frequence in order to get data max values """
         return dict([(snmpoid.max_, snmpoid)
                     for s in self.frequences[interval].services.values()
                     for snmpoid in s.oids.values()
@@ -137,36 +133,31 @@ class SNMPHost(object):
         for s in self.frequences[interval].services.values():
             for snmpoid in s.oids.values():
                 if snmpoid.max_ and not isinstance(snmpoid.max_, float):
-                    oid_max, _ = snmpoid.max_.rsplit(".", 1) # DELETE ME PLEASE! :)
+                    oid_max, _ = snmpoid.max_.rsplit(".", 1)  # DELETE ME PLEASE! :)
                     max_oids.append(oid_max)
 
         return max_oids
 
     def format_output(self, frequence, key):
-        """ Prepare service output 
-        """
+        """ Prepare service output """
         m, r = self.frequences[frequence].format_output(key)
         return m, r
 
     def map_instances(self, frequence):
-        """ Map instances
-        """
+        """ Map instances """
         for s in self.frequences[frequence].services.values():
             s.map_instances(self.instances)
 
     def set_limits(self, frequence, limits):
-        """ Set data max values
-        """
+        """ Set data max values """
         for s in self.frequences[frequence].services.values():
             s.set_limits(limits)
 
     def __eq__(self, other):
-        """ equal reimplementation
-        """
+        """ equal reimplementation """
         if isinstance(other, SNMPHost):
             result = []
             result.append(self.community == other.community)
             result.append(self.version == other.version)
             return all(result)
         return NotImplemented
-

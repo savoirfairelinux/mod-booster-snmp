@@ -20,6 +20,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Entry file for SNMP Booster module
+"""
 
 import os
 import re
@@ -48,7 +51,8 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is missing: memcache, configobj, pysnmp")
+    logger.error("[SnmpBooster] Import error. Maybe one of this "
+                 "module is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
 from shinken.check import Check
@@ -71,10 +75,13 @@ properties = {
 
 def get_instance(mod_conf):
     """called by the plugin manager to get a poller"""
-    logger.info("[SnmpBooster] Get a snmp poller module for plugin %s" % mod_conf.get_name())
+    logger.info("[SnmpBooster] Get a snmp poller module "
+                "for plugin %s" % mod_conf.get_name())
     if not mod_conf.loaded_by in mod_conf.properties['daemons']:
-        logger.info("[SnmpBooster] Import errorfor plugin %s. Please check your configuration" % mod_conf.get_name())
-        raise Exception("[SnmpBooster] Cannot load SnmpBooster. Please check your configuration")
+        logger.info("[SnmpBooster] Import errorfor plugin %s. "
+                    "Please check your configuration" % mod_conf.get_name())
+        raise Exception("[SnmpBooster] Cannot load SnmpBooster. "
+                        "Please check your configuration")
     class_name = "SnmpBooster%s" % mod_conf.loaded_by.capitalize()
     instance = globals()[class_name](mod_conf)
     return instance

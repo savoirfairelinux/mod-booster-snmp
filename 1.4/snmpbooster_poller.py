@@ -64,14 +64,16 @@ class SnmpBoosterPoller(SnmpBooster):
                 if host is None:
                     chk.status = 'done'
                     chk.exit_status = 2
-                    chk.get_outputs('Error : the parameters host or command are not correct.', 8012)
+                    chk.get_outputs('Error : the parameters host or command '
+                                    'are not correct.', 8012)
                     chk.execution_time = 0.0
                     continue
 
                 # Ok we are good, we go on
                 n = SNMPAsyncClient(host, community, version, self.datasource,
-                                    triggergroup, dstemplate, instance, instance_name,
-                                    self.memcached_address, self.max_repetitions, self.show_from_cache)
+                                    triggergroup, dstemplate, instance,
+                                    instance_name, self.memcached_address,
+                                    self.max_repetitions, self.show_from_cache)
                 chk.con = n
 
     # Check the status of checks
@@ -81,40 +83,45 @@ class SnmpBoosterPoller(SnmpBooster):
         to_del = []
 
         # First look for checks in timeout
-        for c in self.checks:
-            if c.status == 'launched' and c.con.state != 'received':
-                c.con.look_for_timeout()
+        for chk in self.checks:
+            if chk.status == 'launched' and chk.con.state != 'received':
+                chk.con.look_for_timeout()
 
         # Now we look for finished checks
-        for c in self.checks:
+        for chk in self.checks:
             # First manage check in error, bad formed
-            if c.status == 'done':
-                to_del.append(c)
+            if chk.status == 'done':
+                to_del.append(chk)
                 try:
-                    self.returns_queue.put(c)
+                    self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [%d]Exiting: %s" % (self.id, exp))
+                    logger.critical("[SnmpBooster] "
+                                    "[%d]Exiting: %s" % (self.id, exp))
                     sys.exit(2)
                 continue
             # Then we check for good checks
-            if c.status == 'launched' and c.con.is_done():
-                n = c.con
-                c.status = 'done'
-                c.exit_status = getattr(n, 'rc', 3)
-                c.get_outputs(str(getattr(n, 'message', 'Error in launching command.')), 8012)
-                c.execution_time = getattr(n, 'execution_time', 0.0)
+            if chk.status == 'launched' and chk.con.is_done():
+                con = chk.con
+                chk.status = 'done'
+                chk.exit_status = getattr(con, 'rc', 3)
+                chk.get_outputs(str(getattr(con,
+                                            'message',
+                                            'Error in launching command.')),
+                                8012)
+                chk.execution_time = getattr(con, 'execution_time', 0.0)
 
                 # unlink our object from the original check
-                if hasattr(c, 'con'):
-                    delattr(c, 'con')
+                if hasattr(chk, 'con'):
+                    delattr(chk, 'con')
 
                 # and set this check for deleting
                 # and try to send it
-                to_del.append(c)
+                to_del.append(chk)
                 try:
-                    self.returns_queue.put(c)
+                    self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [%d]Exiting: %s" % (self.id, exp))
+                    logger.critical("[SnmpBooster] "
+                                    "[%d]Exiting: %s" % (self.id, exp))
                     sys.exit(2)
 
         # And delete finished checks
@@ -156,12 +163,13 @@ class SnmpBoosterPoller(SnmpBooster):
                 cmsg = c.get(block=False)
                 if cmsg.get_type() == 'Die':
                     #TODO : What is self.id undefined variable
-                    #logger.info("[SnmpBooster] [%d]Dad say we are dying..." % self.id)
-                    logger.info("[SnmpBooster] FIX-ME-ID Parent requests termination.")
+                    # logger.info("[SnmpBooster] [%d]
+                    # Dad say we are dying..." % self.id)
+                    logger.info("[SnmpBooster] FIX-ME-ID Parent "
+                                "requests termination.")
                     break
             except:
                 pass
-
 
             #TODO : better time management
             time.sleep(.1)

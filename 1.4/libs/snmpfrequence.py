@@ -1,5 +1,5 @@
 class SNMPFrequence(object):
-    """ Frequence 
+    """ Frequence
 
     >>> services = {
     >>>     '(interface, map(interface,eth0), eth0)': <SNMPService>
@@ -16,6 +16,6 @@ class SNMPFrequence(object):
         self.checking = False
 
     def format_output(self, key):
-        """ Prepare service output 
-        """
-        return self.services[key].format_output(self.check_time, self.old_check_time)
+        """ Prepare service output """
+        return self.services[key].format_output(self.check_time,
+                                                self.old_check_time)

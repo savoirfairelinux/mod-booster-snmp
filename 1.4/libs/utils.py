@@ -39,16 +39,16 @@ from Queue import Empty
 
 from shinken.log import logger
 
+
 def rpn_calculator(rpn_list):
-    """ Reverse Polish notation calculator
-    """
+    """ Reverse Polish notation calculator """
     try:
         st = []
         for el in rpn_list:
             if el is None:
                 continue
             if hasattr(operator, str(el)):
-                y, x = st.pop(),st.pop()
+                y, x = st.pop(), st.pop()
                 z = getattr(operator, el)(x, y)
             else:
                 z = float(el)
@@ -60,8 +60,7 @@ def rpn_calculator(rpn_list):
             return(st.pop())
 
     except Exception, e:
-        logger.error('[SnmpBooster] RPN calculation Error: %s - %s' % (str(e),
-                                                         str(rpn_list)))
+        logger.error('[SnmpBooster] RPN calculation Error: %s - %s' % (str(e), str(rpn_list)))
         return "Calc error"
 
 
@@ -77,18 +76,17 @@ def parse_args(cmd_args):
 
     #Manage the options
     try:
-        options, args = getopt.getopt(cmd_args,
-                        'H:C:V:i:t:T:n:',
-                        ['hostname=', 'community=', 'snmp-version=',
-                         'dstemplate=', 'triggergroup=',
-                         'instance=', 'instance-name=' ])
+        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:',
+                                      ['hostname=', 'community=', 'snmp-version=',
+                                       'dstemplate=', 'triggergroup=',
+                                       'instance=', 'instance-name='])
     except getopt.GetoptError, err:
         # TODO later - Use argparse
         # If we got problem, bail out
         logger.error("[SnmpBooster] Error in command: definition %s" % str(err))
         return (host, community, version,
-                    triggergroup, dstemplate, instance,
-                    instance_name,)
+                triggergroup, dstemplate, instance,
+                instance_name,)
     for option_name, value in options:
         if option_name in ("-H", "--hostname"):
             host = value
@@ -121,5 +119,3 @@ def parse_args(cmd_args):
     return (host, community, version,
             triggergroup, dstemplate, instance,
             instance_name)
-
-
