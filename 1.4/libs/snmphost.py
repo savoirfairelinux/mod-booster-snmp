@@ -98,12 +98,30 @@ class SNMPHost(object):
             logger.error('[SnmpBooster] No frequences found for this key: %s' % str(service_key))
             return None
 
-    def get_oids_by_frequence(self, interval):
+    def get_oids_by_frequence(self, interval, with_instance=True):
         """ Return all oids from an frequence """
-        return dict([(snmpoid.oid, snmpoid)
-                    for s in self.frequences[interval].services.values()
-                    for snmpoid in s.oids.values()
-                    if s.instance != "NOTFOUND"])
+        if with_instance == False:
+            ret_dict = {}
+            for s in self.frequences[interval].services.values():
+                for snmpoid in s.oids.values():
+                    if s.instance == "NOTFOUND":
+                        continue
+                    elif s.instance is None:
+                        ret_dict[snmpoid.oid] = snmpoid
+                    else:
+#                        if len(s.instance.split(".")) == 1 and int(s.instance) > 0:
+#                            snmp_key = snmpoid.oid.rsplit(".", 1)[0] + "." + str(int(snmpoid.oid.rsplit(".", 1)[1]) - 1)
+#                            ret_dict[snmp_key] = snmpoid
+#                        else:
+                        snmp_key = re.sub("." + s.instance + "$", "", snmpoid.oid)
+                        ret_dict[snmp_key] = snmpoid
+            return ret_dict
+        else:
+            return dict([(snmpoid.oid, snmpoid)
+                         for s in self.frequences[interval].services.values()
+                         for snmpoid in s.oids.values()
+                         if s.instance != "NOTFOUND"])
+
 
     def get_oids_for_instance_mapping(self, interval, datasource):
         """ Return all oids from an frequence in order to map instances """
@@ -122,21 +140,25 @@ class SNMPHost(object):
 
         return base_oids
 
-    def get_oids_for_limits(self, interval):
+    def get_oids_for_limits(self, interval, with_instance=True):
         """ Return all oids from an frequence in order to get data max values """
-        return dict([(snmpoid.max_, snmpoid)
-                    for s in self.frequences[interval].services.values()
-                    for snmpoid in s.oids.values()
-                    if s.instance != "NOTFOUND" and isinstance(snmpoid.max_, str) and snmpoid.max_])
-        # TODO : Unreachable code, FIXME!!!
-        max_oids = []
-        for s in self.frequences[interval].services.values():
-            for snmpoid in s.oids.values():
-                if snmpoid.max_ and not isinstance(snmpoid.max_, float):
-                    oid_max, _ = snmpoid.max_.rsplit(".", 1)  # DELETE ME PLEASE! :)
-                    max_oids.append(oid_max)
-
-        return max_oids
+        if with_instance == True:
+            ret_dict = {}
+            for s in self.frequences[interval].services.values():
+                for snmpoid in s.oids.values():
+                    if s.instance == "NOTFOUND" or snmpoid.max_ is None or snmpoid.max_ == '':
+                        continue
+                    elif s.instance is None:
+                        ret_dict[snmpoid.max_] = snmpoid
+                    else:
+                        snmp_key = ".".join((snmpoid.max_, s.instance))
+                        ret_dict[snmp_key] = snmpoid
+            return ret_dict
+        else:
+            return dict([(snmpoid.max_, snmpoid)
+                        for s in self.frequences[interval].services.values()
+                        for snmpoid in s.oids.values()
+                        if s.instance != "NOTFOUND" and isinstance(snmpoid.max_, str) and snmpoid.max_])
 
     def format_output(self, frequence, key):
         """ Prepare service output """
