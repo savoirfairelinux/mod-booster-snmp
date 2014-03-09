@@ -94,8 +94,8 @@ class SnmpBoosterArbiter(SnmpBooster):
             try:
                 memcache_socket = socket.socket(socket.AF_INET,
                                                 socket.SOCK_STREAM)
-                memcache_socket.connect(self.memcached_host,
-                                        self.memcached_port)
+                memcache_socket.connect((self.memcached_host,
+                                         self.memcached_port))
                 logger.info("[SnmpBooster] Clear Memcachedb log")
                 memcache_socket.send('db_archive\r\n')
                 ret = memcache_socket.recv(1024)

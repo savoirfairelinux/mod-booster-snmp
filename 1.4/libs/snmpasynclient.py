@@ -147,7 +147,7 @@ class SNMPAsyncClient(object):
             data_validity = True
             message, rc = self.obj.format_output(self.check_interval, self.serv_key)
             logger.info('[SnmpBooster] FROM CACHE : Return code: %s - Message: %s' % (rc, message))
-            if self.show_from_cache:
+            if self.show_from_cache == True:
                 message = "FROM CACHE: " + message
             self.set_exit(message, rc=rc)
             self.memcached.set(self.obj_key, self.obj, time=604800)

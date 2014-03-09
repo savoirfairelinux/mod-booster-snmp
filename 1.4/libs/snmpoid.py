@@ -87,7 +87,7 @@ class SNMPOid(object):
         """ Format output for text type """
         self.value = "%(raw_value)s" % self.__dict__
         self.out = "%(name)s: %(value)s%(unit)s" % self.__dict__
-        self.unknown = True
+        self.unknown = False
 
     def format_derive64_output(self, check_time, old_check_time):
         """ Format output for derive64 type """
