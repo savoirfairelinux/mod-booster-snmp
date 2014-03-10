@@ -69,7 +69,7 @@ Simply declare the module:
 
 ::
 
-  modules SnmpBooster
+  modules SnmpBoosterArbiter
 
 Scheduler daemon configuration
 ++++++++++++++++++++++++++++++
@@ -78,7 +78,7 @@ Simply declare the module:
 
 ::
 
-  modules SnmpBooster
+  modules SnmpBoosterScheduler
 
 Poller daemon configuration
 +++++++++++++++++++++++++++
@@ -87,22 +87,55 @@ Simply declare the module:
 
 ::
 
-  modules SnmpBooster
+  modules SnmpBoosterPoller
 
 SnmpBooster Module declaration
 ++++++++++++++++++++++++++++++
 
-# Included in Shinken v1.2.1 shinken-specific.cfg.
+You have to declare all least 3 modules.
+
+One for the Arbiter:
 
 ::
 
-   define module {
-       module_name          SnmpBooster
-       module_type          snmp_poller
-       datasource           /usr/local/shinken/etc/packs/network/SnmpBooster/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
-       memcached_host       x.x.x.x  ; SET THE IP ADDRESS OF YOUR memcached SERVER
-       memcached_port       11211  ; default port for a memcached process
-   }
+    define module {
+        module_name          SnmpBoosterArbiter
+        module_type          snmp_booster
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
+        memcached_port       21201   ; default port for a memcached process
+        loaded_by            arbiter
+        show_from_cache      False
+    }
+
+One for the Scheduler:
+
+::
+
+    define module {
+        module_name          SnmpBoosterScheduler
+        module_type          snmp_booster
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
+        memcached_port       21201   ; default port for a memcached process
+        loaded_by            scheduler
+        show_from_cache      False
+    }
+
+One for the Poller:
+
+::
+
+    define module {
+        module_name          SnmpBoosterPoller
+        module_type          snmp_booster
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
+        memcached_port       21201   ; default port for a memcached process
+        loaded_by            poller
+        show_from_cache      False
+    }
+
 
 If you do not know the IP adress on which your memcache is listening, check under /etc/memcached.conf. Or do a:
 
@@ -111,6 +144,19 @@ If you do not know the IP adress on which your memcache is listening, check unde
   netstat -a | grep memcached
 
 If you are running a test on the local machine you can leave memcached on 127.0.0.1 (localhost), but if your poller, scheduler or arbiter is on a different machine, set the memcached to listen on a real IP address.
+
+
+Parameters
+~~~~~~~~~~
+
+:module_name:          Module Name. Example: `SnmpBoosterPoller`
+:module_type:          Module type. Must be: `snmp_booster`
+:datasource:           Datasource folder. Where all your Defaults*.ini are. Example: `/etc/shinken/snmpbooster_datasource/`
+:memcached_host:       Memcached host IP. Example: `192.168.1.2`
+:memcached_port:       Memcached host port. Example: `21201`
+:loaded_by:            Which part of Shinken load this module. Must be: `poller`, `arbiter` or `scheduler`. Example: `arbiter`
+:show_from_cache:      Prefix output by `FROM CACHE` string when datas come from memcached. Usefull for debugging. Default: False
+
 
 How to define a Host and Service
 --------------------------------
@@ -137,7 +183,7 @@ To edit the file
   define command {
     command_name    check_snmp_booster
     command_line    check_snmp_booster -H $HOSTNAME$ -C $SNMPCOMMUNITYREAD$ -V 2c -t $ARG1$ -i $_SERVICEINST$ -T $_SERVICETRIGGERGROUP$
-    module_type     snmp_poller
+    module_type     snmp_booster
   }
 
 
@@ -161,7 +207,7 @@ To edit the file
   host{
     name                    SnmpBooster-host
     alias                   SnmpBooster-host template
-    check_command	    check_host_alive
+    check_command	        check_host_alive
     max_check_attempts      3
     check_interval          1
     retry_interval          1
