@@ -1,0 +1,5 @@
+shinken-module-snmpbooster (1.0-1) unstable; urgency=medium
+
+  * First stable version.
+
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Mon, 10 Mar 2014 18:33:11 -0400
