@@ -60,8 +60,22 @@ class SNMPService(object):
     def set_limits(self, limits):
         """ Set data max values """
         for snmpoid in self.oids.values():
-            if snmpoid.max_ in limits:
-                snmpoid.max_ = float(limits[snmpoid.max_])
+            if isinstance(snmpoid.max_, float):
+                snmpoid.max_value = snmpoid.max_
+            elif isinstance(snmpoid.max_, str):
+                if isinstance(self.instance, str):
+                    tmp_oid_max = ".".join((snmpoid.max_, self.instance))
+                else:
+                    tmp_oid_max = snmpoid.max_
+                if tmp_oid_max in limits:
+                    snmpoid.max_value = float(limits[tmp_oid_max])
+                else:
+                    # Limit seems already set
+                    pass
+            else:
+                pass
+                # snmpoid.max_ has a strange format .....
+
 
     def map_instances(self, instances):
         """ Map instances """
@@ -82,8 +96,11 @@ class SNMPService(object):
         for snmpoid in self.oids.values():
             snmpoid.format_output(check_time, old_check_time)
 
+        message = ""
         # Get return code from trigger
-        rc = self.get_trigger_result()
+        trigger_error, rc = self.get_trigger_result()
+        if trigger_error == True:
+            message = "Trigger Problem detected (Please check output or poller logs) - "
         # Set return code to UNKNOW if one value are unknown
         if any([snmpoid.unknown for snmpoid in self.oids.values()]):
             rc = 3
@@ -104,9 +121,9 @@ class SNMPService(object):
             rc = 3
 
         if not perf:
-            message = "%s: %s" % (name, out)
+            message += "%s: %s" % (name, out)
         else:
-            message = "%s: %s" % (name, out)
+            message += "%s: %s" % (name, out)
             message = "%s | %s" % (message, perf)
 
         return message, rc
@@ -131,8 +148,14 @@ class SNMPService(object):
                             if len(tmp) > 1:
                                 # detect oid with function
                                 ds, fct = tmp
+                                if not ds in self.oids:
+                                    logger.error("[SnmpBooster] DS %s not found "
+                                                 "to compute the trigger."
+                                                 "Please check your datasource "
+                                                 "file." % ds)
                                 if self.oids[ds].value is None:
-                                    return int(trigger['default_status'])
+                                    logger.error("[SnmpBooster] No data found for DS: %s " % ds)
+                                    return True, int(trigger['default_status'])
                                 fct, args = fct.split("(")
                                 if hasattr(self.oids[ds], fct):
                                     if args == ')':
@@ -142,10 +165,11 @@ class SNMPService(object):
                                         args = args.split(",")
                                         value = getattr(self.oids[ds], fct)(**args)
                                 else:
+
                                     logger.error("[SnmpBooster] Trigger function not "
                                                  "found: %s" % fct)
                                     # return UNKNOW
-                                    return 3
+                                    return True, int(trigger['default_status'])
                             elif el in self.oids:
                                 # detect oid
                                 value = self.oids[ds].value
@@ -155,12 +179,11 @@ class SNMPService(object):
 
                         error = rpn_calculator(rpn_list)
                         if error:
-                            return error_code
-            return errors['ok']
+                            return False, error_code
+            return False, errors['ok']
         except Exception, e:
-
             logger.error("[SnmpBooster] Get Trigger error: %s" % str(e))
-            return int(trigger['default_status'])
+            return True, int(trigger['default_status'])
 
     def set_triggers(self, datasource):
         """ Prepare trigger from triggroup and trigges definition

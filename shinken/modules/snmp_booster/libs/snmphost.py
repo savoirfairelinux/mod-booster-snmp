@@ -146,7 +146,7 @@ class SNMPHost(object):
             ret_dict = {}
             for s in self.frequences[interval].services.values():
                 for snmpoid in s.oids.values():
-                    if s.instance == "NOTFOUND" or snmpoid.max_ is None or snmpoid.max_ == '':
+                    if s.instance == "NOTFOUND" or snmpoid.max_ is None or snmpoid.max_ == '' or isinstance(snmpoid.max_, float):
                         continue
                     elif s.instance is None:
                         ret_dict[snmpoid.max_] = snmpoid

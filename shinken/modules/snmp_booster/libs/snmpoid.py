@@ -59,6 +59,9 @@ class SNMPOid(object):
         self.value = None
         # Old value (after calculation)
         self.old_value = None
+        # Max value (for pcrt calculation)
+        self.max_value = None
+
         self.perf = ""
         # Set true if we don't have value
         self.unknown = True
@@ -69,7 +72,7 @@ class SNMPOid(object):
         return self.raw_value == self.raw_old_value
 
     def prct(self):
-        return float(self.value) * 100 / float(self.max_)
+        return float(self.value) * 100 / float(self.max_value)
 
     def last(self):
         return self.value

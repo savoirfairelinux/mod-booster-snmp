@@ -285,6 +285,8 @@ class SNMPAsyncClient(object):
         # Save the time when snmp request start
         self.snmp_request_start_time = time.time()
 
+        self.startedAt = time.time()
+
         # Prepare SNMP Request
         transportDispatcher = AsynsockDispatcher()
         transportDispatcher.registerTransport(udp.domainName,
@@ -535,13 +537,13 @@ class SNMPAsyncClient(object):
 
                 # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 
-                if time.time() - self.snmp_request_start_time > self.timeout:
+                if time.time() - self.startedAt > self.timeout:
                     self.set_exit("SNMP Request timed out",
                                   3,
                                   transportDispatcher)
                 #return wholeMsg
 
-                self.snmp_request_start_time = time.time()
+                self.startedAt = time.time()
 
         # Prepare output
         message, rc = self.obj.format_output(self.check_interval,
