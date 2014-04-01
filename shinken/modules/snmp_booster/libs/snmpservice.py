@@ -150,9 +150,9 @@ class SNMPService(object):
                                 ds, fct = tmp
                                 if not ds in self.oids:
                                     logger.error("[SnmpBooster] DS %s not found "
-                                                 "to compute the trigger."
+                                                 "to compute the trigger (%s). "
                                                  "Please check your datasource "
-                                                 "file." % ds)
+                                                 "file." % (ds, self.triggergroup))
                                 if self.oids[ds].value is None:
                                     logger.error("[SnmpBooster] No data found for DS: %s " % ds)
                                     return True, int(trigger['default_status'])
