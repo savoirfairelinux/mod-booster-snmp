@@ -161,7 +161,7 @@ class SNMPOid(object):
 
             self.value = float(self.value)
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
-            self.out = self.out % self.__dict__
+            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
             self.unknown = False
 
     def format_gauge_output(self, check_time, old_check_time):
@@ -181,7 +181,7 @@ class SNMPOid(object):
 
             self.value = float(self.value)
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
-            self.perf = "%(name)s=%(out)s%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
             self.unknown = False
 
     def __eq__(self, other):
