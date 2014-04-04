@@ -76,10 +76,10 @@ def parse_args(cmd_args):
 
     #Manage the options
     try:
-        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:',
+        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:P:b',
                                       ['hostname=', 'community=', 'snmp-version=',
-                                       'dstemplate=', 'triggergroup=',
-                                       'instance=', 'instance-name='])
+                                       'dstemplate=', 'triggergroup=', 'port=',
+                                       'instance=', 'instance-name=', 'use-getbulk'])
     except getopt.GetoptError, err:
         # TODO later - Use argparse
         # If we got problem, bail out
@@ -87,6 +87,11 @@ def parse_args(cmd_args):
         return (host, community, version,
                 triggergroup, dstemplate, instance,
                 instance_name,)
+    # Set default values
+    port = 161
+    use_getbulk = False
+    version = '2c'
+
     for option_name, value in options:
         if option_name in ("-H", "--hostname"):
             host = value
@@ -102,6 +107,10 @@ def parse_args(cmd_args):
             version = value
         elif option_name in ("-n", "--instance-name"):
             instance_name = value
+        elif option_name in ("-P", "--port"):
+            port = value
+        elif option_name in ("-b", "--use-getbulk"):
+            use_getbulk = value
 
     if instance and (instance.startswith('-') or instance.lower() == 'none'):
         instance = None
@@ -118,4 +127,4 @@ def parse_args(cmd_args):
 
     return (host, community, version,
             triggergroup, dstemplate, instance,
-            instance_name)
+            instance_name, port, use_getbulk)
