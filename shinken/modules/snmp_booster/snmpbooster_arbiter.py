@@ -20,6 +20,7 @@ class SnmpBoosterArbiter(SnmpBooster):
 
     def hook_late_configuration(self, arb):
         """ Read config and fill memcached """
+
         for serv in arb.conf.services:
             if serv.check_command.command.module_type == 'snmp_booster':
                 chk = serv.check_command.command
@@ -41,7 +42,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                 # we do not want the first member, check_snmp thing
                 args = parse_args(clean_command[1:])
                 (host, community, version,
-                 triggergroup, dstemplate, instance, instance_name) = args
+                 triggergroup, dstemplate, instance, instance_name, port, use_getbulk) = args
 
                 # Get key from memcached
                 obj_key = str(host)

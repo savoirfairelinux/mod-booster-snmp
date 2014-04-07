@@ -287,23 +287,27 @@ class SNMPAsyncClient(object):
             self.remaining_tablerow = set(self.headVars[99:])
             self.headVars = self.headVars[:99]
 
+        print self.version
+        print self.use_getbulk
+        print self.community
+        print self.port
         if self.version == '1' or self.use_getbulk == False:
             # GETNET
             # Build PDU
             if self.version in ['1', 1]:
                 self.pMod = api.protoModules[api.protoVersion1]
             else:
-                self.pMod = api.protoModules[api.protoVersion2]
+                self.pMod = api.protoModules[api.protoVersion2c]
             self.reqPDU = self.pMod.GetNextRequestPDU()
             self.pMod.apiPDU.setDefaults(self.reqPDU)
             self.pMod.apiPDU.setVarBinds(self.reqPDU,
-                                         [(self.pMod.ObjectIdentifier(x),
-                                           self.pMod.null) for x in self.headVars ])
+                                         [(self.pMod.ObjectIdentifier(tuple(int(i) for i in x.split("."))), self.pMod.null)
+                                           for x in sorted(self.headVars)])
             # Build message 
-            reqMsg = self.pMod.Message()
-            self.pMod.apiMessage.setDefaults(reqMsg)
-            self.pMod.apiMessage.setCommunity(reqMsg, self.community)
-            self.pMod.apiMessage.setPDU(reqMsg, reqPDU)
+            self.reqMsg = self.pMod.Message()
+            self.pMod.apiMessage.setDefaults(self.reqMsg)
+            self.pMod.apiMessage.setCommunity(self.reqMsg, self.community)
+            self.pMod.apiMessage.setPDU(self.reqMsg, self.reqPDU)
 
         else:
             # GETBULK
@@ -383,19 +387,18 @@ class SNMPAsyncClient(object):
         while wholeMsg:
             # Do some stuff to read SNMP anser
             self.rspMsg, wholeMsg = decoder.decode(wholeMsg,
-                                                   asn1Spec=v2c.Message())
-            self.rspPDU = v2c.apiMessage.getPDU(self.rspMsg)
-            rspPDU = self.pMod.apiMessage.getPDU(rspMsg)
+                                                   asn1Spec=self.pMod.Message())
+            self.rspPDU = self.pMod.apiMessage.getPDU(self.rspMsg)
 
-            if self.pMod.apiPDU.getRequestID(reqPDU) == self.pMod.apiPDU.getRequestID(rspPDU):
+            if self.pMod.apiPDU.getRequestID(self.reqPDU) == self.pMod.apiPDU.getRequestID(self.rspPDU):
                 # Check for SNMP errors reported
-                errorStatus = self.pMod.apiPDU.getErrorStatus(rspPDU)
+                errorStatus = self.pMod.apiPDU.getErrorStatus(self.rspPDU)
                 if errorStatus and errorStatus != 2:
                     logger.error('[SnmpBooster] SNMP Request error 2: %s' % str(errorStatus))
                     self.set_exit("SNMP Request error 2: " + str(errorStatus), rc=3)
                     return wholeMsg
                 # Format var-binds table
-                varBindTable = self.pMod.apiPDU.getVarBindTable(reqPDU, rspPDU)
+                varBindTable = self.pMod.apiPDU.getVarBindTable(self.reqPDU, self.rspPDU)
                 # Initialize mapping_instance dict
                 mapping_instance = {}
                 # Read datas from the anser
