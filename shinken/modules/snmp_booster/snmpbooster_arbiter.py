@@ -87,6 +87,9 @@ class SnmpBoosterArbiter(SnmpBooster):
                                            str(e)))
                     logger.error(message)
 
+            # Disconnect from memcache
+            self.memcached.disconnect_all()
+
     def hook_tick(self, brok):
         """Each second the broker calls the hook_tick function
            Every tick try to flush the buffer
@@ -105,6 +108,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                 else:
                     logger.error("[SnmpBooster] Memcachedb log not cleared")
                 self.nb_tick = 0
+                memcache_socket.close()
             except Exception, e:
                 logger.error("[SnmpBooster] Memcachedb log not cleared. "
                              "Error: %s" % str(e))
