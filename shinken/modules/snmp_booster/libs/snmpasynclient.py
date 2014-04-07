@@ -127,11 +127,13 @@ class SNMPAsyncClient(object):
             self.set_exit("Memcached error: `%s'"
                           % self.memcached.get(self.obj_key),
                           rc=3)
+            self.memcached.disconnect_all()
             return
         if not isinstance(self.obj, SNMPHost):
             logger.error('[SnmpBooster] Host not found in memcache: %s' % self.hostname)
             self.set_exit("Host not found in memcache: `%s'" % self.hostname,
                           rc=3)
+            self.memcached.disconnect_all()
             return
 
         # Find service check_interval
@@ -140,6 +142,7 @@ class SNMPAsyncClient(object):
             # Possible ???
             logger.error('[SnmpBooster] Interval not found in memcache: %s' % self.check_interval)
             self.set_exit("Interval not found in memcache", rc=3)
+            self.memcached.disconnect_all()
             return
 
         # Check if map is done
@@ -198,6 +201,7 @@ class SNMPAsyncClient(object):
                 message = "FROM CACHE: " + message
             self.set_exit(message, rc=rc)
             self.memcached.set(self.obj_key, self.obj, time=604800)
+            self.memcached.disconnect_all()
             return
 
         # Save old datas
@@ -257,7 +261,7 @@ class SNMPAsyncClient(object):
                               " - " +
                               str(self.serv_key),
                               rc=3)
-
+                self.memcached.disconnect_all()
                 return
 
             # SNMP table header
@@ -354,23 +358,29 @@ class SNMPAsyncClient(object):
             logger.error('[SnmpBooster] SNMP Request error 1: %s' % str(e))
             self.set_exit("SNMP Request error 1: " + str(e), rc=3)
 
-        # LOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+            # LOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+            ## Set `checking' to False
+            ## Maybe this attribute is useless ?
             try:
                 self.obj = self.memcached.get(self.obj_key)
             except ValueError, e:
                 self.set_exit("Memcached error: `%s'"
                               % self.memcached.get(self.obj_key),
                               rc=3)
+                self.memcached.disconnect_all()
                 return
+
             if not isinstance(self.obj, SNMPHost):
                 logger.error('[SnmpBooster] Host not found in memcache: %s' % self.hostname)
                 self.set_exit("Host not found in memcache: `%s'" % self.hostname,
                               rc=3)
+                self.memcached.disconnect_all()
                 return
 
             self.obj.frequences[self.check_interval].checking = False
             self.memcached.set(self.obj_key, self.obj, time=604800)
-        # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+            self.memcached.disconnect_all()
+            # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 
         transportDispatcher.closeDispatcher()
 
@@ -601,6 +611,9 @@ class SNMPAsyncClient(object):
                     'Message: %s' % (rc, message))
         self.set_exit(message, rc, transportDispatcher)
 
+        # TODO: checkme
+        self.memcached.disconnect_all()
+
         return wholeMsg
 
     def callback(self, transportDispatcher, transportDomain, transportAddress,
@@ -830,11 +843,15 @@ class SNMPAsyncClient(object):
                     'Message: %s' % (rc, message))
         self.set_exit(message, rc, transportDispatcher)
 
+        # TODO: checkme
+        self.memcached.disconnect_all()
+
         return wholeMsg
 
     def callback_timer(self, now):
         """ Callback function called to check if the SNMP request time out """
         if now - self.snmp_request_start_time > self.timeout:
+            self.memcached.disconnect_all()
             raise Exception("Request timed out or bad community")
 
     def is_done(self):
@@ -857,6 +874,7 @@ class SNMPAsyncClient(object):
             message = ('Error : SnmpBooster request timeout '
                        'after %d seconds' % self.timeout)
             self.set_exit(message, rc)
+            self.memcached.disconnect_all()
 
     def set_exit(self, message, rc=3, transportDispatcher=None):
         """ Set the output and exit code of the check """
