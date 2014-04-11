@@ -76,9 +76,9 @@ def parse_args(cmd_args):
 
     #Manage the options
     try:
-        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:P:b',
+        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:P:br',
                                       ['hostname=', 'community=', 'snmp-version=',
-                                       'dstemplate=', 'triggergroup=', 'port=',
+                                       'dstemplate=', 'triggergroup=', 'port=', 'real-check'
                                        'instance=', 'instance-name=', 'use-getbulk'])
     except getopt.GetoptError, err:
         # TODO later - Use argparse
@@ -86,10 +86,11 @@ def parse_args(cmd_args):
         logger.error("[SnmpBooster] Error in command: definition %s" % str(err))
         return (host, community, version,
                 triggergroup, dstemplate, instance,
-                instance_name,)
+                instance_name, port, use_getbulk, real_check)
     # Set default values
     port = 161
     use_getbulk = False
+    real_check = False
     version = '2c'
 
     for option_name, value in options:
@@ -111,6 +112,8 @@ def parse_args(cmd_args):
             port = value
         elif option_name in ("-b", "--use-getbulk"):
             use_getbulk = True
+        elif option_name in ("-r", "--real-check"):
+            real_check = True
 
     if instance and (instance.startswith('-') or instance.lower() == 'none'):
         instance = None
@@ -127,4 +130,4 @@ def parse_args(cmd_args):
 
     return (host, community, version,
             triggergroup, dstemplate, instance,
-            instance_name, port, use_getbulk)
+            instance_name, port, use_getbulk, real_check)

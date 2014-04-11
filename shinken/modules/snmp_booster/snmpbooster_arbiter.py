@@ -42,7 +42,8 @@ class SnmpBoosterArbiter(SnmpBooster):
                 # we do not want the first member, check_snmp thing
                 args = parse_args(clean_command[1:])
                 (host, community, version,
-                 triggergroup, dstemplate, instance, instance_name, port, use_getbulk) = args
+                 triggergroup, dstemplate, instance,
+                 instance_name, port, use_getbulk, real_check) = args
 
                 # Get key from memcached
                 obj_key = str(host)
@@ -65,7 +66,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                         new_serv.set_oids(self.datasource)
                         new_serv.set_triggers(self.datasource)
                         obj.update_service(new_serv)
-                        obj.frequences[serv.check_interval].forced = False
+#                        obj.frequences[serv.check_interval].forced = False
                         self.memcached.set(obj_key, obj, time=604800)
                     else:
                         # No old datas for this host

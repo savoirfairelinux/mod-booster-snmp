@@ -114,7 +114,7 @@ class SNMPAsyncClient(object):
         self.state = 'creation'
         self.start_time = datetime.now()
         # TODO get the service standard timeout minus 5 seconds...
-        self.timeout = 20
+        self.timeout = 60
 
         self.obj = None
 
@@ -146,73 +146,16 @@ class SNMPAsyncClient(object):
             return
 
         # Check if map is done
-        s = self.obj.frequences[self.check_interval].services[self.serv_key]
-        if isinstance(s.instance, str):
-            self.mapping_done = not s.instance.startswith("map(")
-        else:
-            self.mapping_done = True
-
-        data_validity = False
-        # Check if the check is forced
-        if self.obj.frequences[self.check_interval].forced:
-            # Check forced !!
-            logger.debug("[SnmpBooster] Check forced : %s,%s" % (self.hostname,
-                                                                 self.instance_name))
-            self.obj.frequences[self.check_interval].forced = False
-            data_validity = False
-        elif not self.mapping_done:
-            logger.debug("[SnmpBooster] Mapping not done : %s,%s" % (self.hostname,
-                                                                     self.instance_name))
-            data_validity = False
-        # Check datas validity
-        elif self.obj.frequences[self.check_interval].check_time is None:
-            # Datas not valid : no data
-            logger.debug("[SnmpBooster] No old data : %s,%s" % (self.hostname,
-                                                                self.instance_name))
-            data_validity = False
-        # Don't send SNMP request if old check is younger than 20 sec
-        elif self.obj.frequences[self.check_interval].check_time and self.start_time - self.obj.frequences[self.check_interval].check_time < timedelta(seconds=20):
-            logger.debug("[SnmpBooster] Derive 0s protection "
-                         ": %s,%s" % (self.hostname, self.instance_name))
-            data_validity = True
-        # Don't send SNMP request if an other SNMP is on the way
-        elif self.obj.frequences[self.check_interval].checking:
-            logger.debug("[SnmpBooster] SNMP request already launched "
-                         ": %s,%s" % (self.hostname, self.instance_name))
-            data_validity = True
-        else:
-            # Compare last check time and check_interval and now
-            td = timedelta(seconds=(self.check_interval
-                                    *
-                                    self.interval_length))
-            # Just to be sure to invalidate datas ...
-            mini_td = timedelta(seconds=(5))
-            data_validity = self.obj.frequences[self.check_interval].check_time + td > self.start_time + mini_td
-            logger.debug("[SnmpBooster] Data validity : %s,%s => %s" % (self.hostname,
-                                                                        self.instance_name,
-                                                                        data_validity))
-
-        if data_validity == True:
-            # Datas valid
-            data_validity = True
-            message, rc = self.obj.format_output(self.check_interval, self.serv_key)
-            logger.info('[SnmpBooster] FROM CACHE : Return code: %s - Message: %s' % (rc, message))
-            if self.show_from_cache:
-                message = "FROM CACHE: " + message
-            self.set_exit(message, rc=rc)
-            self.memcached.set(self.obj_key, self.obj, time=604800)
-            self.memcached.disconnect_all()
-            return
-
+        self.mapping_done = not any([s.instance.startswith("map(")
+                                     for s in self.obj.frequences[self.check_interval].services.values()
+                                     if isinstance(s.instance, str)
+                                     ]
+                                    )
         # Save old datas
-        #for oid in self.obj.frequences[self.check_interval].services[self.serv_key].oids.values():
         for service in self.obj.frequences[self.check_interval].services.values():
             for snmpoid in service.oids.values():
                 snmpoid.old_value = snmpoid.value
                 snmpoid.raw_old_value = snmpoid.raw_value
-
-        # One SNMP request is now running
-        self.obj.frequences[self.check_interval].checking = True
 
         self.memcached.set(self.obj_key, self.obj, time=604800)
         # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
@@ -286,17 +229,14 @@ class SNMPAsyncClient(object):
 
         # Delete duplication
         self.headVars = list(set(self.headVars))
+
         # Cut SNMP request if it is too long
         if len(self.headVars) >= 100:
             self.remaining_tablerow = set(self.headVars[99:])
             self.headVars = self.headVars[:99]
 
-        print self.version
-        print self.use_getbulk
-        print self.community
-        print self.port
         if self.version == '1' or self.use_getbulk == False:
-            # GETNET
+            # GETNEXT
             # Build PDU
             if self.version in ['1', 1]:
                 self.pMod = api.protoModules[api.protoVersion1]
@@ -315,6 +255,7 @@ class SNMPAsyncClient(object):
 
         else:
             # GETBULK
+
             # Build PDU
             self.reqPDU = v2c.GetBulkRequestPDU()
             v2c.apiBulkPDU.setDefaults(self.reqPDU)
@@ -431,9 +372,8 @@ class SNMPAsyncClient(object):
                             # TODO: Need more detail
                             for m_oid in self.mapping_oids:
                                 if oid.startswith(m_oid + "."):
-                                    instance = oid.replace(m_oid + ".", "")
                                     val = re.sub("[,:/ ]", "_", str(val))
-                                    mapping_instance[val] = instance
+                                    mapping_instance[val] =  oid.replace(m_oid + ".", "")
                         elif oid in self.limit_oids:
                             # get limits => What is a limit ????????????
                             try:
@@ -445,6 +385,13 @@ class SNMPAsyncClient(object):
                             # The current oid is not needed
                             pass
 
+                # Stop on EOM
+                for oid, val in varBindTable[-1]:
+                    if not isinstance(val, self.pMod.Null):
+                        break
+                    else:
+                        transportDispatcher.jobFinished(1)
+
                 # IF the mapping is done, we can look for OID values
                 if self.mapping_done:
                     # Get all OIDS that we want datas
@@ -454,7 +401,6 @@ class SNMPAsyncClient(object):
                                        self.results_limits_dict.keys())
                     # Get all OIDS which have not datas YET
                     self.remaining_oids = oids - results_oids
-
 
                     # We have to determinate which OIDs we need to ask,
                     # to get the datas for our wanted OIDs...
@@ -533,28 +479,52 @@ class SNMPAsyncClient(object):
                 # We have to do the mapping instance
                 if not self.mapping_done:
                     # TODO: need more documentation
-                    self.obj.instances = mapping_instance
 
+                    # mapping instance is empty ...
+                    # We have to stop here
+                    if mapping_instance == {}:
+#                        print "NOTHING TO DO!!!",  mapping_instance, varBindTable[-1]
+                        return 
+#                        self.pMod.apiPDU.setVarBinds(self.reqPDU,
+#                                        [(self.pMod.ObjectIdentifier(x), self.pMod.null) for x, y in varBindTable[-1]])
+#                        self.pMod.apiPDU.setRequestID(self.reqPDU, self.pMod.getNextRequestID())
+#                        transportDispatcher.sendMessage(encoder.encode(self.reqMsg),
+#                                                        transportDomain,
+#                                                    transportAddress)
+#                        return wholeMsg
+
+
+                    # Update instances
+                    self.obj.instances.update(mapping_instance)
+
+                    # Get current service and his key
+                    if len(mapping_instance) > 0:
+                        servs = [(serv_key, serv) for serv_key, serv in self.obj.frequences[self.check_interval].services.items() if serv.instance_name == mapping_instance.keys()[0]]
+                        serv_key, serv = servs[0]
+                        # go to the next request if the instance is already mapping
+                        if not serv.instance.startswith("map("):
+                            self.pMod.apiPDU.setVarBinds(self.reqPDU,
+                                            [(self.pMod.ObjectIdentifier(x), self.pMod.null) for x, y in varBindTable[-1]])
+                            self.pMod.apiPDU.setRequestID(self.reqPDU, self.pMod.getNextRequestID())
+                            transportDispatcher.sendMessage(encoder.encode(self.reqMsg),
+                                                            transportDomain,
+                                                        transportAddress)
+                            return wholeMsg
+    
+
+                    # Try to map instances
                     self.obj.map_instances(self.check_interval)
-                    s = self.obj.frequences[self.check_interval].services[self.serv_key]
-
-                    self.obj.frequences[self.check_interval].checking = False
+                    # Save in memcache
                     self.memcached.set(self.obj_key, self.obj, time=604800)
-                    if s.instance.startswith("map("):
-                        result_oids_mapping = set([".%s" % str(o).rsplit(".", 1)[0]
-                                                   for t in varBindTable for o, _ in t])
-                        if not result_oids_mapping.intersection(set(self.mapping_oids.keys())):
-                            s.instance = "NOTFOUND"
-                            self.obj.frequences[self.check_interval].checking = False
-                            self.memcached.set(self.obj_key, self.obj, time=604800)
-                            logger.info("[SnmpBooster] - Instance mapping not found. "
-                                        "Please check your config")
-                            self.set_exit("%s: Instance mapping not found. "
-                                          "Please check your config" % s.instance_name,
-                                          3,
-                                          transportDispatcher)
-                            # Stop if oid not in mappping oidS
-                            return
+
+                    mapping_finished = not any([serv.instance.startswith("map(")
+                                                for serv in self.obj.frequences[self.check_interval].services.values()
+                                                if isinstance(serv.instance, str)
+                                                ]
+                                               )
+                    self.memcached.set(self.obj_key, self.obj, time=604800)
+
+                    if not mapping_finished:
 
                         # Mapping not finished
                         self.pMod.apiPDU.setVarBinds(self.reqPDU,
@@ -590,7 +560,7 @@ class SNMPAsyncClient(object):
                         self.oids_to_check[oid].raw_value = None
 
                 # save data
-                self.obj.frequences[self.check_interval].checking = False
+#                self.obj.frequences[self.check_interval].checking = False
                 self.memcached.set(self.obj_key, self.obj, time=604800)
 
                 # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
@@ -765,14 +735,20 @@ class SNMPAsyncClient(object):
                 # We have to do the mapping instance
                 if not self.mapping_done:
                     # TODO: need more documentation
-                    self.obj.instances = mapping_instance
+                    self.obj.instances.update(mapping_instance)
 
                     self.obj.map_instances(self.check_interval)
                     s = self.obj.frequences[self.check_interval].services[self.serv_key]
 
-                    self.obj.frequences[self.check_interval].checking = False
+                    request_finished = any([s.instance.startswith("map(")
+                                            for s in self.obj.frequences[self.check_interval].services.values()
+                                            if isinstance(s.instance, str)
+                                            ]
+                                           )
+#                    self.obj.frequences[self.check_interval].checking = False
                     self.memcached.set(self.obj_key, self.obj, time=604800)
-                    if s.instance.startswith("map("):
+#                    if s.instance.startswith("map("):
+                    if request_finished:
                         result_oids_mapping = set([".%s" % str(o).rsplit(".", 1)[0]
                                                    for t in varBindTable for o, _ in t])
                         if not result_oids_mapping.intersection(set(self.mapping_oids.keys())):

@@ -84,7 +84,7 @@ class SNMPOid(object):
 
     def format_output(self, check_time, old_check_time):
         """ Prepare service output """
-        getattr(self, 'format_' + self.type_.lower() + '_output')(check_time, old_check_time)
+        return getattr(self, 'format_' + self.type_.lower() + '_output')(check_time, old_check_time)
 
     def format_text_output(self, check_time, old_check_time):
         """ Format output for text type """
@@ -93,10 +93,12 @@ class SNMPOid(object):
             self.value = "%(raw_value)s" % self.__dict__
             self.out = "%(name)s: %(value)s%(unit)s" % self.__dict__
             self.unknown = False
+            return True
+        return None
 
     def format_derive64_output(self, check_time, old_check_time):
         """ Format output for derive64 type """
-        self.format_derive_output(check_time, old_check_time, limit=18446744073709551615)
+        return self.format_derive_output(check_time, old_check_time, limit=18446744073709551615)
 
     def format_derive_output(self, check_time, old_check_time, limit=4294967295):
         """ Format output for derive type """
@@ -105,6 +107,7 @@ class SNMPOid(object):
             # Need more data to get derive
             self.out = "Waiting an additional check to calculate derive"
             self.perf = ''
+            return None
         else:
             raw_value = self.raw_value
             # detect counter reset
@@ -117,6 +120,7 @@ class SNMPOid(object):
             if t_delta.seconds == 0:
                 logger.error("[SnmpBooster] Time delta is 0s. We can not get derive "
                              "for this OID %s" % self.oid)
+                return None
             else:
                 if self.raw_value < self.raw_old_value:
                     d_delta = float(raw_value)
@@ -134,10 +138,11 @@ class SNMPOid(object):
                 self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
                 self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
                 self.unknown = False
+                return True
 
     def format_counter64_output(self, check_time, old_check_time):
         """ Format output for counter64 type """
-        self.format_counter_output(check_time, old_check_time, limit=18446744073709551615)
+        return self.format_counter_output(check_time, old_check_time, limit=18446744073709551615)
 
     def format_counter_output(self, check_time, old_check_timei, limit=4294967295):
         """ Format output for counter type """
@@ -146,6 +151,7 @@ class SNMPOid(object):
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
             self.perf = ''
+            return None
         else:
             raw_value = self.raw_value
             # detect counter reset
@@ -163,6 +169,7 @@ class SNMPOid(object):
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
             self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
             self.unknown = False
+            return True
 
     def format_gauge_output(self, check_time, old_check_time):
         """ Format output for gauge type """
@@ -171,6 +178,7 @@ class SNMPOid(object):
             # No data, is it possible??
             self.out = "No Data found ... maybe we have to wait ..."
             self.perf = ''
+            return None
         else:
             raw_value = self.raw_value
             # Make calculation
@@ -183,6 +191,7 @@ class SNMPOid(object):
             self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
             self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
             self.unknown = False
+            return True
 
     def __eq__(self, other):
         """ equal reimplementation """

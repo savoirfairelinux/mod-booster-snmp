@@ -1,4 +1,6 @@
 import shlex
+import datetime
+import time
 
 from shinken.check import Check
 from shinken.log import logger
@@ -13,6 +15,32 @@ class SnmpBoosterScheduler(SnmpBooster):
     """
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
+        self.checks = {}
+
+    def has_datas(self, data):
+        return not data is None
+
+    def is_forced_check(self, serv):
+        forced = (serv.next_chk - serv.last_chk) < (serv.check_interval * serv.interval_length - 15)
+        def is_last_check_20_second_ago(self):
+            # when forced check
+            pass
+        return forced
+
+    def need_to_refresh_datas(self, data, serv):
+        if data is not None and 'last_check' in data:
+            return serv.next_chk - data['last_check'] >= serv.check_interval * serv.interval_length - 2
+        else:
+            return False
+
+    def is_last_check_too_recent(self, data, serv):
+        if data is not None and 'last_check' in data:
+            return serv.next_chk - data['last_check'] < 20
+        else:
+            return False
+
+    def is_checking(self, key):
+        return bool(self.checks.get(key, False))
 
     def hook_get_new_actions(self, sche):
         """ Detect of forced checks """
@@ -33,46 +61,31 @@ class SnmpBoosterScheduler(SnmpBooster):
                         args = parse_args(clean_command[1:])
                         (host, community, version,
                          triggergroup, dstemplate,
-                         instance, instance_name) = args
+                         instance, instance_name, port, use_getbulk, real_check) = args
 
                         # Get key from memcached
                         obj_key = str(host)
-                        # looking for old datas
-                        obj = self.memcached.get(obj_key)
+                        check_frequency_key = (host, s.check_interval)
 
-                        # Don't force check on first launch
-                        forced = False
-                        if not obj is None:
-                            # Host found
-                            # try to find if this oid is already in memcache
-                            if not s.check_interval in obj.frequences:
-                                logger.error("[SnmpBooster] check_interval not"
-                                             " found in frequence list -"
-                                             "host: %s - check_interval: "
-                                             "%s" % (obj_key,
-                                                     s.check_interval))
-                                # possible ??
-                                continue
-                            if not obj.frequences[s.check_interval].check_time is None:
-                                # Forced or not forced check ??
-                                if s.state_type == 'SOFT':
-                                    forced = True
-                                else:
-                                    # Detect if the checked is forced by
-                                    # an UI or external command
-                                    forced = (s.next_chk - s.last_chk) < \
-                                        s.check_interval * s.interval_length - 15
+                        data = self.checks.get(check_frequency_key, None)
 
-                                if forced:
-                                    # Set forced
-                                    logger.info("[SnmpBooster] Forced check "
-                                                "for this host/service: "
-                                                "%s/%s" % (obj_key,
-                                                           s.service_description))
-                                    obj.frequences[s.check_interval].forced = forced
-
-                            self.memcached.set(obj_key, obj, time=604800)
+                        make_real_check = False
+                        # si le lastcheck du couple host,interval est superieur a interval => GO
+                        if self.need_to_refresh_datas(data, s) == True:
+                            make_real_check = True
+                        # si le service est force => GO
+                        if self.is_forced_check(s) == True:
+                            make_real_check = True
+                        # si le dernier check a etait prevu il y a moins de 20 s => NOGO
+                        if self.is_last_check_too_recent(data, s) == True:
+                            make_real_check = False
+                        # No Data => GO
+                        if not self.has_datas(data) == True:
+                            make_real_check = True
+            
+                        if make_real_check == True:
+                            a.command = a.command + " -r"
+                            self.checks[check_frequency_key] = {'last_check': s.next_chk}
                         else:
-                            # Host Not found
-                            logger.error("[SnmpBooster] Host not "
-                                         "found: %s" % obj_key)
+                            if a.command.endswith(" -r"):
+                                a.command = a.command[:-3]

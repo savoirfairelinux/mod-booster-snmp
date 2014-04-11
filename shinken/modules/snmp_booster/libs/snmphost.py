@@ -67,7 +67,7 @@ class SNMPHost(object):
             else:
                 # service found, check if it needs update
                 # FIXME We NEED a better object comparison
-                attrs = ['instance', 'instance_name', 'key', 'name', 'oids',
+                attrs = ['instance_name', 'key', 'name', 'oids',
                          'raw_instance', 'triggergroup', 'triggers']
                 for attr in attrs:
                     if not getattr(self.frequences[service.check_interval].services[service.key], attr) == getattr(service, attr):

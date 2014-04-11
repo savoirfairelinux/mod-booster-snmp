@@ -79,7 +79,7 @@ class SNMPService(object):
 
     def map_instances(self, instances):
         """ Map instances """
-        # CHANGE IF FOR REGEXP
+        # TODO CHANGE IF FOR REGEXP
         if self.instance_name in instances:
             # Set instance
             self.instance = instances[self.instance_name]
@@ -93,14 +93,20 @@ class SNMPService(object):
 
     def format_output(self, check_time, old_check_time):
         """ Prepare service output """
-        for snmpoid in self.oids.values():
-            snmpoid.format_output(check_time, old_check_time)
+        all_output_ok = all([snmpoid.format_output(check_time, old_check_time)
+                             for snmpoid in self.oids.values()])
 
-        message = ""
-        # Get return code from trigger
-        trigger_error, rc = self.get_trigger_result()
-        if trigger_error == True:
-            message = "Trigger Problem detected (Please check output or poller logs) - "
+        all_output_ok = True
+        if all_output_ok == True:
+            message = ""
+            # Get return code from trigger
+            trigger_error, rc = self.get_trigger_result()
+            if trigger_error == True:
+                message = "Trigger Problem detected (Please check output or poller logs) - "
+        else:
+            logger.info("[SnmpBooster] Missing data to use trigger. Please wait more checks")
+            message = "Missing data to use trigger. Please wait more checks - "
+
         # Set return code to UNKNOW if one value are unknown
         if any([snmpoid.unknown for snmpoid in self.oids.values()]):
             rc = 3
@@ -148,6 +154,7 @@ class SNMPService(object):
                             if len(tmp) > 1:
                                 # detect oid with function
                                 ds, fct = tmp
+
                                 if not ds in self.oids:
                                     logger.error("[SnmpBooster] DS %s not found "
                                                  "to compute the trigger (%s). "
@@ -287,7 +294,7 @@ class SNMPService(object):
             result.append(self.triggers == other.triggers)
             result.append(self.dstemplate == other.dstemplate)
             result.append(self.instance_name == other.instance_name)
-            result.append(self.raw_instance == other.instance)
+            result.append(self.raw_instance == other.raw_instance)
             for key, snmpoid in self.oids.items():
                 if not key in other.oids:
                     result.append(False)

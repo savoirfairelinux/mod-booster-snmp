@@ -10,6 +10,7 @@ from shinken.log import logger
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args
 from libs.snmpasynclient import SNMPAsyncClient
+from libs.snmpmcclient import SNMPMCClient
 
 
 class SnmpBoosterPoller(SnmpBooster):
@@ -58,7 +59,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     # we do not want the first member, check_snmp thing
                     args = parse_args(clean_command[1:])
                     (host, community, version, triggergroup, dstemplate,
-                     instance, instance_name, port, use_getbulk) = args
+                     instance, instance_name, port, use_getbulk, real_check) = args
 
                 # If we do not have the good args, we bail out for this check
                 if host is None:
@@ -70,12 +71,20 @@ class SnmpBoosterPoller(SnmpBooster):
                     continue
 
                 # Ok we are good, we go on
-                n = SNMPAsyncClient(host, community, version, self.datasource,
-                                    triggergroup, dstemplate, instance,
-                                    instance_name, self.memcached_address,
-                                    self.max_repetitions, self.show_from_cache,
-                                    port, use_getbulk,
-                                    )
+                if real_check == True:
+                    n = SNMPAsyncClient(host, community, version, self.datasource,
+                                        triggergroup, dstemplate, instance,
+                                        instance_name, self.memcached_address,
+                                        self.max_repetitions, self.show_from_cache,
+                                        port, use_getbulk,
+                                        )
+                else:
+                    n = SNMPMCClient(host, community, version, self.datasource,
+                                     triggergroup, dstemplate, instance,
+                                     instance_name, self.memcached_address,
+                                     self.max_repetitions, self.show_from_cache,
+                                     port, use_getbulk,
+                                     )
                 chk.con = n
 
     # Check the status of checks
