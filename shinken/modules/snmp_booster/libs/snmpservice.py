@@ -156,12 +156,17 @@ class SNMPService(object):
                                 ds, fct = tmp
 
                                 if not ds in self.oids:
-                                    logger.error("[SnmpBooster] DS %s not found "
+                                    logger.error("[SnmpBooster] [%s, %s] DS %s not found "
                                                  "to compute the trigger (%s). "
                                                  "Please check your datasource "
-                                                 "file." % (ds, self.triggergroup))
+                                                 "file." % (self.host.host,
+                                                            self.raw_instance,
+                                                            ds, self.triggergroup))
                                 if self.oids[ds].value is None:
-                                    logger.error("[SnmpBooster] No data found for DS: %s " % ds)
+                                    logger.warning("[SnmpBooster] [%s, %s] No "
+                                                   "data found for DS: %s " % (self.host.host,
+                                                                               self.raw_instance,
+                                                                               ds))
                                     return True, int(trigger['default_status'])
                                 fct, args = fct.split("(")
                                 if hasattr(self.oids[ds], fct):
@@ -172,10 +177,10 @@ class SNMPService(object):
                                         args = args.split(",")
                                         value = getattr(self.oids[ds], fct)(**args)
                                 else:
-
-                                    logger.error("[SnmpBooster] Trigger function not "
-                                                 "found: %s" % fct)
-                                    # return UNKNOW
+                                    logger.error("[SnmpBooster][%s, %s] Trigger function not "
+                                                 "found: %s" % (self.host.host,
+                                                                self.raw_instance,
+                                                                fct))
                                     return True, int(trigger['default_status'])
                             elif el in self.oids:
                                 # detect oid

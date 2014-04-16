@@ -483,26 +483,27 @@ class SNMPAsyncClient(object):
                     # mapping instance is empty ...
                     # We have to stop here
                     if mapping_instance == {}:
-#                        print "NOTHING TO DO!!!",  mapping_instance, varBindTable[-1]
                         return 
-#                        self.pMod.apiPDU.setVarBinds(self.reqPDU,
-#                                        [(self.pMod.ObjectIdentifier(x), self.pMod.null) for x, y in varBindTable[-1]])
-#                        self.pMod.apiPDU.setRequestID(self.reqPDU, self.pMod.getNextRequestID())
-#                        transportDispatcher.sendMessage(encoder.encode(self.reqMsg),
-#                                                        transportDomain,
-#                                                    transportAddress)
-#                        return wholeMsg
-
 
                     # Update instances
                     self.obj.instances.update(mapping_instance)
 
                     # Get current service and his key
                     if len(mapping_instance) > 0:
-                        servs = [(serv_key, serv) for serv_key, serv in self.obj.frequences[self.check_interval].services.items() if serv.instance_name == mapping_instance.keys()[0]]
-                        serv_key, serv = servs[0]
+                        servs = [(serv_key, serv)
+                                 for serv_key, serv in self.obj.frequences[self.check_interval].services.items()
+                                 if serv.instance_name == mapping_instance.keys()[0]]
+                        if len(servs) == 1:
+                            serv_key, serv = servs[0]
+                        elif len(servs) == 0:
+                            # No service found in memcached,
+                            # Maybe the service is disabled in the configuration
+                            serv = None
+                        else:
+                            # This is not possible but I prefered to manage it
+                            serv = None
                         # go to the next request if the instance is already mapping
-                        if not serv.instance.startswith("map("):
+                        if serv is None or not serv.instance.startswith("map("):
                             self.pMod.apiPDU.setVarBinds(self.reqPDU,
                                             [(self.pMod.ObjectIdentifier(x), self.pMod.null) for x, y in varBindTable[-1]])
                             self.pMod.apiPDU.setRequestID(self.reqPDU, self.pMod.getNextRequestID())
@@ -560,7 +561,6 @@ class SNMPAsyncClient(object):
                         self.oids_to_check[oid].raw_value = None
 
                 # save data
-#                self.obj.frequences[self.check_interval].checking = False
                 self.memcached.set(self.obj_key, self.obj, time=604800)
 
                 # UNLOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
@@ -745,9 +745,7 @@ class SNMPAsyncClient(object):
                                             if isinstance(s.instance, str)
                                             ]
                                            )
-#                    self.obj.frequences[self.check_interval].checking = False
                     self.memcached.set(self.obj_key, self.obj, time=604800)
-#                    if s.instance.startswith("map("):
                     if request_finished:
                         result_oids_mapping = set([".%s" % str(o).rsplit(".", 1)[0]
                                                    for t in varBindTable for o, _ in t])
