@@ -95,6 +95,8 @@ class SnmpBoosterArbiter(SnmpBooster):
         """Each second the broker calls the hook_tick function
            Every tick try to flush the buffer
         """
+        if self.db_archive_freq == 0:
+            return
         if self.nb_tick > self.db_archive_freq:
             try:
                 memcache_socket = socket.socket(socket.AF_INET,

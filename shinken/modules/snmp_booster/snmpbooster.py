@@ -3,6 +3,7 @@ import glob
 
 from shinken.basemodule import BaseModule
 from shinken.log import logger
+from shinken.util import to_bool, to_int
 
 try:
     import memcache
@@ -22,16 +23,15 @@ class SnmpBooster(BaseModule):
         self.version = "1.0"
         self.datasource_file = getattr(mod_conf, 'datasource', None)
         self.memcached_host = getattr(mod_conf, 'memcached_host', "127.0.0.1")
-        self.memcached_port = int(getattr(mod_conf, 'memcached_port', 11211))
+        self.memcached_port = to_int(getattr(mod_conf, 'memcached_port', 11211))
+        self.max_repetitions = to_int(getattr(mod_conf, 'max_repetitions', 64))
+        self.show_from_cache = to_bool(getattr(mod_conf, 'show_from_cache', 0))
+        self.db_archive_freq = to_int(getattr(mod_conf,
+                                              'db_archive_freqency',
+                                              0))
+
         self.memcached_address = "%s:%s" % (self.memcached_host,
                                             self.memcached_port)
-        self.max_repetitions = int(getattr(mod_conf, 'max_repetitions', 64))
-        self.show_from_cache = bool(int(getattr(mod_conf,
-                                            'show_from_cache',
-                                            0)))
-        self.db_archive_freq = int(getattr(mod_conf,
-                                           'db_archive_freqency',
-                                           60))
         self.datasource = None
 
         # Called by poller to say 'let's prepare yourself guy'
