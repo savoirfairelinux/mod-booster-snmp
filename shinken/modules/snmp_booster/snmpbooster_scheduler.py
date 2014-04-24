@@ -53,7 +53,7 @@ class SnmpBoosterScheduler(SnmpBooster):
                                                                      'ignore'))
                         # If the command doesn't seem good
                         if len(clean_command) <= 1:
-                            logger.error("[SnmpBooster] Bad command "
+                            logger.error("[SnmpBooster] [code 5] Bad command "
                                          "detected: %s" % a.command)
                             continue
 

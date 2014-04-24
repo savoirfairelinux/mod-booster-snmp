@@ -25,7 +25,7 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module "
+    logger.error("[SnmpBooster] [code 18] Import error. Maybe one of this module "
                  "is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
@@ -95,7 +95,9 @@ class SNMPHost(object):
         if service_key in tmp:
             return tmp[service_key]
         else:
-            logger.error('[SnmpBooster] No frequences found for this key: %s' % str(service_key))
+            logger.error('[SnmpBooster] [code 19] [%s] No frequences:'
+                         'found for this key: %s' % (self.host,
+                                                     str(service_key)))
             return None
 
     def get_oids_by_frequence(self, interval, with_instance=True):
@@ -135,8 +137,10 @@ class SNMPHost(object):
                         oid = datasource['MAP'][base_oid_name]['base_oid']
                         base_oids[oid] = s.instance
                     else:
-                        logger.error("[SnmpBooster] Map name `%s' not found "
-                                     "in datasource INI file" % base_oid_name)
+                        logger.error("[SnmpBooster] [code 20] [%s] Map name "
+                                     "`%s' not found in "
+                                     "datasource INI file" % (self.host,
+                                                              base_oid_name))
 
         return base_oids
 

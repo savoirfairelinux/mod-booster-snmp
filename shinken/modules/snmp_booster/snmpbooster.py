@@ -9,7 +9,7 @@ try:
     import memcache
     from configobj import ConfigObj, Section
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is "
+    logger.error("[SnmpBooster] [code 52] Import error. Maybe one of this module is "
                  "missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
@@ -37,13 +37,13 @@ class SnmpBooster(BaseModule):
         # Called by poller to say 'let's prepare yourself guy'
     def init(self):
         """Called by poller to say 'let's prepare yourself guy'"""
-        logger.info("[SnmpBooster] Initialization of "
+        logger.info("[SnmpBooster] [code 53] Initialization of "
                     "the SNMP Booster %s" % self.version)
         self.i_am_dying = False
 
         if self.datasource_file is None:
             # Kill snmp booster if config_file is not set
-            logger.error("[SnmpBooster] Please set config_file parameter")
+            logger.error("[SnmpBooster] [code 54] Please set config_file parameter")
             self.i_am_dying = True
             return
 
@@ -51,23 +51,23 @@ class SnmpBooster(BaseModule):
         self.memcached = memcache.Client([self.memcached_address], debug=0)
         # Check if memcached server is available
         if not self.memcached.get_stats():
-            logger.error("[SnmpBooster] Memcache server (%s) "
+            logger.error("[SnmpBooster] [code 55] Memcache server (%s) "
                          "is not reachable" % self.memcached_address)
             self.i_am_dying = True
             return
 
         if self.datasource_file is None:
-            logger.info("[SnmpBooster] Trying to get datasource from "
+            logger.info("[SnmpBooster] [code 56] Trying to get datasource from "
                              "Memcache : `%s'" % str(e))
             self.datasource = self.memcached.get('datasource')
             if self.datasource is None:
-                logger.error("[SnmpBooster] Datasource file not found in "
+                logger.error("[SnmpBooster] [code 57] Datasource file not found in "
                              "in Memcached. Please check Memcache "
                              "and consult the SNMPBooster documentation")
                 self.i_am_dying = True
                 return
             else:
-                logger.info("[SnmpBooster] Datasource loaded from Memcached")
+                logger.info("[SnmpBooster] [code 58] Datasource loaded from Memcached")
 
 
         # Read datasource file
@@ -79,7 +79,7 @@ class SnmpBooster(BaseModule):
             if os.path.isfile(self.datasource_file):
                 self.datasource = ConfigObj(self.datasource_file,
                                             interpolation='template')
-                logger.info("[SnmpBooster] Reading input configuration "
+                logger.info("[SnmpBooster] [code 59] Reading input configuration "
                            "file: %s" % self.datasource_file)
 
             # if directory
@@ -96,7 +96,7 @@ class SnmpBooster(BaseModule):
                     else:
                         ctemp = ConfigObj(f, interpolation='template')
                         self.datasource.merge(ctemp)
-                        logger.info("[SnmpBooster] Reading input "
+                        logger.info("[SnmpBooster] [code 60] Reading input "
                                     "configuration file: %s" % f)
             else:
                 # Normal error with scheduler and poller module
@@ -108,21 +108,21 @@ class SnmpBooster(BaseModule):
         # raise if reading error
         except Exception, e:
             if f is None:
-                logger.info("[SnmpBooster] Datasource error while reading "
+                logger.info("[SnmpBooster] [code 61] Datasource error while reading "
                              "or merging in %s : `%s'" % (str(f), str(e)))
             else:
-                logger.info("[SnmpBooster] Datasource error while reading "
+                logger.info("[SnmpBooster] [code 62] Datasource error while reading "
                              "or merging : `%s'" % str(e))
-            logger.info("[SnmpBooster] Trying to get datasource from "
+            logger.info("[SnmpBooster] [code 63] Trying to get datasource from "
                              "Memcache : `%s'" % str(e))
             # Try to get it from memcache
             self.datasource = self.memcached.get('datasource')
             if self.datasource is None:
-                logger.error("[SnmpBooster] Datasource file not found in your "
+                logger.error("[SnmpBooster] [code 64] Datasource file not found in your "
                              "hard disk and in memcached. Get it from the "
                              "SnmpBooster distribution or consult the "
                              "Shinken documentation")
                 self.i_am_dying = True
                 return
             else:
-                logger.info("[SnmpBooster] Datasource loaded from Memcached")
+                logger.info("[SnmpBooster] [code 65] Datasource loaded from Memcached")

@@ -26,7 +26,7 @@ try:
     from pysnmp.proto import api
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is "
+    logger.error("[SnmpBooster] [code 21] Import error. Maybe one of this module is "
                  "missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
@@ -87,14 +87,14 @@ class SNMPAsyncClient(object):
 
         # Check args
         if self.version not in SNMP_VERSIONS:
-            logger.error('[SnmpBooster] Bad SNMP VERSION for host: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 21] Bad SNMP VERSION for host: %s' % self.hostname)
             self.set_exit("Bad SNMP VERSION for host: `%s'" % self.hostname,
                            rc=3)
             return
         try:
             self.port = int(self.port)
         except:
-            logger.error('[SnmpBooster] Bad SNMP PORT for host: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 22] Bad SNMP PORT for host: %s' % self.hostname)
             self.set_exit("Bad SNMP PORT for host: `%s'" % self.hostname,
                            rc=3)
             return
@@ -130,7 +130,7 @@ class SNMPAsyncClient(object):
             self.memcached.disconnect_all()
             return
         if not isinstance(self.obj, SNMPHost):
-            logger.error('[SnmpBooster] Host not found in memcache: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 23] Host not found in memcache: %s' % self.hostname)
             self.set_exit("Host not found in memcache: `%s'" % self.hostname,
                           rc=3)
             self.memcached.disconnect_all()
@@ -140,7 +140,9 @@ class SNMPAsyncClient(object):
         self.check_interval = self.obj.find_frequences(self.serv_key)
         if self.check_interval is None:
             # Possible ???
-            logger.error('[SnmpBooster] Interval not found in memcache: %s' % self.check_interval)
+            logger.error('[SnmpBooster] [code 24] [%s] Interval not found '
+                         'in memcache: %s' % (self.hostname,
+                                              self.check_interval))
             self.set_exit("Interval not found in memcache", rc=3)
             self.memcached.disconnect_all()
             return
@@ -169,7 +171,11 @@ class SNMPAsyncClient(object):
             try:
                 tuple(int(i) for i in oid.split("."))
             except ValueError:
-                logger.info("[SnmpBooster] Bad format for this oid: %s" % oid)
+                logger.info("[SnmpBooster] [code 25] [%s, %s, %s] Bad format "
+                            "for this oid: %s" % (self.hostname,
+                                                  self.dstemplate,
+                                                  self.instance_name,
+                                                  oid))
                 continue
             self.headVars.append(oid)
 
@@ -183,7 +189,12 @@ class SNMPAsyncClient(object):
                 try:
                     tuple(int(i) for i in oid.split("."))
                 except ValueError, e:
-                    logger.info("[SnmpBooster] Bad format for this oid: %s" % oid)
+                    logger.info("[SnmpBooster] [code 26] [%s, %s, %s] Bad "
+                                "format for this "
+                                "oid: %s" % (self.hostname,
+                                             self.dstemplate,
+                                             self.instance_name,
+                                             oid))
                     continue
                 self.headVars.append(oid)
 
@@ -196,8 +207,10 @@ class SNMPAsyncClient(object):
             self.oids_to_check = self.obj.get_oids_by_frequence(self.check_interval, False)
             self.oids_waiting_values = self.obj.get_oids_by_frequence(self.check_interval)
             if self.oids_to_check == {}:
-                logger.error('[SnmpBooster] No OID found - %s - %s' %
-                             (self.obj_key, str(self.serv_key)))
+                logger.error('[SnmpBooster] [code 27] [%s, %s, %s] No OID found' %
+                             (self.hostname,
+                              self.dstemplate,
+                              self.instance_name))
                 self.set_exit("No OID found" +
                               " - " +
                               self.obj_key +
@@ -219,7 +232,11 @@ class SNMPAsyncClient(object):
                 try:
                     tuple(int(i) for i in oid.split("."))
                 except ValueError:
-                    logger.info("[SnmpBooster] Bad format for this oid: %s" % oid)
+                    logger.info("[SnmpBooster] [code 28] [%s, %s, %s] Bad "
+                                "format for this oid: "
+                                "%s" % (self.hostname,
+                                        self.dstemplate,
+                                        self.instance_nameoid))
                     continue
                 self.headVars.append(oid)
 
@@ -296,8 +313,9 @@ class SNMPAsyncClient(object):
             # launch SNMP Request
             transportDispatcher.runDispatcher()
         except Exception, e:
-            logger.error('[SnmpBooster] SNMP Request error 1: %s' % str(e))
-            self.set_exit("SNMP Request error 1: " + str(e), rc=3)
+            logger.error('[SnmpBooster] [code 28] [%s] SNMP Request error 1: %s' % (self.hostname,
+                                                                          str(e)))
+            self.set_exit("SNMP Request error 28: " + str(e), rc=3)
 
             # LOCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
             ## Set `checking' to False
@@ -305,6 +323,9 @@ class SNMPAsyncClient(object):
             try:
                 self.obj = self.memcached.get(self.obj_key)
             except ValueError, e:
+                logger.error('[SnmpBooster] [code 29] [%s] Memcached '
+                             'error: `%s' % (self.hostname,
+                                             str(e)))
                 self.set_exit("Memcached error: `%s'"
                               % self.memcached.get(self.obj_key),
                               rc=3)
@@ -312,7 +333,7 @@ class SNMPAsyncClient(object):
                 return
 
             if not isinstance(self.obj, SNMPHost):
-                logger.error('[SnmpBooster] Host not found in memcache: %s' % self.hostname)
+                logger.error('[SnmpBooster] [code 30] [%s] Host not found in memcache' % self.hostname)
                 self.set_exit("Host not found in memcache: `%s'" % self.hostname,
                               rc=3)
                 self.memcached.disconnect_all()
@@ -345,8 +366,10 @@ class SNMPAsyncClient(object):
                 # Check for SNMP errors reported
                 errorStatus = self.pMod.apiPDU.getErrorStatus(self.rspPDU)
                 if errorStatus and errorStatus != 2:
-                    logger.error('[SnmpBooster] SNMP Request error 2: %s' % str(errorStatus))
-                    self.set_exit("SNMP Request error 2: " + str(errorStatus), rc=3)
+                    logger.error('[SnmpBooster] [code 31] [%s] SNMP '
+                                 'Request error: %s' % (self.hostname,
+                                                        str(errorStatus)))
+                    self.set_exit("SNMP Request error code 31: " + str(errorStatus), rc=3)
                     return wholeMsg
                 # Format var-binds table
                 varBindTable = self.pMod.apiPDU.getVarBindTable(self.reqPDU, self.rspPDU)
@@ -379,8 +402,10 @@ class SNMPAsyncClient(object):
                             try:
                                 self.results_limits_dict[oid] = float(val)
                             except ValueError:
-                                logger.error('[SnmpBooster] Bad limit for '
-                                             'oid: %s - Skipping' % str(oid))
+                                logger.error('[SnmpBooster] [code 32] [%s] '
+                                             'Bad limit for '
+                                             'oid: %s - Skipping' % (self.hostname,
+                                                                     str(oid)))
                         else:
                             # The current oid is not needed
                             pass
@@ -467,7 +492,9 @@ class SNMPAsyncClient(object):
                     # Get OID from memcache
                     self.obj = self.memcached.get(self.obj_key)
                 except ValueError, e:
-                    logger.error('[SnmpBooster] Memcached error while getting: `%s' % self.obj_key)
+                    logger.error('[SnmpBooster] [code 33] [%s] Memcached '
+                                 'error while getting: `%s' % (self.hostname,
+                                                               self.obj_key))
                     self.set_exit("Memcached error: `%s'"
                                   % self.memcached.get(self.obj_key),
                                   3, transportDispatcher)
@@ -536,8 +563,12 @@ class SNMPAsyncClient(object):
                                                         transportAddress)
                         return wholeMsg
 
-                    logger.info("[SnmpBooster] - Instance mapping completed. "
-                                "Expect results at next check")
+                    logger.info("[SnmpBooster] [code 34] [%s, %s, %s] Instance"
+                                " mapping completed. Expect results at next "
+                                "check" % (self.hostname,
+                                           self.dstemplate,
+                                           self.instance_name,
+                                           ))
                     self.set_exit("Instance mapping completed. "
                                   "Expect results at next check",
                                   3,
@@ -577,8 +608,12 @@ class SNMPAsyncClient(object):
         message, rc = self.obj.format_output(self.check_interval,
                                              self.serv_key)
 
-        logger.info('[SnmpBooster] Return code: %s - '
-                    'Message: %s' % (rc, message))
+        logger.info('[SnmpBooster] [code 35] [%s, %s, %s] Return code: %s - '
+                    'Message: %s' % (self.hostname,
+                                     self.dstemplate,
+                                     self.instance_name,
+                                     rc,
+                                     message))
         self.set_exit(message, rc, transportDispatcher)
 
         # TODO: checkme
@@ -606,8 +641,10 @@ class SNMPAsyncClient(object):
                 # Check for SNMP errors reported
                 errorStatus = aBP.getErrorStatus(self.rspPDU)
                 if errorStatus and errorStatus != 2:
-                    logger.error('[SnmpBooster] SNMP Request error 2: %s' % str(errorStatus))
-                    self.set_exit("SNMP Request error 2: " + str(errorStatus), rc=3)
+                    logger.error('[SnmpBooster] [code 36] [%s] SNMP '
+                                 'Request error: %s' % (self.hostname,
+                                                          str(errorStatus)))
+                    self.set_exit("SNMP Request error code 36: " + str(errorStatus), rc=3)
                     return wholeMsg
                 # Format var-binds table
                 varBindTable = aBP.getVarBindTable(self.reqPDU, self.rspPDU)
@@ -641,8 +678,10 @@ class SNMPAsyncClient(object):
                             try:
                                 self.results_limits_dict[oid] = float(val)
                             except ValueError:
-                                logger.error('[SnmpBooster] Bad limit for '
-                                             'oid: %s - Skipping' % str(oid))
+                                logger.error('[SnmpBooster] [code 37] [%s] '
+                                             'Bad limit for oid: '
+                                             '%s - Skipping' % (self.hostname,
+                                                                str(oid)))
                         else:
                             # The current oid is not needed
                             pass
@@ -723,7 +762,9 @@ class SNMPAsyncClient(object):
                     # Get OID from memcache
                     self.obj = self.memcached.get(self.obj_key)
                 except ValueError, e:
-                    logger.error('[SnmpBooster] Memcached error while getting: `%s' % self.obj_key)
+                    logger.error('[SnmpBooster] [code 38] [%s] Memcached '
+                                 'error while getting: `%s' % (self.hostname,
+                                                               self.obj_key))
                     self.set_exit("Memcached error: `%s'"
                                   % self.memcached.get(self.obj_key),
                                   3, transportDispatcher)
@@ -753,8 +794,12 @@ class SNMPAsyncClient(object):
                             s.instance = "NOTFOUND"
                             self.obj.frequences[self.check_interval].checking = False
                             self.memcached.set(self.obj_key, self.obj, time=604800)
-                            logger.info("[SnmpBooster] - Instance mapping not found. "
-                                        "Please check your config")
+                            logger.info("[SnmpBooster] [code 39] [%s, %s]"
+                                        " Instance mapping not found. "
+                                        "Please check your "
+                                        "config" % (self.hostname,
+                                                    self.serv_key,
+                                                    ))
                             self.set_exit("%s: Instance mapping not found. "
                                           "Please check your config" % s.instance_name,
                                           3,
@@ -771,8 +816,12 @@ class SNMPAsyncClient(object):
                                                         transportAddress)
                         return wholeMsg
 
-                    logger.info("[SnmpBooster] - Instance mapping completed. "
-                                "Expect results at next check")
+                    logger.info("[SnmpBooster] [code 40] [%s, %s, %s] "
+                                "Instance mapping completed. Expect "
+                                "results at next check" % (self.hostname,
+                                                           self.dstemplate,
+                                                           self.instance_name,
+                                                           ))
                     self.set_exit("Instance mapping completed. "
                                   "Expect results at next check",
                                   3,
@@ -813,8 +862,12 @@ class SNMPAsyncClient(object):
         message, rc = self.obj.format_output(self.check_interval,
                                              self.serv_key)
 
-        logger.info('[SnmpBooster] Return code: %s - '
-                    'Message: %s' % (rc, message))
+        logger.info('[SnmpBooster] [code 41] [%s, %s, %s] Return code: %s - '
+                    'Message: %s' % (self.hostname,
+                                     self.dstemplate,
+                                     self.instance_name,
+                                     rc,
+                                     message))
         self.set_exit(message, rc, transportDispatcher)
 
         # TODO: checkme
@@ -841,9 +894,6 @@ class SNMPAsyncClient(object):
         t_delta = now - self.start_time
         if t_delta.seconds > self.timeout + 1:
         # TODO add `unknown_on_timeout` option
-#            if self.unknown_on_timeout:
-#                rc = 3
-#            else:
             rc = 3
             message = ('Error : SnmpBooster request timeout '
                        'after %d seconds' % self.timeout)

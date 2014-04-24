@@ -20,7 +20,7 @@ from shinken.log import logger
 try:
     import memcache
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module is "
+    logger.error("[SnmpBooster] [code 43]  Import error. Maybe one of this module is "
                  "missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
@@ -78,14 +78,15 @@ class SNMPMCClient(object):
 
         # Check args
         if self.version not in SNMP_VERSIONS:
-            logger.error('[SnmpBooster] Bad SNMP VERSION for host: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 44] [%s] Bad SNMP VERSION' % self.hostname)
             self.set_exit("Bad SNMP VERSION for host: `%s'" % self.hostname,
                            rc=3)
             return
         try:
             self.port = int(self.port)
         except:
-            logger.error('[SnmpBooster] Bad SNMP PORT for host: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 45] [%s] '
+                         'Bad SNMP PORT' % self.hostname)
             self.set_exit("Bad SNMP PORT for host: `%s'" % self.hostname,
                            rc=3)
             return
@@ -120,7 +121,8 @@ class SNMPMCClient(object):
             self.memcached.disconnect_all()
             return
         if not isinstance(self.obj, SNMPHost):
-            logger.error('[SnmpBooster] [MC] Host not found in memcache: %s' % self.hostname)
+            logger.error('[SnmpBooster] [code 46] [%s] Host not '
+                         'found in memcache' % self.hostname)
             self.set_exit("Host not found in memcache: `%s'" % self.hostname,
                           rc=3)
             self.memcached.disconnect_all()
@@ -130,7 +132,9 @@ class SNMPMCClient(object):
         self.check_interval = self.obj.find_frequences(self.serv_key)
         if self.check_interval is None:
             # Possible ???
-            logger.error('[SnmpBooster] Interval not found in memcache: %s' % self.check_interval)
+            logger.error('[SnmpBooster] [code 47] [%s] Interval not found '
+                         'in memcache: %s' % (self.hostname,
+                                              self.check_interval))
             self.set_exit("Interval not found in memcache", rc=3)
             self.memcached.disconnect_all()
             return
@@ -146,7 +150,13 @@ class SNMPMCClient(object):
         else:
             rc = 3
             message = 'Mapping in progress. Please wait more checks'
-        logger.info('[SnmpBooster] FROM CACHE : Return code: %s - Message: %s' % (rc, message))
+        logger.info('[SnmpBooster] [code 48] [%s, %s, %s] Return code: %s - '
+                    'Message: %s' % (self.hostname,
+                                     self.ds_template,
+                                     self.instance_name,
+                                     rc,
+                                     message,
+                                     ))
         if self.show_from_cache:
             message = "FROM CACHE: " + message
         self.set_exit(message, rc=rc)

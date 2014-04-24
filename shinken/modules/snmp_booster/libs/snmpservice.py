@@ -25,8 +25,8 @@ try:
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
 except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module "
-                 "is missing: memcache, configobj, pysnmp")
+    logger.error("[SnmpBooster] [code 6] Import error. Maybe one of this "
+                 "module is missing: memcache, configobj, pysnmp")
     raise ImportError(e)
 
 from shinken.check import Check
@@ -102,9 +102,14 @@ class SNMPService(object):
             # Get return code from trigger
             trigger_error, rc = self.get_trigger_result()
             if trigger_error == True:
-                message = "Trigger Problem detected (Please check output or poller logs) - "
+                message = ("Trigger Problem detected (Please check output or "
+                           "poller logs) - ")
         else:
-            logger.info("[SnmpBooster] Missing data to use trigger. Please wait more checks")
+            logger.info("[SnmpBooster] [%s, %s] Missing data to use "
+                        "trigger. Please wait more checks" % (self.host.host,
+                                                              self.raw_instance,
+                                                              )
+                        )
             message = "Missing data to use trigger. Please wait more checks - "
 
         # Set return code to UNKNOW if one value are unknown
@@ -156,14 +161,16 @@ class SNMPService(object):
                                 ds, fct = tmp
 
                                 if not ds in self.oids:
-                                    logger.error("[SnmpBooster] [%s, %s] DS %s not found "
-                                                 "to compute the trigger (%s). "
-                                                 "Please check your datasource "
+                                    logger.error("[SnmpBooster] [code 7] "
+                                                 " [%s, %s] DS %s not found "
+                                                 "to compute the trigger "
+                                                 "(%s). Please check your "
+                                                 "datasource "
                                                  "file." % (self.host.host,
                                                             self.raw_instance,
                                                             ds, self.triggergroup))
                                 if self.oids[ds].value is None:
-                                    logger.warning("[SnmpBooster] [%s, %s] No "
+                                    logger.warning("[SnmpBooster] [code 8] [%s, %s] No "
                                                    "data found for DS: %s " % (self.host.host,
                                                                                self.raw_instance,
                                                                                ds))
@@ -177,7 +184,8 @@ class SNMPService(object):
                                         args = args.split(",")
                                         value = getattr(self.oids[ds], fct)(**args)
                                 else:
-                                    logger.error("[SnmpBooster][%s, %s] Trigger function not "
+                                    logger.error("[SnmpBooster] [code 9] [%s, %s] "
+                                                 "Trigger function not "
                                                  "found: %s" % (self.host.host,
                                                                 self.raw_instance,
                                                                 fct))
@@ -189,12 +197,22 @@ class SNMPService(object):
                                 value = el
                             rpn_list.append(value)
 
-                        error = rpn_calculator(rpn_list)
-                        if error:
+                        try:
+                            rpn_calculator(rpn_list)
+                        except Exception, e:
+                            logger.error("[SnmpBooster] [code 15] [%s, %s] "
+                                         "RPN calculation Error: "
+                                         "%s - %s" % (self.host.host,
+                                                      self.raw_instance,
+                                                      str(e), str(rpn_list)))
                             return False, error_code
+
             return False, errors['ok']
         except Exception, e:
-            logger.error("[SnmpBooster] Get Trigger error: %s" % str(e))
+            logger.error("[SnmpBooster] [code 10] [%s, %s] Get Trigger "
+                         "error: %s" % (self.host.host,
+                                        self.raw_instance,
+                                        str(e)))
             return True, int(trigger['default_status'])
 
     def set_triggers(self, datasource):
@@ -222,8 +240,12 @@ class SNMPService(object):
         """ Get datas from datasource and set SNMPOid dict
         """
         if not 'ds' in datasource['DSTEMPLATE'][self.dstemplate]:
-            logger.error("[SnmpBooster] no ds found in the DStemplate. "
-                         "Check your configuration" % source)
+            logger.error("[SnmpBooster] [code 11] [%s, %s] no ds found in the "
+                         "DStemplate %s. Check your "
+                         "configuration" % (self.host.host,
+                                            self.raw_instance,
+                                            self.dstemplate,
+                                            ))
             return
 
         ds = datasource['DSTEMPLATE'][self.dstemplate]['ds']
@@ -231,12 +253,21 @@ class SNMPService(object):
             ds = [d.strip() for d in ds.split(",")]
 
         for source in ds:
-            try:
-                oid = datasource['DATASOURCE'][source]['ds_oid']
-            except:
-                # TODO FIXME
-#                import pdb;pdb.set_trace()
-                logger.error("[SnmpBooster] ds_oid not found for source: %s" % source)
+            if datasource['DATASOURCE'].get(source, None) is None:
+                logger.error("[SnmpBooster] [code 12] [%s, %s] source %s "
+                             "not found in DStemplate %s. Check your "
+                             "configuration" % (self.host.host,
+                                                self.raw_instance,
+                                                source,
+                                                self.dstemplate,
+                                                ))
+                return
+            oid = datasource['DATASOURCE'][source].get('ds_oid', None)
+            if oid is None:
+                logger.error("[SnmpBooster] [code 13] [%s, %s] no oid "
+                             "not found for source %s" % (self.host.host,
+                                                          self.raw_instance,
+                                                          source))
                 return
 
             # Determining oid
@@ -249,8 +280,11 @@ class SNMPService(object):
                 ds_type = datasource['DATASOURCE']['ds_type']
             else:
                 ds_type = 'TEXT'
-                logger.info("[SnmpBooster] ds_type not found for source: %s. "
-                            "TEXT type selected" % source)
+                logger.warning("[SnmpBooster] [code 14] [%s, %s] ds_type not "
+                               "found for source %s. TEXT type "
+                               "selected" % (self.host.host,
+                                             self.raw_instance,
+                                             source))
             # Search name
             name = source
             if 'ds_name' in datasource['DATASOURCE'][source]:

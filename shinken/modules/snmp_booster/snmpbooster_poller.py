@@ -106,8 +106,8 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] "
-                                    "[%d]Exiting: %s" % (self.id, exp))
+                    logger.critical("[SnmpBooster] [code 49]"
+                                    "[%d] Exiting: %s" % (self.id, exp))
                     sys.exit(2)
                 continue
             # Then we check for good checks
@@ -131,8 +131,8 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] "
-                                    "[%d]Exiting: %s" % (self.id, exp))
+                    logger.critical("[SnmpBooster] [code 50]"
+                                    "[%d] Exiting: %s" % (self.id, exp))
                     sys.exit(2)
 
         # And delete finished checks
@@ -145,7 +145,7 @@ class SnmpBoosterPoller(SnmpBooster):
     # return_queue = queue managed by manager
     # c = Control Queue for the worker
     def work(self, s, returns_queue, c):
-        logger.info("[SnmpBooster] Module SNMP Booster started!")
+        logger.info("[SnmpBooster] [code 51] Module SNMP Booster started!")
         ## restore default signal handler for the workers:
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         timeout = 1.0

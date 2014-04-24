@@ -35,7 +35,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                                                                 'ignore'))
                 # If the command doesn't seem good
                 if len(clean_command) <= 1:
-                    logger.error("[SnmpBooster] Bad command "
+                    logger.error("[SnmpBooster] [code 1] Bad command "
                                  "detected: %s" % chk.command)
                     continue
 
@@ -66,7 +66,6 @@ class SnmpBoosterArbiter(SnmpBooster):
                         new_serv.set_oids(self.datasource)
                         new_serv.set_triggers(self.datasource)
                         obj.update_service(new_serv)
-#                        obj.frequences[serv.check_interval].forced = False
                         self.memcached.set(obj_key, obj, time=604800)
                     else:
                         # No old datas for this host
@@ -81,12 +80,13 @@ class SnmpBoosterArbiter(SnmpBooster):
                         # Save new host in memcache
                         self.memcached.set(obj_key, new_obj, time=604800)
                 except Exception, e:
-                    message = ("[SnmpBooster] Error adding : "
-                               "Host %s - Service %s - Error related "
-                               "to: %s" % (obj_key,
-                                           serv.service_description,
-                                           str(e)))
-                    logger.error(message)
+                    logger.error = ("[SnmpBooster] [code 2] [%s, %s] Error "
+                                    "while saving it in memcache - Error "
+                                    "related to: %s" % (obj_key,
+                                                        serv.service_description,
+                                                        str(e)
+                                                        )
+                                    )
 
             # Disconnect from memcache
             self.memcached.disconnect_all()
@@ -109,11 +109,12 @@ class SnmpBoosterArbiter(SnmpBooster):
                 if ret.find('OK') != -1:
                     logger.info("[SnmpBooster] Memcachedb log cleared")
                 else:
-                    logger.error("[SnmpBooster] Memcachedb log not cleared")
+                    logger.error("[SnmpBooster] [code 3] Memcachedb log "
+                                 "not cleared")
                 self.nb_tick = 0
                 memcache_socket.close()
             except Exception, e:
-                logger.error("[SnmpBooster] Memcachedb log not cleared. "
-                             "Error: %s" % str(e))
+                logger.error("[SnmpBooster] [code 4] Memcachedb log not "
+                             "cleared. Error: %s" % str(e))
         else:
             self.nb_tick += 1

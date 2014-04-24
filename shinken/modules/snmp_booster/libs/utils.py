@@ -42,26 +42,21 @@ from shinken.log import logger
 
 def rpn_calculator(rpn_list):
     """ Reverse Polish notation calculator """
-    try:
-        st = []
-        for el in rpn_list:
-            if el is None:
-                continue
-            if hasattr(operator, str(el)):
-                y, x = st.pop(), st.pop()
-                z = getattr(operator, el)(x, y)
-            else:
-                z = float(el)
-            st.append(z)
+    st = []
+    for el in rpn_list:
+        if el is None:
+            continue
+        if hasattr(operator, str(el)):
+            y, x = st.pop(), st.pop()
+            z = getattr(operator, el)(x, y)
+        else:
+            z = float(el)
+        st.append(z)
 
-        assert len(st) <= 1
+    assert len(st) <= 1
 
-        if len(st) == 1:
-            return(st.pop())
-
-    except Exception, e:
-        logger.error('[SnmpBooster] RPN calculation Error: %s - %s' % (str(e), str(rpn_list)))
-        return "Calc error"
+    if len(st) == 1:
+        return(st.pop())
 
 
 def parse_args(cmd_args):
@@ -81,9 +76,8 @@ def parse_args(cmd_args):
                                        'dstemplate=', 'triggergroup=', 'port=', 'real-check'
                                        'instance=', 'instance-name=', 'use-getbulk'])
     except getopt.GetoptError, err:
-        # TODO later - Use argparse
-        # If we got problem, bail out
-        logger.error("[SnmpBooster] Error in command: definition %s" % str(err))
+        # TODO raise instead of log error
+        logger.error("[SnmpBooster] [code 16] Error in command: definition %s" % str(err))
         return (host, community, version,
                 triggergroup, dstemplate, instance,
                 instance_name, port, use_getbulk, real_check)
@@ -119,7 +113,8 @@ def parse_args(cmd_args):
         instance = None
     if dstemplate and (dstemplate.startswith('-') or dstemplate.lower() == 'none'):
         dstemplate = None
-        logger.error("[SnmpBooster] Dstemplate is not define in the command line")
+        # TODO raise instead of log error
+        logger.error("[SnmpBooster] [code 17] Dstemplate is not define in the command line")
     if triggergroup and (triggergroup.startswith('-') or triggergroup.lower() == 'none'):
         triggergroup = None
 
