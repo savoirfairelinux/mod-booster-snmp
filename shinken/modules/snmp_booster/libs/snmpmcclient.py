@@ -152,7 +152,7 @@ class SNMPMCClient(object):
             message = 'Mapping in progress. Please wait more checks'
         logger.info('[SnmpBooster] [code 48] [%s, %s, %s] Return code: %s - '
                     'Message: %s' % (self.hostname,
-                                     self.ds_template,
+                                     self.dstemplate,
                                      self.instance_name,
                                      rc,
                                      message,
