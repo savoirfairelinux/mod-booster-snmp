@@ -29,6 +29,7 @@ class SnmpBooster(BaseModule):
         self.db_archive_freq = to_int(getattr(mod_conf,
                                               'db_archive_freqency',
                                               0))
+        self.loaded_by = getattr(mod_conf, 'loaded_by', None)
 
         self.memcached_address = "%s:%s" % (self.memcached_host,
                                             self.memcached_port)
@@ -41,9 +42,9 @@ class SnmpBooster(BaseModule):
                     "the SNMP Booster %s" % self.version)
         self.i_am_dying = False
 
-        if self.datasource_file is None:
+        if self.datasource_file is None and self.loaded_by == 'arbiter':
             # Kill snmp booster if config_file is not set
-            logger.error("[SnmpBooster] [code 54] Please set config_file parameter")
+            logger.error("[SnmpBooster] [code 54] Please set datasource parameter")
             self.i_am_dying = True
             return
 
