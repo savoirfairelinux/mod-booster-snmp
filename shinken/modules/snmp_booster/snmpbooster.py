@@ -107,13 +107,13 @@ class SnmpBooster(BaseModule):
             self.memcached.set('datasource', self.datasource, time=604800)
         # raise if reading error
         except Exception, e:
-            if f is None:
-                logger.info("[SnmpBooster] [code 61] Datasource error while reading "
+            if f is not None:
+                logger.error("[SnmpBooster] [code 61] Datasource error while reading "
                              "or merging in %s : `%s'" % (str(f), str(e)))
             else:
-                logger.info("[SnmpBooster] [code 62] Datasource error while reading "
+                logger.error("[SnmpBooster] [code 62] Datasource error while reading "
                              "or merging : `%s'" % str(e))
-            logger.info("[SnmpBooster] [code 63] Trying to get datasource from "
+            logger.error("[SnmpBooster] [code 63] Trying to get datasource from "
                              "Memcache : `%s'" % str(e))
             # Try to get it from memcache
             self.datasource = self.memcached.get('datasource')
@@ -123,6 +123,7 @@ class SnmpBooster(BaseModule):
                              "SnmpBooster distribution or consult the "
                              "Shinken documentation")
                 self.i_am_dying = True
+                # Poller thread will restart ???
                 return
             else:
                 logger.info("[SnmpBooster] [code 65] Datasource loaded from Memcached")
