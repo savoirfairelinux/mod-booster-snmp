@@ -59,7 +59,8 @@ class SnmpBoosterPoller(SnmpBooster):
                     # we do not want the first member, check_snmp thing
                     args = parse_args(clean_command[1:])
                     (host, community, version, triggergroup, dstemplate,
-                     instance, instance_name, port, use_getbulk, real_check) = args
+                     instance, instance_name, port, use_getbulk,
+                     real_check, timeout) = args
 
                 # If we do not have the good args, we bail out for this check
                 if host is None:
@@ -76,14 +77,14 @@ class SnmpBoosterPoller(SnmpBooster):
                                         triggergroup, dstemplate, instance,
                                         instance_name, self.memcached_address,
                                         self.max_repetitions, self.show_from_cache,
-                                        port, use_getbulk,
+                                        port, use_getbulk, timeout,
                                         )
                 else:
                     n = SNMPMCClient(host, community, version, self.datasource,
                                      triggergroup, dstemplate, instance,
                                      instance_name, self.memcached_address,
                                      self.max_repetitions, self.show_from_cache,
-                                     port, use_getbulk,
+                                     port, use_getbulk, timeout,
                                      )
                 chk.con = n
 

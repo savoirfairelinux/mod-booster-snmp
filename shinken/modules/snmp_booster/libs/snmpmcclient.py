@@ -62,8 +62,9 @@ class SNMPMCClient(object):
     def __init__(self, host, community, version, datasource,
                  triggergroup, dstemplate, instance, instance_name,
                  memcached_address, max_repetitions=64, show_from_cache=False,
-                 port=161, use_getbulk=False):
+                 port=161, use_getbulk=False, timeout=10):
 
+        # TODO Clean useless parameters
         self.hostname = host
         self.community = community
         self.version = version
@@ -75,6 +76,7 @@ class SNMPMCClient(object):
         self.show_from_cache = show_from_cache
         self.use_getbulk = use_getbulk
         self.port = port
+        self.timeout = timeout
 
         # Check args
         if self.version not in SNMP_VERSIONS:
@@ -105,8 +107,6 @@ class SNMPMCClient(object):
         self.check_interval = None
         self.state = 'creation'
         self.start_time = datetime.now()
-        # TODO get the service standard timeout minus 5 seconds...
-        self.timeout = 20
 
         self.obj = None
 

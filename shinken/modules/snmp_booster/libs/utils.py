@@ -60,14 +60,18 @@ def rpn_calculator(rpn_list):
 
 
 def parse_args(cmd_args):
-    #Default params
+    # Set default values
     host = None
-    community = 'public3'
+    port = 161
+    community = 'public'
     version = '2c'
     dstemplate = None
     triggergroup = None
     instance = 0
     instance_name = None
+    use_getbulk = False
+    real_check = False
+    timeout = 10
 
     #Manage the options
     try:
@@ -80,12 +84,8 @@ def parse_args(cmd_args):
         logger.error("[SnmpBooster] [code 16] Error in command: definition %s" % str(err))
         return (host, community, version,
                 triggergroup, dstemplate, instance,
-                instance_name, port, use_getbulk, real_check)
-    # Set default values
-    port = 161
-    use_getbulk = False
-    real_check = False
-    version = '2c'
+                instance_name, port, use_getbulk, real_check, timeout)
+
 
     for option_name, value in options:
         if option_name in ("-H", "--hostname"):
@@ -108,13 +108,17 @@ def parse_args(cmd_args):
             use_getbulk = True
         elif option_name in ("-r", "--real-check"):
             real_check = True
+        elif option_name in ("-s", "--timeout"):
+            timeout = value
 
     if instance and (instance.startswith('-') or instance.lower() == 'none'):
         instance = None
+
     if dstemplate and (dstemplate.startswith('-') or dstemplate.lower() == 'none'):
         dstemplate = None
         # TODO raise instead of log error
         logger.error("[SnmpBooster] [code 17] Dstemplate is not define in the command line")
+
     if triggergroup and (triggergroup.startswith('-') or triggergroup.lower() == 'none'):
         triggergroup = None
 
@@ -125,4 +129,4 @@ def parse_args(cmd_args):
 
     return (host, community, version,
             triggergroup, dstemplate, instance,
-            instance_name, port, use_getbulk, real_check)
+            instance_name, port, use_getbulk, real_check, timeout)

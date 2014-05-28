@@ -71,7 +71,7 @@ class SNMPAsyncClient(object):
     def __init__(self, host, community, version, datasource,
                  triggergroup, dstemplate, instance, instance_name,
                  memcached_address, max_repetitions=64, show_from_cache=False,
-                 port=161, use_getbulk=False):
+                 port=161, use_getbulk=False, timeout=10):
 
         self.hostname = host
         self.community = community
@@ -84,8 +84,17 @@ class SNMPAsyncClient(object):
         self.show_from_cache = show_from_cache
         self.use_getbulk = use_getbulk
         self.port = port
+        # TODO get the service standard timeout minus 5 seconds...
+        self.timeout = timeout
 
+        # TODO move this to parse args functions...
         # Check args
+        try:
+            self.timeout = int(self.timeout)
+        except:
+            self.timeout = 10
+            logger.warning('[SnmpBooster] [code 69] Bad timeout: timeout is now 10s')
+
         if self.version not in SNMP_VERSIONS:
             logger.error('[SnmpBooster] [code 21] Bad SNMP VERSION for host: %s' % self.hostname)
             self.set_exit("Bad SNMP VERSION for host: `%s'" % self.hostname,
@@ -102,6 +111,7 @@ class SNMPAsyncClient(object):
         self.serv_key = (dstemplate, instance, instance_name)
         # TODO get this data from the configuration
         self.interval_length = 60
+
         self.remaining_oids = None
         self.remaining_tablerow = set()
         self.nb_next_requests = 0
@@ -113,8 +123,6 @@ class SNMPAsyncClient(object):
         self.check_interval = None
         self.state = 'creation'
         self.start_time = datetime.now()
-        # TODO get the service standard timeout minus 5 seconds...
-        self.timeout = 60
 
         self.obj = None
 
