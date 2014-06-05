@@ -1,16 +1,18 @@
 import signal
 import time
 import shlex
-from Queue import Empty
+from Queue import Empty, Queue
 
 
 from shinken.log import logger
 
+from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args
 from libs.snmpasynclient import SNMPAsyncClient
 from libs.snmpmcclient import SNMPMCClient
+from libs.snmpworker import SNMPWorker
 
 
 class SnmpBoosterPoller(SnmpBooster):
@@ -19,6 +21,7 @@ class SnmpBoosterPoller(SnmpBooster):
     """
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
+        self.snmp_task_queue = Queue()
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -43,6 +46,7 @@ class SnmpBoosterPoller(SnmpBooster):
         """ Launch checks that are in status
             REF: doc/shinken-action-queues.png (4)
         """
+#        print "===" * 5 + "MY CHECK LENGTH LAUNCH: %d" % len(self.checks)
         for chk in self.checks:
             now = time.time()
             if chk.status == 'queue':
@@ -73,13 +77,15 @@ class SnmpBoosterPoller(SnmpBooster):
 
                 # Ok we are good, we go on
                 if real_check == True:
-                    n = SNMPAsyncClient(host, community, version, self.datasource,
+                    print "IN ASYNC"
+                    n = SNMPAsyncClient(self.snmp_task_queue, host, community, version, self.datasource,
                                         triggergroup, dstemplate, instance,
                                         instance_name, self.memcached_address,
                                         self.max_repetitions, self.show_from_cache,
                                         port, use_getbulk, timeout,
                                         )
                 else:
+#                    print "IN MC"
                     n = SNMPMCClient(host, community, version, self.datasource,
                                      triggergroup, dstemplate, instance,
                                      instance_name, self.memcached_address,
@@ -87,6 +93,7 @@ class SnmpBoosterPoller(SnmpBooster):
                                      port, use_getbulk, timeout,
                                      )
                 chk.con = n
+        #print "===" * 4 + "MY LENGHT OF ASYNC %s" % len([c for c in self.checks if isinstance(c.con, SNMPAsyncClient)])    
 
     # Check the status of checks
     # if done, return message finished :)
@@ -140,6 +147,8 @@ class SnmpBoosterPoller(SnmpBooster):
         for chk in to_del:
             self.checks.remove(chk)
 
+#        print "===" * 5 + "MY CHECK LENGTH : %d" % len(self.checks)
+
     # id = id of the worker
     # s = Global Queue Master->Slave
     # m = Queue Slave->Master
@@ -155,6 +164,9 @@ class SnmpBoosterPoller(SnmpBooster):
         self.returns_queue = returns_queue
         self.s = s
         self.t_each_loop = time.time()
+
+        self.snmpworker = SNMPWorker(self.snmp_task_queue)
+        self.snmpworker.start()
         while True:
             begin = time.time()
             msg = None
@@ -165,10 +177,13 @@ class SnmpBoosterPoller(SnmpBooster):
             if not self.i_am_dying:
                 # REF: doc/shinken-action-queues.png (3)
                 self.get_new_checks()
+                #print "GOT CHECK IN :%ds" % (time.time() - begin)
                 # REF: doc/shinken-action-queues.png (4)
                 self.launch_new_checks()
+#                print "LAUNCHED CHECK IN :%ds" % (time.time() - begin)
             # REF: doc/shinken-action-queues.png (5)
             self.manage_finished_checks()
+#            print "MANAGED FINISH CHECK IN :%ds" % (time.time() - begin)
 
             # Now get order from master
             try:
@@ -189,3 +204,5 @@ class SnmpBoosterPoller(SnmpBooster):
             timeout -= time.time() - begin
             if timeout < 0:
                 timeout = 1.0
+        # stop worker
+        self.snmpworker.stop_worker()

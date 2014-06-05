@@ -109,13 +109,17 @@ class SNMPHost(object):
                     if s.instance == "NOTFOUND":
                         continue
                     elif s.instance is None:
-                        ret_dict[snmpoid.oid] = snmpoid
+                        last_id = snmpoid.oid.rsplit(".", 1)[1]
+                        if int(last_id) == 0:
+                            snmp_key = snmpoid.oid.rsplit(".", 1)[0]
+                        else:
+                            snmp_key = snmpoid.oid.rsplit(".", 1)[0] + "." + str(int(last_id) - 1)
+                        ret_dict[snmp_key] = snmpoid
                     else:
-#                        if len(s.instance.split(".")) == 1 and int(s.instance) > 0:
-#                            snmp_key = snmpoid.oid.rsplit(".", 1)[0] + "." + str(int(snmpoid.oid.rsplit(".", 1)[1]) - 1)
-#                            ret_dict[snmp_key] = snmpoid
-#                        else:
-                        snmp_key = re.sub("." + s.instance + "$", "", snmpoid.oid)
+                        if len(s.instance.split(".")) == 1 and int(s.instance) > 0:
+                            snmp_key = snmpoid.oid.rsplit(".", 1)[0] + "." + str(int(snmpoid.oid.rsplit(".", 1)[1]) - 1)
+                        else:
+                            snmp_key = re.sub("." + s.instance + "$", "", snmpoid.oid)
                         ret_dict[snmp_key] = snmpoid
             return ret_dict
         else:
