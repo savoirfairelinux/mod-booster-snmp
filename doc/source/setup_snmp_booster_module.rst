@@ -134,6 +134,7 @@ One for the Poller:
         memcached_port       21201   ; default port for a memcached process
         loaded_by            poller
         show_from_cache      False
+        life_time            1000 ; Nb of checks done before kill the worker (and restart an other one)
     }
 
 

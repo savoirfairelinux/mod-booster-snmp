@@ -19,6 +19,8 @@ class SnmpBoosterPoller(SnmpBooster):
     """
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
+        self.max_checks_done = to_int(getattr(mod_conf, 'life_time', 1000))
+        self.checks_done = 0
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -139,6 +141,9 @@ class SnmpBoosterPoller(SnmpBooster):
         # And delete finished checks
         for chk in to_del:
             self.checks.remove(chk)
+            # Count checks done
+            self.checks_done += 1
+
 
     # id = id of the worker
     # s = Global Queue Master->Slave
@@ -164,7 +169,8 @@ class SnmpBoosterPoller(SnmpBooster):
             # take new jobs, we just finished the current one
             if not self.i_am_dying:
                 # REF: doc/shinken-action-queues.png (3)
-                self.get_new_checks()
+                if self.checks_done < self.max_checks_done:
+                    self.get_new_checks()
                 # REF: doc/shinken-action-queues.png (4)
                 self.launch_new_checks()
             # REF: doc/shinken-action-queues.png (5)
@@ -189,3 +195,9 @@ class SnmpBoosterPoller(SnmpBooster):
             timeout -= time.time() - begin
             if timeout < 0:
                 timeout = 1.0
+
+            if self.checks_done >= self.max_checks_done and self.checks == []:
+                self.i_am_dying = True
+                logger.warning('[SnmpBooster] [code 70] Worker goes down. '
+                               'The next warning message is a confirmation')
+                break
