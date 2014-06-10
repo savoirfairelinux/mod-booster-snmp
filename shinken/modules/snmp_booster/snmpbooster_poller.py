@@ -5,6 +5,7 @@ from Queue import Empty
 
 
 from shinken.log import logger
+from shinken.util import to_int
 
 
 from snmpbooster import SnmpBooster
@@ -110,7 +111,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     self.returns_queue.put(chk)
                 except IOError, exp:
                     logger.critical("[SnmpBooster] [code 49]"
-                                    "[%d] Exiting: %s" % (self.id, exp))
+                                    "[%d] Exiting: %s" % (str(self), exp))
                     sys.exit(2)
                 continue
             # Then we check for good checks
