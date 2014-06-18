@@ -39,14 +39,14 @@ class SNMPOid(object):
     """ OID created from datasource
         contains oids, values, max, ...
     """
-    def __init__(self, oid, ds_type, name, ds_max='', ds_min='', unit='', calc=None):
+    def __init__(self, oid, ds_type, name, ds_max='', ds_min_value='', unit='', calc=None):
         self.oid = oid
         self.raw_oid = oid
         self.type_ = ds_type
         self.name = name
         self.max_ = ds_max
         self.raw_max_ = ds_max
-        self.min_ = ds_min
+        self.min_value = ds_min_value
         self.unit = unit
         self.calc = calc
         # Message printed
@@ -135,8 +135,17 @@ class SNMPOid(object):
                     self.value = value
 
                 self.value = float(self.value)
-                self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
-                self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+                format_dict = {}
+                format_dict['value'] = self.value
+                format_dict['name'] = self.name
+                format_dict['unit'] = self.unit
+                format_dict['min_value'] = self.min_value
+                if isinstance(self.max_value, float):
+                    format_dict['max_value'] = "%0.2f" % float(self.max_value)
+                else:
+                    format_dict['max_value'] = ""
+                self.out = "%(name)s: %(value)0.2f%(unit)s" % format_dict
+                self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_value)s;%(max_value)s" % format_dict
                 self.unknown = False
                 return True
 
@@ -166,8 +175,17 @@ class SNMPOid(object):
                 self.value = raw_value
 
             self.value = float(self.value)
-            self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
-            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+            format_dict = {}
+            format_dict['value'] = self.value
+            format_dict['name'] = self.name
+            format_dict['unit'] = self.unit
+            format_dict['min_value'] = self.min_value
+            if isinstance(self.max_value, float):
+                format_dict['max_value'] = "%0.2f" % float(self.max_value)
+            else:
+                format_dict['max_value'] = ""
+            self.out = "%(name)s: %(value)0.2f%(unit)s" % format_dict
+            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_value)s;%(max_value)s" % format_dict
             self.unknown = False
             return True
 
@@ -188,8 +206,17 @@ class SNMPOid(object):
                 self.value = raw_value
 
             self.value = float(self.value)
-            self.out = "%(name)s: %(value)0.2f%(unit)s" % self.__dict__
-            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_)s;%(max_)s" % self.__dict__
+            format_dict = {}
+            format_dict['value'] = self.value
+            format_dict['name'] = self.name
+            format_dict['unit'] = self.unit
+            format_dict['min_value'] = self.min_value
+            if isinstance(self.max_value, float):
+                format_dict['max_value'] = "%0.2f" % float(self.max_value)
+            else:
+                format_dict['max_value'] = ""
+            self.out = "%(name)s: %(value)0.2f%(unit)s" % format_dict
+            self.perf = "%(name)s=%(value)0.2f%(unit)s;;;%(min_value)s;%(max_value)s" % format_dict
             self.unknown = False
             return True
 
