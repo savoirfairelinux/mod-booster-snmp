@@ -45,14 +45,21 @@ from shinken.log import logger
 
 try:
     import memcache
+except ImportError as e:
+    logger.error("[SnmpBooster] Import error. Module memcache is missing")
+    raise ImportError(e)
+try:
     from configobj import ConfigObj, Section
+except ImportError as e:
+    logger.error("[SnmpBooster] Import error. Module configobj is missing")
+    raise ImportError(e)
+try:
     from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
     from pysnmp.carrier.asynsock.dgram import udp
     from pyasn1.codec.ber import encoder, decoder
     from pysnmp.proto.api import v2c
-except ImportError, e:
-    logger.error("[SnmpBooster] [code 66] Import error. Maybe one of this "
-                 "module is missing: memcache, configobj, pysnmp")
+except ImportError as e:
+    logger.error("[SnmpBooster] Import error. Module pysnmp is missing")
     raise ImportError(e)
 
 from shinken.check import Check
