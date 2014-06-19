@@ -77,8 +77,13 @@ def get_instance(mod_conf):
     """called by the plugin manager to get a poller"""
     logger.info("[SnmpBooster] [code 67] Get a snmp poller module "
                 "for plugin %s" % mod_conf.get_name())
+    if not hasattr(mod_conf, 'loaded_by'):
+        logger.error("[SnmpBooster] Couldn't find loaded_by configuration "
+                     "directive.")
+        raise Exception("[SnmpBooster] Couldn't find loaded_by configuration "
+                        "directive.")
     if not mod_conf.loaded_by in mod_conf.properties['daemons']:
-        logger.info("[SnmpBooster] [code 68] Import errorfor plugin %s. "
+        logger.error("[SnmpBooster] [code 68] Import errorfor plugin %s. "
                     "Please check your configuration" % mod_conf.get_name())
         raise Exception("[SnmpBooster] Cannot load SnmpBooster. "
                         "Please check your configuration")
