@@ -72,13 +72,16 @@ def parse_args(cmd_args):
     use_getbulk = False
     real_check = False
     timeout = 10
+    max_rep_map = 64
+    max_rep = 64
 
     #Manage the options
     try:
-        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:P:br',
+        options, args = getopt.getopt(cmd_args, 'H:C:V:i:t:T:n:P:M:m:br',
                                       ['hostname=', 'community=', 'snmp-version=',
                                        'dstemplate=', 'triggergroup=', 'port=', 'real-check'
-                                       'instance=', 'instance-name=', 'use-getbulk'])
+                                       'instance=', 'instance-name=', 'use-getbulk',
+                                       'max-rep-map', 'max-rep'])
     except getopt.GetoptError, err:
         # TODO raise instead of log error
         logger.error("[SnmpBooster] [code 16] Error in command: definition %s" % str(err))
@@ -110,6 +113,19 @@ def parse_args(cmd_args):
             real_check = True
         elif option_name in ("-s", "--timeout"):
             timeout = value
+        elif option_name in ("-M", "--max-rep-map"):
+            try:
+                max_rep_map = int(value)
+            except:
+                max_rep_map = 64
+                logger.warning('[SnmpBooster] [code 69] Bad max_rep_map: setting to 64)')
+        elif option_name in ("-m", "--max-rep"):
+            try:
+                max_rep = int(value)
+            except:
+                max_rep = 64
+                logger.warning('[SnmpBooster] [code 69] Bad max_rep: setting to 64)')
+
 
     if instance and (instance.startswith('-') or instance.lower() == 'none'):
         instance = None
@@ -129,4 +145,5 @@ def parse_args(cmd_args):
 
     return (host, community, version,
             triggergroup, dstemplate, instance,
-            instance_name, port, use_getbulk, real_check, timeout)
+            instance_name, port, use_getbulk, real_check, timeout,
+            max_rep_map, max_rep)

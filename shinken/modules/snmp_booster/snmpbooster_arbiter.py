@@ -43,7 +43,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                 args = parse_args(clean_command[1:])
                 (host, community, version, triggergroup,
                  dstemplate, instance, instance_name, port,
-                 use_getbulk, real_check, timeout) = args
+                 use_getbulk, real_check, timeout, max_rep_map, max_rep) = args
 
                 # Get key from memcached
                 obj_key = str(host)
