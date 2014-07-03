@@ -81,7 +81,7 @@ def parse_args(cmd_args):
                                       ['hostname=', 'community=', 'snmp-version=',
                                        'dstemplate=', 'triggergroup=', 'port=', 'real-check'
                                        'instance=', 'instance-name=', 'use-getbulk',
-                                       'max-rep-map', 'max-rep'])
+                                       'max-rep-map=', 'max-rep='])
     except getopt.GetoptError, err:
         # TODO raise instead of log error
         logger.error("[SnmpBooster] [code 16] Error in command: definition %s" % str(err))
