@@ -80,13 +80,13 @@ class SnmpBoosterArbiter(SnmpBooster):
                         # Save new host in memcache
                         self.memcached.set(obj_key, new_obj, time=604800)
                 except Exception, e:
-                    logger.error = ("[SnmpBooster] [code 2] [%s, %s] Error "
-                                    "while saving it in memcache - Error "
-                                    "related to: %s" % (obj_key,
-                                                        serv.service_description,
-                                                        str(e)
-                                                        )
-                                    )
+                    logger.error("[SnmpBooster] [code 2] [%s, %s] Error "
+                                 "while saving it in memcache - Error "
+                                 "related to: %s" % (obj_key,
+                                                     serv.service_description,
+                                                     str(e)
+                                                     )
+                                 )
 
             # Disconnect from memcache
             self.memcached.disconnect_all()
