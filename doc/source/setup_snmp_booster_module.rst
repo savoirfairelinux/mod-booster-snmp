@@ -18,8 +18,8 @@ Downloads
 
 The SnmpBooster module and genDevConfig are currently in public beta prior to integration within Shinken. You can consult the design specification to see the [[SnmpBooster design specification | current development status]].
   * [[https://github.com/xkilian/genDevConfig]]
-  * [[https://github.com/titilambert/shinken/tree/snmp_booster/shinken/modules]]  (snmp_booster branch)
-    * Simply right-click and download snmp_poller.py then copy it to shinken/modules/
+  * [[https://github.com/titilambert/mod-booster-snmp]]  (use for_shinken_1.4 branch)
+    * Download and copy mod-booster-snmp/shinken/modules/snmp_booster to shinken/modules/
 
 Requirements
 ============
@@ -46,7 +46,7 @@ Installation
 SnmpBooster:
 
   * Install the dependencies
-  * Copy the file snmp_poller.py from the git repository to your shinken/modules directory.
+  * Copy the snmp_booster directory from the git repository to your shinken/modules directory.
   * Configuration steps are listed in the present web page.
 
 genDevConfig:
@@ -65,7 +65,7 @@ You need to modify shinken-specific.cfg, which is located in $shinken/etc/shinke
 Arbiter daemon configuration
 ++++++++++++++++++++++++++++
 
-Simply declare the module:
+Simply declare the module inside arbiter definition:
 
 ::
 
@@ -74,7 +74,7 @@ Simply declare the module:
 Scheduler daemon configuration
 ++++++++++++++++++++++++++++++
 
-Simply declare the module:
+Simply declare the module inside scheduler definition:
 
 ::
 
@@ -83,7 +83,7 @@ Simply declare the module:
 Poller daemon configuration
 +++++++++++++++++++++++++++
 
-Simply declare the module:
+Simply declare the module inside poller definition:
 
 ::
 
@@ -101,7 +101,7 @@ One for the Arbiter:
     define module {
         module_name          SnmpBoosterArbiter
         module_type          snmp_booster
-        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
         memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
         memcached_port       21201   ; default port for a memcached process
         loaded_by            arbiter
@@ -115,7 +115,7 @@ One for the Scheduler:
     define module {
         module_name          SnmpBoosterScheduler
         module_type          snmp_booster
-        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
         memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
         memcached_port       21201   ; default port for a memcached process
         loaded_by            scheduler
@@ -129,7 +129,7 @@ One for the Poller:
     define module {
         module_name          SnmpBoosterPoller
         module_type          snmp_booster
-        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES
+        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
         memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
         memcached_port       21201   ; default port for a memcached process
         loaded_by            poller
@@ -187,6 +187,19 @@ To edit the file
     module_type     snmp_booster
   }
 
+Parameters for check_snmp_booster command
++++++++++++++++++++++++++++++++++++++++++
+
+:-H: server hostname
+:-P: SNMP port. Default: 161
+:-C: SNMP community
+:-V: SNMP version
+:-t: dstemplate name
+:-i: instance mapping
+:-T: trigger group
+:-b: Use snmp getbulk requests. Default: False
+:-M: Instance mapping max_repetititon parameters for snmp getbulk requests. Default: 64
+:-m: max_repetition parameters for snmp getbulk requests. Default: 64
 
 
 ::
