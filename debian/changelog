@@ -1,3 +1,9 @@
+shinken-module-snmpbooster (1.1.7-1) unstable; urgency=low
+
+  * New Upstream version
+
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Mon, 07 Jul 2014 10:43:52 -0400
+
 shinken-module-snmpbooster (1.1.6-1) unstable; urgency=medium
 
   * New Upstream version
