@@ -33,11 +33,12 @@ class SNMPMCClient(object):
     Launch async SNMP request
 
     Class parameters
+
     :hostname:              Hostname, IP address
     :community:             SNMP Community
     :version:               SNMP version
     :dstemplate:            DS template use by this service (set in )
-    :instance:              ????
+    :instance:              Instance object
     :instance_name:         Name of the instance
     :triggergroup:          triggergroup use by this service
     :memcached_address:     Address of Memcache server
@@ -45,6 +46,7 @@ class SNMPMCClient(object):
     :show_from_cache:       Show "FROM CACHE" in the output. Default: False (Data come from cache, no requests made for this service)
 
     Class computed attributes
+
     :serv_key:              Unique key for this service for Memcache
     :interval_length:       interval_length (for now is 60, TODO: get this data from the configuration)
     :remaining_oids:

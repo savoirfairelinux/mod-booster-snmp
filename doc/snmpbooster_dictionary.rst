@@ -1,18 +1,20 @@
+.. _snmpbooster_dictionary:
+
 ================================
 SnmpBooster reference dictionary
 ================================
-
-  * Jump back to [[setup_active_module_checks|SnmpBooster documentation index]]
 
 SnmpBooster.ini dictionary
 ==========================
 
 There are five dictionaries:
-  * [DATASOURCE]
-  * [DSTEMPLATE]
-  * [MAP]
-  * [TRIGGER]
-  * [TRIGGERGROUP]
+  * :ref:`DATASOURCE <datasource>`
+  * :ref:`DSTEMPLATE <dstemplate>`
+  * :ref:`MAP <map>`
+  * :ref:`TRIGGER <trigger>`
+  * :ref:`TRIGGERGROUP <triggergroup>`
+
+.. _datasource:
 
 DATASOURCE DICTIONARY
 ---------------------
@@ -25,21 +27,29 @@ ds_calc refers to any scaling manipulations to make the data more understandable
 ds_oid refers to the actual $OidVariable name. An instance identifier can be appended to the name to signify that an instance is provided by the Shinken service definition. This information is passed when the check is called.
 ...
 
+.. _dstemplate:
+
 DSTEMPLATE DICTIONNARY
 ----------------------
 
 [DsTemplateName] refers to the name of the DSTEMPLATE that will be referred to in the Shinken service definitions.
 ds refers to the list of DATASOURCES to be collected. If an instance is expected for the list of DATASOURCES, it MUST be the same instance for all Oids. If a different instance is required, use a second DSTEMPLATE.
 
+.. _trigger:
+
 TRIGGER DICTIONNARY
 -------------------
 
 ...
 
+.. _triggergroup:
+
 TRIGGERGROUP DICTIONNARY
 ------------------------
 
 ...
+
+.. _map:
 
 MAP DICTIONNARY
 ---------------

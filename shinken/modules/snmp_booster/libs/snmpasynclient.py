@@ -41,12 +41,13 @@ class SNMPAsyncClient(object):
     """SNMP asynchron Client.
     Launch async SNMP request
 
-    Class parameters
+    **Class parameters**
+
     :hostname:              Hostname, IP address
     :community:             SNMP Community
     :version:               SNMP version
     :dstemplate:            DS template use by this service (set in )
-    :instance:              ????
+    :instance:              Instance object
     :instance_name:         Name of the instance
     :triggergroup:          triggergroup use by this service
     :memcached_address:     Address of Memcache server
@@ -55,7 +56,8 @@ class SNMPAsyncClient(object):
     :max_rep_map:           Custom GETBULK max_repetitions for instance mapping, useful if you have big mapping tables. Default: 64
     :max_rep:               Custom GETBULK max_repetitions. With big tables mapping, depending on your snmp table, we have to decrease it (if you notice some snmp timeout). Default: 64
 
-    Class computed attributes
+    **Class computed attributes**
+
     :serv_key:              Unique key for this service for Memcache
     :interval_length:       interval_length (for now is 60, TODO: get this data from the configuration)
     :remaining_oids:
@@ -69,6 +71,7 @@ class SNMPAsyncClient(object):
     :timeout:               SNMP timeout
     :obj:                   Host object got from Memcache
     :obj_key:               Unique key for this host for Memcache
+
     """
     def __init__(self, host, community, version, datasource,
                  triggergroup, dstemplate, instance, instance_name,

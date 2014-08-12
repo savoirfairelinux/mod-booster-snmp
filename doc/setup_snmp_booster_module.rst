@@ -1,3 +1,5 @@
+.. _setup_snmp_booster_module:
+
 ===============================
 SNMP Booster: Install and setup
 ===============================
@@ -7,18 +9,20 @@ SNMP Booster: Install and setup
 SnmpBooster Download Install and Configure
 ==========================================
 
-  * [[SnmpBooster_how_it_works| What is the SnmpBooster module]]
-  * [[Setup SNMP booster module| Install and configure the SNMP acquisition module.]] [You are here]
-  * [[snmpbooster_troubleshooting|Reference - SnmpBooster troubleshooting]]
-  * [[snmpbooster_design_specification|Reference - SnmpBooster design specification]]
-  * [[snmpbooster_dictionary|Reference - SnmpBooster configuration dictionnary]]
+  * :ref:`What is the SnmpBooster module <SnmpBooster_how_it_works>`
+  * :ref:`Install and configure the SNMP acquisition module <setup_snmp_booster_module>` [You are here]
+  * :ref:`SnmpBooster troubleshooting <snmpbooster_troubleshooting>`
+  * :ref:`SnmpBooster design specification <snmpbooster_design_specification>`
+  * :ref:`SnmpBooster configuration dictionnary <snmpbooster_dictionary>`
+
 
 Downloads
 =========
 
-The SnmpBooster module and genDevConfig are currently in public beta prior to integration within Shinken. You can consult the design specification to see the [[SnmpBooster design specification | current development status]].
-  * [[https://github.com/xkilian/genDevConfig]]
-  * [[https://github.com/titilambert/mod-booster-snmp]]  (use for_shinken_1.4 branch)
+The SnmpBooster module and genDevConfig are currently in public beta prior to integration within Shinken. You can consult the design specification to see the :ref:`current development status <snmpbooster_design_specification>`.
+  * https://github.com/xkilian/genDevConfig
+  * https://github.com/titilambert/mod-booster-snmp  (use for_shinken_1.4 branch)
+
     * Download and copy mod-booster-snmp/shinken/modules/snmp_booster to shinken/modules/
 
 Requirements
@@ -27,11 +31,22 @@ Requirements
 The SnmpBooster module requires:
 
   * Python 2.6+
-  * Shinken 1.2+
-  * [[http://pysnmp.sourceforge.net/download.html|PySNMP 4.2.1+ (Python module and its dependencies)]]
-  * [[http://www.voidspace.org.uk/python/configobj.html#downloading|ConfigObj (Python module)]]
-  * [[http://pypi.python.org/pypi/python-memcached/|python-memcached]]
-  * memcachedb or memcached package for your operating system (ex. For Ubuntu: apt-get install memcachedb) [[memcached_note|Note]]
+  * Shinken 1.2+ < 2.0
+  * `PySNMP 4.2.1+ (Python module and its dependencies)`_
+  * `ConfigObj (Python module)`_
+  * `python-memcached`_
+  * memcachedb or memcached package for your operating system (ex. For Ubuntu: apt-get install memcachedb) `See memcached note`_.
+
+.. _See memcached note:
+
+.. note::
+   On Ubuntu 12.04 the default instalation is on port 21201 instead of 11211.
+   This causes the error ”[SnmpBooster] Memcache server (127.0.0.1:11211) is not reachable” when shinken starts.
+   To change it, you must edit the file /etc/memcachedb.conf
+
+.. _PySNMP 4.2.1+ (Python module and its dependencies): http://pysnmp.sourceforge.net/download.html
+.. _ConfigObj (Python module): http://www.voidspace.org.uk/python/configobj.html#downloading
+.. _python-memcached: http://pypi.python.org/pypi/python-memcached/
 
 The genDevConfig profile generator depends on:
 
@@ -60,7 +75,7 @@ Configuration
 How to define the SnmpBooster module in the Shinken daemons
 -----------------------------------------------------------
 
-You need to modify shinken-specific.cfg, which is located in $shinken/etc/shinken-specific.cfg
+You need to modify shinken-specific.cfg, which is located in *shinken/etc/shinken-specific.cfg*
 
 Arbiter daemon configuration
 ++++++++++++++++++++++++++++
@@ -218,7 +233,7 @@ Parameters for check_snmp_booster command
 
 ::
 
-  host{
+  host {
     name                    SnmpBooster-host
     alias                   SnmpBooster-host template
     check_command	        check_host_alive
@@ -238,6 +253,7 @@ Define some hosts and services. You would typically use genDevConfig or another 
 Mandatory service arguments related to SNMP polling:
 
 ::
+
    _dstemplate		Cisco-Generic-Router  ; Name of a DSTEMPLATE defined in the SnmpBooster config.ini file
    snmpcommunityread    which is set in your resource.cfg file
 

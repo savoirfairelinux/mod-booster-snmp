@@ -12,11 +12,59 @@
 # serve to show the default.
 
 import sys, os
+from sphinx.ext import autodoc
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../shinken'))
+#sys.path.insert(0, os.path.abspath('../shinken/modules/snmpbooster'))
+#sys.path.insert(0, os.path.abspath('../shinken/modules/snmpbooster/libs'))
+
+# Fix for missing modules
+class Mock(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return Mock()
+
+    @classmethod
+    def __getattr__(cls, name):
+        if name in ('__file__', '__path__'):
+            return '/dev/null'
+        elif name[0] == name[0].upper():
+            mockType = type(name, (), {})
+            mockType.__module__ = __name__
+            return mockType
+        else:
+            return Mock()
+
+MOCK_MODULES = [
+                'shinken.log',
+                'memcache',
+                'pysnmp',
+                'pysnmp.carrier',
+                'pysnmp.carrier.asynsock',
+                'pysnmp.carrier.asynsock.dispatch',
+                'pysnmp.carrier.asynsock.dgram',
+                'pyasn1',
+                'pyasn1.codec',
+                'pyasn1.codec.ber',
+                'pysnmp',
+                'pysnmp.proto',
+                'pysnmp.proto.api',
+                'shinken',
+                'shinken.check',
+                'shinken.macroresolver',
+                'shinken.basemodule',
+                'shinken.util',
+                ]
+
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = Mock()
+
+
 
 # -- General configuration -----------------------------------------------------
 

@@ -1,16 +1,11 @@
+.. _snmpbooster_how_it_works:
+
 ===============================
 SNMP Booster: How does it works
 ===============================
 
 Overview
 ========
-
-* Jump back to [[setup_active_module_checks|SnmpBooster documentation index]]
-
-
-.. tip::
-   module is now in public beta as of 2012-10-26! Have Fun!
-   Nothing new to add, more to come in 2013. 2013-01-19.
 
 What is it
 ----------
@@ -75,7 +70,7 @@ SnmpBooster is not compatible with distributed pollers in multiple datacenters, 
 Design specification
 ====================
 
-[[snmpbooster_design_specification|SnmpBooster design specification]] and current development status.
+:ref:`SnmpBooster design specification <snmpbooster_design_specification>` and current development status.
 
 Data model
 ==========
@@ -115,17 +110,17 @@ A final location containes rules to build your Shinken configuration.
 Installation and configuration
 ==============================
 
-[[setup_snmp_booster_module|SnmpBooster installation]]
+:ref:`SnmpBooster installation <setup_snmp_booster_module>`
 
 Reference Dictionnary
 =====================
 
-[[snmpbooster_dictionary|SnmpBooster reference dictionary ]]
+:ref:`SnmpBooster reference dictionary <snmpbooster_dictionary>`
 
 Troubleshooting
 ===============
 
-[[snmpbooster_troubleshooting|SnmpBooster troubleshooting]]
+:ref:`SnmpBooster troubleshooting <snmpbooster_troubleshooting>`
 
 Graph templates
 ===============
