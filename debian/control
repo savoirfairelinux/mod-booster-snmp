@@ -14,6 +14,7 @@ Architecture: any
 Depends: shinken-common (<< 2.0), python-pysnmp4, python-pyasn1,
          python-configobj, python-memcache, ${misc:Depends}
 Conflicts: shinken-core
+Suggests: shinken-module-snmpbooster-doc
 Recommends: 
 Description:  Flexible monitoring tool - NRPE module for Poller
  SNMP module for Arbiter/Scheduler/Poller. This module makes SNMP requests
@@ -22,3 +23,15 @@ Description:  Flexible monitoring tool - NRPE module for Poller
  Shinken is a new, Nagios compatible monitoring tool, written in Python. The
  main goal of Shinken is to allow users to have a fully flexible architecture
  for their monitoring system that can easily scale to large environments.
+
+Package: shinken-module-snmpbooster-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}, libjs-jquery, libjs-underscore
+Description: Flexible monitoring tool - Documentation
+ Shinken SNMP module documentation.
+ .
+ Shinken is a new, Nagios compatible monitoring tool, written in Python. The
+ main goal of Shinken is to allow users to have a fully flexible architecture
+ for their monitoring system that can easily scale to large environments.
+

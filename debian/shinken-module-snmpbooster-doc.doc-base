@@ -1,0 +1,10 @@
+Document: shinken
+Title: Shinken Manual
+Author: Various
+Abstract: Complete documentation for Shinken
+ system and network monitoring application.
+Section: Network/Monitoring
+
+Format: HTML
+Index: /usr/share/doc/shinken-module-snmpbooster-doc/html/index.html
+Files: /usr/share/doc/shinken-module-snmpbooster-doc/html/*/*.html
