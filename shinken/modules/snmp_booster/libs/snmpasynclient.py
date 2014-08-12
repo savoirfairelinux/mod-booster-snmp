@@ -52,6 +52,8 @@ class SNMPAsyncClient(object):
     :memcached_address:     Address of Memcache server
     :max_repetitions:       max_repetitions option for SNMP requests. Default: 64
     :show_from_cache:       Show "FROM CACHE" in the output. Default: False (Data come from cache, no requests made for this service)
+    :max_rep_map:           Custom GETBULK max_repetitions for instance mapping, useful if you have big mapping tables. Default: 64
+    :max_rep:               Custom GETBULK max_repetitions. With big tables mapping, depending on your snmp table, we have to decrease it (if you notice some snmp timeout). Default: 64
 
     Class computed attributes
     :serv_key:              Unique key for this service for Memcache
@@ -71,7 +73,7 @@ class SNMPAsyncClient(object):
     def __init__(self, host, community, version, datasource,
                  triggergroup, dstemplate, instance, instance_name,
                  memcached_address, max_repetitions=64, show_from_cache=False,
-                 port=161, use_getbulk=False, timeout=10):
+                 port=161, use_getbulk=False, timeout=10, max_rep_map=64, max_rep=64):
 
         self.hostname = host
         self.community = community
@@ -86,6 +88,9 @@ class SNMPAsyncClient(object):
         self.port = port
         # TODO get the service standard timeout minus 5 seconds...
         self.timeout = timeout
+        # Custom max_repetition for big snmp mapping tables
+        self.max_rep_map = max_rep_map
+        self.max_rep = max_rep
 
         # TODO move this to parse args functions...
         # Check args
@@ -124,6 +129,7 @@ class SNMPAsyncClient(object):
         self.state = 'creation'
         self.start_time = datetime.now()
 
+        self.is_mapping = False
         self.obj = None
 
         # Check if obj is in memcache
@@ -175,6 +181,10 @@ class SNMPAsyncClient(object):
         self.mapping_oids = self.obj.get_oids_for_instance_mapping(self.check_interval,
                                                                    self.datasource)
         tmp_oids = list(set([oid[1:] for oid in self.mapping_oids]))
+
+        if tmp_oids:
+            self.is_mapping = True
+
         for oid in tmp_oids:
             try:
                 tuple(int(i) for i in oid.split("."))
@@ -285,7 +295,10 @@ class SNMPAsyncClient(object):
             self.reqPDU = v2c.GetBulkRequestPDU()
             v2c.apiBulkPDU.setDefaults(self.reqPDU)
             v2c.apiBulkPDU.setNonRepeaters(self.reqPDU, 0)
-            v2c.apiBulkPDU.setMaxRepetitions(self.reqPDU, self.max_repetitions)
+            if self.is_mapping:
+                v2c.apiBulkPDU.setMaxRepetitions(self.reqPDU, self.max_rep_map)
+            else:
+                v2c.apiBulkPDU.setMaxRepetitions(self.reqPDU, self.max_rep)
             v2c.apiBulkPDU.setVarBinds(self.reqPDU,
                                        [(v2c.ObjectIdentifier(tuple(int(i) for i in x.split("."))), v2c.null)
                                         for x in sorted(self.headVars)])
@@ -546,7 +559,6 @@ class SNMPAsyncClient(object):
                                                             transportDomain,
                                                         transportAddress)
                             return wholeMsg
-    
 
                     # Try to map instances
                     self.obj.map_instances(self.check_interval)

@@ -61,7 +61,7 @@ class SnmpBoosterScheduler(SnmpBooster):
                         args = parse_args(clean_command[1:])
                         (host, community, version, triggergroup,
                          dstemplate, instance, instance_name,
-                         port, use_getbulk, real_check, timeout) = args
+                         port, use_getbulk, real_check, timeout, max_rep_map, max_rep) = args
 
                         # Get key from memcached
                         obj_key = str(host)
@@ -82,7 +82,7 @@ class SnmpBoosterScheduler(SnmpBooster):
                         # No Data => GO
                         if not self.has_datas(data) == True:
                             make_real_check = True
-            
+
                         if make_real_check == True:
                             a.command = a.command + " -r"
                             self.checks[check_frequency_key] = {'last_check': s.next_chk}

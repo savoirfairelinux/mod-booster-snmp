@@ -63,7 +63,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     args = parse_args(clean_command[1:])
                     (host, community, version, triggergroup, dstemplate,
                      instance, instance_name, port, use_getbulk,
-                     real_check, timeout) = args
+                     real_check, timeout, max_rep_map, max_rep) = args
 
                 # If we do not have the good args, we bail out for this check
                 if host is None:
@@ -80,7 +80,7 @@ class SnmpBoosterPoller(SnmpBooster):
                                         triggergroup, dstemplate, instance,
                                         instance_name, self.memcached_address,
                                         self.max_repetitions, self.show_from_cache,
-                                        port, use_getbulk, timeout,
+                                        port, use_getbulk, timeout, max_rep_map, max_rep
                                         )
                 else:
                     n = SNMPMCClient(host, community, version, self.datasource,
