@@ -1,0 +1,16 @@
+Releasing a New Version
+=======================
+
+ * Do final quality checks
+   $ pep8 shinken
+ * Bump version numbers
+   - setup.py
+   - debian/changelog
+ * Update NEWS and TODO
+ * Commit changes
+   $ git commit -a -m "Update to X.Y.Z"
+   $ git tag -s "X.Y.Z"
+   $ git push
+   $ git push --tags
+ * Upload and announce
+
