@@ -170,10 +170,9 @@ class SnmpBoosterPoller(SnmpBooster):
             # take new jobs, we just finished the current one
             if not self.i_am_dying:
                 # REF: doc/shinken-action-queues.png (3)
-                if self.checks_done < self.max_checks_done:
-                    self.get_new_checks()
+                self.get_new_checks()
                 # REF: doc/shinken-action-queues.png (4)
-                self.launch_new_checks()
+            self.launch_new_checks()
             # REF: doc/shinken-action-queues.png (5)
             self.manage_finished_checks()
 
@@ -197,8 +196,10 @@ class SnmpBoosterPoller(SnmpBooster):
             if timeout < 0:
                 timeout = 1.0
 
-            if self.checks_done >= self.max_checks_done and self.checks == []:
-                self.i_am_dying = True
+            if self.i_am_dying == True and self.checks == [] and self.returns_queue.empty() == True:
                 logger.warning('[SnmpBooster] [code 70] Worker goes down. '
                                'The next warning message is a confirmation')
                 break
+
+            if self.checks_done >= self.max_checks_done and self.checks == []:
+                self.i_am_dying = True
