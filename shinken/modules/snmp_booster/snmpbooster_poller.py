@@ -1,7 +1,9 @@
 import signal
 import time
 import shlex
-from Queue import Empty
+from Queue import Empty, Queue
+from threading import Thread
+
 
 
 from shinken.log import logger
@@ -10,8 +12,8 @@ from shinken.util import to_int
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args
-from libs.snmpasynclient import SNMPAsyncClient
-from libs.snmpmcclient import SNMPMCClient
+from libs.check_snmp import check_snmp
+from libs.snmpworker import SNMPWorker
 
 
 class SnmpBoosterPoller(SnmpBooster):
@@ -22,6 +24,7 @@ class SnmpBoosterPoller(SnmpBooster):
         SnmpBooster.__init__(self, mod_conf)
         self.max_checks_done = to_int(getattr(mod_conf, 'life_time', 1000))
         self.checks_done = 0
+        self.mapping_queue = Queue()
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -61,35 +64,21 @@ class SnmpBoosterPoller(SnmpBooster):
                 if len(clean_command) > 1:
                     # we do not want the first member, check_snmp thing
                     args = parse_args(clean_command[1:])
-                    (host, community, version, triggergroup, dstemplate,
-                     instance, instance_name, port, use_getbulk,
-                     real_check, timeout, max_rep_map, max_rep) = args
-
-                # If we do not have the good args, we bail out for this check
-                if host is None:
-                    chk.status = 'done'
-                    chk.exit_status = 2
-                    chk.get_outputs('Error : the parameters host or command '
-                                    'are not correct.', 8012)
-                    chk.execution_time = 0.0
-                    continue
 
                 # Ok we are good, we go on
-                if real_check == True:
-                    n = SNMPAsyncClient(host, community, version, self.datasource,
-                                        triggergroup, dstemplate, instance,
-                                        instance_name, self.memcached_address,
-                                        self.max_repetitions, self.show_from_cache,
-                                        port, use_getbulk, timeout, max_rep_map, max_rep
-                                        )
+                print args.get('real_check')
+                if args.get('real_check', False):
+                    result = check_snmp(args, self.db_client, self.mapping_queue)
+
                 else:
-                    n = SNMPMCClient(host, community, version, self.datasource,
-                                     triggergroup, dstemplate, instance,
-                                     instance_name, self.memcached_address,
-                                     self.max_repetitions, self.show_from_cache,
-                                     port, use_getbulk, timeout,
-                                     )
-                chk.con = n
+                    continue
+#                    n = SNMPMCClient(host, community, version, self.datasource,
+#                                     triggergroup, dstemplate, instance,
+#                                     instance_name, self.memcached_address,
+#                                     self.max_repetitions, self.show_from_cache,
+#                                     port, use_getbulk, timeout,
+#                                     )
+                chk.result = result
 
     # Check the status of checks
     # if done, return message finished :)
@@ -99,8 +88,12 @@ class SnmpBoosterPoller(SnmpBooster):
 
         # First look for checks in timeout
         for chk in self.checks:
-            if chk.status == 'launched' and chk.con.state != 'received':
-                chk.con.look_for_timeout()
+            if not hasattr(chk, "result"):
+                continue
+            if chk.status == 'launched' and chk.result.get('state') != 'finished':
+                pass
+                # TODO cimpore check.result['execution_time'] > timeout
+#                chk.con.look_for_timeout()
 
         # Now we look for finished checks
         for chk in self.checks:
@@ -115,19 +108,21 @@ class SnmpBoosterPoller(SnmpBooster):
                     sys.exit(2)
                 continue
             # Then we check for good checks
-            if chk.status == 'launched' and chk.con.is_done():
-                con = chk.con
+            if not hasattr(chk, "result"):
+                continue
+            if chk.status == 'launched' and chk.result['state'] == 'finished':
+                result = chk.result
+                print "resultPOLLER", result
                 chk.status = 'done'
-                chk.exit_status = getattr(con, 'rc', 3)
-                chk.get_outputs(str(getattr(con,
-                                            'message',
-                                            'Error in launching command.')),
+                chk.exit_status = result.get('exit_code', 3)
+                chk.get_outputs(str(result.get('output',
+                                               'Output is missing')),
                                 8012)
-                chk.execution_time = getattr(con, 'execution_time', 0.0)
+                chk.execution_time = result.get('execution_time', 0.0)
 
                 # unlink our object from the original check
-                if hasattr(chk, 'con'):
-                    delattr(chk, 'con')
+                if hasattr(chk, 'result'):
+                    delattr(chk, 'result')
 
                 # and set this check for deleting
                 # and try to send it
@@ -161,6 +156,10 @@ class SnmpBoosterPoller(SnmpBooster):
         self.returns_queue = returns_queue
         self.s = s
         self.t_each_loop = time.time()
+        self.snmpworker = SNMPWorker(self.mapping_queue)
+#        self.snmpworker_thread = Thread(target=self.snmpworker.run, args=(self.mapping_queue,))
+        self.snmpworker.start()
+
         while True:
             begin = time.time()
             msg = None

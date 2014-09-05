@@ -17,75 +17,35 @@ class SnmpBoosterScheduler(SnmpBooster):
         SnmpBooster.__init__(self, mod_conf)
         self.checks = {}
 
-    def has_datas(self, data):
-        return not data is None
 
-    def is_forced_check(self, serv):
-        forced = (serv.next_chk - serv.last_chk) < (serv.check_interval * serv.interval_length - 15)
-        def is_last_check_20_second_ago(self):
-            # when forced check
-            pass
-        return forced
+    def toto(self, ret, check_tup):
+        # TODO COMMENTSS
+        def set_true_check(check, real=False):
+            # TODO COMMENTSS
+            if real:
+                check.command = check.command + " -r"
+            else:
+                if check.command.endswith(" -r"):
+                    check.command = check.command[:-3]
+            return check
 
-    def need_to_refresh_datas(self, data, serv):
-        if data is not None and 'last_check' in data:
-            return serv.next_chk - data['last_check'] >= serv.check_interval * serv.interval_length - 2
+        key = check_tup[0]
+        check = check_tup[1]
+
+        if key not in ret:
+            ret[key] = []
+            check = set_true_check(check, True)
         else:
-            return False
+            check = set_true_check(check, False)
 
-    def is_last_check_too_recent(self, data, serv):
-        if data is not None and 'last_check' in data:
-            return serv.next_chk - data['last_check'] < 20
-        else:
-            return False
-
-    def is_checking(self, key):
-        return bool(self.checks.get(key, False))
+        ret[key].append(check)
+        return ret
 
     def hook_get_new_actions(self, sche):
-        """ Detect of forced checks """
-        for s in sche.services:
-            for a in s.actions:
-                if isinstance(a, Check):
-                    if a.module_type == 'snmp_booster':
-                        # Clean command
-                        clean_command = shlex.split(a.command.encode('utf8',
-                                                                     'ignore'))
-                        # If the command doesn't seem good
-                        if len(clean_command) <= 1:
-                            logger.error("[SnmpBooster] [code 5] Bad command "
-                                         "detected: %s" % a.command)
-                            continue
-
-                        # we do not want the first member, check_snmp thing
-                        args = parse_args(clean_command[1:])
-                        (host, community, version, triggergroup,
-                         dstemplate, instance, instance_name,
-                         port, use_getbulk, real_check, timeout, max_rep_map, max_rep) = args
-
-                        # Get key from memcached
-                        obj_key = str(host)
-                        check_frequency_key = (host, s.check_interval)
-
-                        data = self.checks.get(check_frequency_key, None)
-
-                        make_real_check = False
-                        # si le lastcheck du couple host,interval est superieur a interval => GO
-                        if self.need_to_refresh_datas(data, s) == True:
-                            make_real_check = True
-                        # si le service est force => GO
-                        if self.is_forced_check(s) == True:
-                            make_real_check = True
-                        # si le dernier check a etait prevu il y a moins de 20 s => NOGO
-                        if self.is_last_check_too_recent(data, s) == True:
-                            make_real_check = False
-                        # No Data => GO
-                        if not self.has_datas(data) == True:
-                            make_real_check = True
-
-                        if make_real_check == True:
-                            a.command = a.command + " -r"
-                            self.checks[check_frequency_key] = {'last_check': s.next_chk}
-                        else:
-                            if a.command.endswith(" -r"):
-                                a.command = a.command[:-3]
+        """ Set if is a SNMP or Cache check """
+        # TODO COMMENTSS
+        snmp_checks = [c for c in sche.checks.values() if c.module_type == 'snmp_booster' and c.status == 'scheduled']
+        check_by_host_inter = [((c.ref.host.get_name(), c.ref.check_interval), c) for c in sche.checks.values()
+                               if c.module_type == 'snmp_booster' and c.status == 'scheduled']
+        check_by_host_inter.sort(key=lambda c: c[1].t_to_go)
+        reduce(self.toto, check_by_host_inter, {})
