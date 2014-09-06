@@ -58,6 +58,31 @@ def rpn_calculator(rpn_list):
         return(st.pop())
 
 
+def calculation(value, ds_calc):
+    """ Get result from calc """
+    print "calculationcalculationcalculation", [value, ] + ds_calc
+    return rpn_calculator([value, ] + ds_calc)
+
+
+def derive(service, ds_name, limit):
+    ds_data = service['ds'][ds_name]
+    # Get derive
+    t_delta = service['check_time'] - service['check_time_last']
+    if t_delta == 0:
+        logger.error("[SnmpBooster] Time delta is 0s. We can not get derive "
+                     "for this service %s - %s" % (service['host'], service['service']))
+        return None
+    # detect counter reset
+    if ds_data['ds_oid_value'] < ds_data['ds_oid_value_last']:
+        # Counter reseted
+        d_delta = limit - ds_data['ds_oid_value_last'] + ds_data['ds_oid_value']
+    else:
+        d_delta = ds_data['ds_oid_value'] - ds_data['ds_oid_value_last']
+    value = d_delta / t_delta
+
+    return value
+
+
 def parse_args(cmd_args):
     # TODO USE SHINKEN STYLE (PROPERTIES see item object)
     # Set default values
@@ -268,6 +293,7 @@ def dict_serialize(serv, mac_resol, datasource):
             trigger_data = datasource.get('TRIGGER').get(trigger_name)
             trigger_data.setdefault("critical", None)
             trigger_data.setdefault("warning", None)
+            trigger_data.setdefault("default_status", datasource.get('TRIGGER').get("default_status", 3))
 
             # add trigger in trigger list
             tmp_dict['triggers'][trigger_name] = trigger_data

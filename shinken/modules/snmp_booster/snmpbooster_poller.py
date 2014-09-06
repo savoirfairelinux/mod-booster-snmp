@@ -11,8 +11,9 @@ from shinken.util import to_int
 
 
 from snmpbooster import SnmpBooster
-from libs.utils import parse_args
-from libs.check_snmp import check_snmp
+from libs.utils import parse_args, calculation
+from libs.result import get_result
+from libs.checks import check_snmp, check_cache
 from libs.snmpworker import SNMPWorker
 
 
@@ -24,7 +25,8 @@ class SnmpBoosterPoller(SnmpBooster):
         SnmpBooster.__init__(self, mod_conf)
         self.max_checks_done = to_int(getattr(mod_conf, 'life_time', 1000))
         self.checks_done = 0
-        self.mapping_queue = Queue()
+        self.task_queue = Queue()
+        self.result_queue = Queue()
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -66,19 +68,14 @@ class SnmpBoosterPoller(SnmpBooster):
                     args = parse_args(clean_command[1:])
 
                 # Ok we are good, we go on
-                print args.get('real_check')
+                #print args.get('real_check')
+                check_snmp(chk, args, self.db_client, self.task_queue, self.result_queue)
+                continue
                 if args.get('real_check', False):
-                    result = check_snmp(args, self.db_client, self.mapping_queue)
+                    check_snmp(chk, args, self.db_client, self.task_queue, self.result_queue)
 
                 else:
-                    continue
-#                    n = SNMPMCClient(host, community, version, self.datasource,
-#                                     triggergroup, dstemplate, instance,
-#                                     instance_name, self.memcached_address,
-#                                     self.max_repetitions, self.show_from_cache,
-#                                     port, use_getbulk, timeout,
-#                                     )
-                chk.result = result
+                    check_cache(chk, args, self.db_client)
 
     # Check the status of checks
     # if done, return message finished :)
@@ -90,7 +87,7 @@ class SnmpBoosterPoller(SnmpBooster):
         for chk in self.checks:
             if not hasattr(chk, "result"):
                 continue
-            if chk.status == 'launched' and chk.result.get('state') != 'finished':
+            if chk.status == 'launched' and chk.result.get('state') != 'received':
                 pass
                 # TODO cimpore check.result['execution_time'] > timeout
 #                chk.con.look_for_timeout()
@@ -110,9 +107,14 @@ class SnmpBoosterPoller(SnmpBooster):
             # Then we check for good checks
             if not hasattr(chk, "result"):
                 continue
-            if chk.status == 'launched' and chk.result['state'] == 'finished':
+            if chk.status == 'launched' and chk.result['state'] == 'received':
                 result = chk.result
-                print "resultPOLLER", result
+                # Format result
+                # Launch trigger
+                # Get exit code
+                # Get execution time
+                #print "resultPOLLER", result
+                output, exit_code = get_result(result)
                 chk.status = 'done'
                 chk.exit_status = result.get('exit_code', 3)
                 chk.get_outputs(str(result.get('output',
@@ -141,6 +143,54 @@ class SnmpBoosterPoller(SnmpBooster):
             self.checks_done += 1
 
 
+    def save_results(self):
+        """ Save results to database """
+        while not self.result_queue.empty():
+            results = self.result_queue.get()
+            for result in results.values():
+                #print "RESULT", result
+                key = result.get('key')
+                # format value
+                if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
+                    value = float(result.get('value'))
+                elif result.get('type') in ['DERIVE64', 'COUNTER64']:
+                    value = float(result.get('value'))
+                elif result.get('type') in ['TEXT', 'STRING']:
+                    value = str(result.get('value'))
+                #print "VALUE", key.get('oid_type') + "_value", value
+
+
+
+
+
+                # TODO NOTE
+                # here call computed_value = get_value(value, result)
+                # ONLY IF oid_type == "ds_oid"
+                # For ds_max and ds_min maybe we just have to luanch calculation ??? 
+
+
+
+                # Save to database
+                # Last value key
+                last_value_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_last"))
+                # New value 
+                value_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value"))
+                mongo_filter = {"host": key.get('host'),
+                                "service": key.get('service')}
+                new_data = {"$set": {
+                                     value_key: value,
+                                     last_value_key: result.get('value_last'),
+                                     "check_time": result.get('check_time'),
+                                     "check_time_last": result.get('check_time_last'),
+                                     }
+                            }
+                self.db_client.booster_snmp.services.update(mongo_filter,
+                                                            new_data)
+            self.result_queue.task_done()
+
+
+
+
     # id = id of the worker
     # s = Global Queue Master->Slave
     # m = Queue Slave->Master
@@ -156,8 +206,8 @@ class SnmpBoosterPoller(SnmpBooster):
         self.returns_queue = returns_queue
         self.s = s
         self.t_each_loop = time.time()
-        self.snmpworker = SNMPWorker(self.mapping_queue)
-#        self.snmpworker_thread = Thread(target=self.snmpworker.run, args=(self.mapping_queue,))
+        # TODO check snmpworker health
+        self.snmpworker = SNMPWorker(self.task_queue)
         self.snmpworker.start()
 
         while True:
@@ -170,8 +220,11 @@ class SnmpBoosterPoller(SnmpBooster):
             if not self.i_am_dying:
                 # REF: doc/shinken-action-queues.png (3)
                 self.get_new_checks()
-                # REF: doc/shinken-action-queues.png (4)
+            # REF: doc/shinken-action-queues.png (4)
             self.launch_new_checks()
+
+            self.save_results()
+
             # REF: doc/shinken-action-queues.png (5)
             self.manage_finished_checks()
 
@@ -194,11 +247,3 @@ class SnmpBoosterPoller(SnmpBooster):
             timeout -= time.time() - begin
             if timeout < 0:
                 timeout = 1.0
-
-            if self.i_am_dying == True and self.checks == [] and self.returns_queue.empty() == True:
-                logger.warning('[SnmpBooster] [code 70] Worker goes down. '
-                               'The next warning message is a confirmation')
-                break
-
-            if self.checks_done >= self.max_checks_done and self.checks == []:
-                self.i_am_dying = True
