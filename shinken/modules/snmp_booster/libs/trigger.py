@@ -33,25 +33,22 @@ from shinken.check import Check
 from shinken.macroresolver import MacroResolver
 
 from utils import rpn_calculator, calculation
-from output import get_data
-
 
 # Zabbix functions
 # AMELIORER LES MESSAGES D ERREUR SUR LE CALCUL DU TRIGGER
 def diff(ds_data):
-
-    return ds_data['ds_oid_value'] == ds_data['ds_oid_value_last']
+    return ds_data['ds_oid_value_computed'] == ds_data['ds_oid_value_last_computed']
 
 def prct(ds_data):
     #print ds_data
     try:
-        max = float(ds_data['ds_max_oid_value'])
+        max = float(ds_data['ds_max_oid_value_computed'])
     except:
         raise Exception("Cannot calculate prct, max value for the datasource '%s' is missing" % ds_data['ds_name'])
-    return float(ds_data['ds_oid_value']) * 100 / max
+    return float(ds_data['ds_oid_value_computed']) * 100 / max
 
 def last(ds_data):
-    return ds_data['ds_oid_value']
+    return ds_data['ds_oid_value_computed']
 
 rpn_functions = {"diff": diff,
                  "prct": prct,
@@ -70,7 +67,7 @@ def get_trigger_result(service):
               'warning': 1,
               'ok': 0,
               }
-    print "get_trigger_resultget_trigger_resultget_trigger_resultget_trigger_resultget_trigger_result"
+    #print "get_trigger_resultget_trigger_resultget_trigger_resultget_trigger_resultget_trigger_result"
 
     if True:
 #    try:
@@ -99,7 +96,7 @@ def get_trigger_result(service):
                                                      service['service'],
                                                      error_message))
                                 return error_message, int(trigger['default_status'])
-                            if service['ds'][ds]['ds_oid_value'] is None:
+                            if service['ds'][ds]['ds_oid_value_computed'] is None:
                                 error_message = "No data found for DS: '%s'" % ds
                                 logger.warning("[SnmpBooster] [code 8] [%s, %s] "
                                                "%s" % (service['host'],
@@ -136,7 +133,7 @@ def get_trigger_result(service):
                             # detect oid
                             # TODO NOTE
                             # GET computed value instead of ds_oid_value
-                            value = service['ds'][ds]['ds_oid_value']
+                            value = service['ds'][ds]['ds_oid_value_computed']
                         else:
                             value = el
                         rpn_list.append(value)

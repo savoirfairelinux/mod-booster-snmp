@@ -60,27 +60,89 @@ def rpn_calculator(rpn_list):
 
 def calculation(value, ds_calc):
     """ Get result from calc """
-    print "calculationcalculationcalculation", [value, ] + ds_calc
+    #print "calculationcalculationcalculation", [value, ] + ds_calc
     return rpn_calculator([value, ] + ds_calc)
 
 
-def derive(service, ds_name, limit):
-    ds_data = service['ds'][ds_name]
+def derive(value, value_last, check_time, check_time_last, limit=4294967295):
     # Get derive
-    t_delta = service['check_time'] - service['check_time_last']
+    t_delta = check_time - check_time_last
     if t_delta == 0:
-        logger.error("[SnmpBooster] Time delta is 0s. We can not get derive "
-                     "for this service %s - %s" % (service['host'], service['service']))
-        return None
+        raise Exception("Time delta is 0s. We can not get derive")
     # detect counter reset
-    if ds_data['ds_oid_value'] < ds_data['ds_oid_value_last']:
+    if value < value_last:
         # Counter reseted
-        d_delta = limit - ds_data['ds_oid_value_last'] + ds_data['ds_oid_value']
+        d_delta = limit - value_last + value
     else:
-        d_delta = ds_data['ds_oid_value'] - ds_data['ds_oid_value_last']
+        d_delta = value - value_last
     value = d_delta / t_delta
 
     return value
+
+
+
+#TODO NOTE
+# WE need to save computed value in database
+
+# Put this functions in utils
+# and call get_value in save_results()
+# and save value in ds_oid_value_computed and ds_oid_value_computed_last
+
+
+def compute_value(result):
+    # Get format function name
+    format_func_name = 'format_' + result.get('type').lower() + '_value'
+    format_func = getattr(sys.modules[__name__], format_func_name, None)
+
+    # launch format function
+    value = format_func(result)
+
+    # Make calculation
+    if result['calc'] is not None:
+        # TODO return this computed value for trigger
+        value = calculation(value, result['calc'])
+
+    return value
+
+
+def format_text_value(result):
+    """ Format value for text type """
+    return str(result.get('value'))
+
+
+def format_derive64_value(result):
+    """ Format value for derive64 type """
+    return format_derive_value(result, limit=18446744073709551615)
+
+
+def format_derive_value(result, limit=4294967295):
+    """ Format value for derive type """
+
+    if result['value_last'] is None:
+        # Need more data to get derive
+        raise Exception("Waiting an additional check to calculate derive")
+
+    # Get derive
+    value = derive(result['value'], result['value_last'], result['check_time'], result['check_time_last'], limit)
+
+    return float(value)
+
+
+def format_gauge_value(result):
+    """ Format value for gauge type """
+    return float(result['value'])
+
+
+def format_counter64_value(result):
+    """ Format value for counter64 type """
+    return format_counter_value(result, limit=18446744073709551615)
+
+def format_counter_value(result, limit=4294967295):
+    """ Format value for counter type """
+    # TODO ???
+    # Handle limit ??
+    return float(result['ds_oid_value'])
+
 
 
 def parse_args(cmd_args):
@@ -267,9 +329,19 @@ def dict_serialize(serv, mac_resol, datasource):
                       "ds_min_oid",
                       "ds_min_oid_value",
                       "ds_oid_value",
-                      "ds_oid_value_last"]:
+                      "ds_oid_value_last",
+                      "ds_oid_value_computed",
+                      "ds_oid_value_computed_last"]:
             ds_data.setdefault(name, None)
 
+        # Add computed_value for max and min
+        for max_min in ['ds_max_oid_value', 'ds_min_oid_value']:
+            if ds_data.get(max_min) is not None:
+                try:
+                    ds_data[max_min + '_computed'] = float(ds_data.get(max_min))
+                except:
+                    # ERRRRRRRRRRRROR bad ds_max_oid_value
+                    ds_data[max_min + '_computed'] = None
 
         # Check if ds_oid is set
         if "ds_oid" not in ds_data:

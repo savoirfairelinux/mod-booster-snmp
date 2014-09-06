@@ -11,7 +11,7 @@ from shinken.util import to_int
 
 
 from snmpbooster import SnmpBooster
-from libs.utils import parse_args, calculation
+from libs.utils import parse_args, calculation, compute_value
 from libs.result import get_result
 from libs.checks import check_snmp, check_cache
 from libs.snmpworker import SNMPWorker
@@ -150,36 +150,57 @@ class SnmpBoosterPoller(SnmpBooster):
             for result in results.values():
                 #print "RESULT", result
                 key = result.get('key')
-                # format value
+
+                # Clean raw_value:
                 if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
-                    value = float(result.get('value'))
+                    raw_value = float(result.get('value'))
                 elif result.get('type') in ['DERIVE64', 'COUNTER64']:
-                    value = float(result.get('value'))
+                    raw_value = float(result.get('value'))
                 elif result.get('type') in ['TEXT', 'STRING']:
-                    value = str(result.get('value'))
-                #print "VALUE", key.get('oid_type') + "_value", value
+                    raw_value = str(result.get('value'))
+                else:
+                    logger.error("[SnmpBooster] [code 17] [%s, %s]"
+                                 "Value type is not in 'TEXT', 'STRING', "
+                                 "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64', "
+                                 "'COUNTER64'" % (key.get('host'),
+                                                  key.get('service'),
+                                                  ))
+                    continue
 
 
 
-
-
-                # TODO NOTE
-                # here call computed_value = get_value(value, result)
-                # ONLY IF oid_type == "ds_oid"
+                # Compute value before saving
+                if key.get('oid_type') == 'ds_oid':
+                    try:
+                        value = compute_value(result)
+                    except Exception as e:
+                        logger.error("[SnmpBooster] [code 17] [%s, %s]"
+                                     "%s" % (key.get('host'),
+                                             key.get('service'),
+                                             str(e)))
+                        value = None
+                else:
+                    # For oid_type == ds_max or ds_min
+                    # No calculation or transformation needed
+                    # So value is raw_value
+                    value = raw_value
+                # TODO?
                 # For ds_max and ds_min maybe we just have to luanch calculation ??? 
-
-
 
                 # Save to database
                 # Last value key
-                last_value_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_last"))
+                value_last_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_last"))
                 # New value 
                 value_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value"))
+                value_computed_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_computed"))
+                value_computed_last_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_computed_last"))
                 mongo_filter = {"host": key.get('host'),
                                 "service": key.get('service')}
                 new_data = {"$set": {
-                                     value_key: value,
-                                     last_value_key: result.get('value_last'),
+                                     value_key: raw_value,
+                                     value_last_key: result.get('value_last'),
+                                     value_computed_key: value,
+                                     value_computed_last_key: result.get('value_last_computed'),
                                      "check_time": result.get('check_time'),
                                      "check_time_last": result.get('check_time_last'),
                                      }

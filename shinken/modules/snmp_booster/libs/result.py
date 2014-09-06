@@ -52,7 +52,7 @@ def get_result(check_result):
     #         exit_code = 0
     if check_result['db_data']['triggers'] != {}:
         error_message, exit_code = get_trigger_result(check_result['db_data'])
-        print "error_message, exit_code", error_message, exit_code
+        #TODO what can we do with error_message???
     else:
         exit_code = 0
 
