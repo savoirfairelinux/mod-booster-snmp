@@ -102,7 +102,7 @@ class SnmpBooster(BaseModule):
             self.db_client.booster_snmp.datasource.drop()
             self.db_client.booster_snmp.datasource.insert(self.datasource.dict())
         # raise if reading error
-        except Exception, e:
+        except Exception as e:
             if f is not None:
                 logger.error("[SnmpBooster] [code 61] Datasource error while reading "
                              "or merging in %s : `%s'" % (str(f), str(e)))
@@ -126,6 +126,9 @@ class SnmpBooster(BaseModule):
         if isinstance(self.datasource, ConfigObj):
             try:
                 self.datasource = self.datasource.dict()
-            except:
+            except Exception as e:
                 # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR in config missing arguemnts
-                pass
+                error_message = ("[SnmpBooster] [code 65] Error during the "
+                                 "config conversion: %s" % (str(e)))
+                logger.error(error_message)
+                raise Exception(error_message)

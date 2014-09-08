@@ -52,15 +52,16 @@ def check_cache(check, arguments, db_client):
         return
 
     # Prepare service result
-    check.result = {'host': arguments.get('host'),
-                    'service': arguments.get('service'),
-                    'exit_code': 3,
-                    'execution_time': None,
-                    'start_time': time.time(),
-                    'state': 'received',
-                    'output': None,
-                    'db_data': current_service,
-                    }
+    dict_result = {'host': arguments.get('host'),
+                   'service': arguments.get('service'),
+                   'exit_code': 3,
+                   'execution_time': None,
+                   'start_time': time.time(),
+                   'state': 'received',
+                   'output': None,
+                   'db_data': current_service,
+                   }
+    setattr(check, "result", dict_result)
     return current_service
 
 
@@ -142,37 +143,58 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         #print "NO MAPPING NEEDED"
 
     # Prepare oids
-    oids = reduce(prepare_oids, services, {})
+    splitted_oids_list = reduce(prepare_oids, services, [{}, ])
 
-    #print "oids", oids.keys()
     # Prepare get task
-    # TODO split task: limit the number of oid ask (default: 64)
-    get_task = {}
-    get_task['data'] = {"authData": cmdgen.CommunityData(arguments.get('community')),
+    for oids in splitted_oids_list:
+        get_task = {}
+        get_task['data'] = {"authData": cmdgen.CommunityData(arguments.get('community')),
                         "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),arguments.get('port'))),
                         "varNames": [str(oid[1:]) for oid in oids.keys()],
                         }
-    get_task['type'] = 'get'
-    # db_client passed in callback function ... not really good
-    get_task['data']['cbInfo'] = (callback_get, (oids, check.result, result_queue))
-    task_queue.put(get_task, block=False)
+        get_task['type'] = 'get'
+        get_task['host'] = arguments.get('address')
+        get_task['data']['cbInfo'] = (callback_get, (splitted_oids_list, check.result, result_queue))
+        task_queue.put(get_task, block=False)
+
 
 def prepare_oids(ret, service):
+    # TODO 4 paramater
+    # Split requets in group of 4
+    if len(ret[-1]) < 4:
+        tmp_dict = ret[-1]
+    else:
+        tmp_dict = {}
+        ret.append(tmp_dict)
+
+    # For each ds_name
     for ds_name, ds in service['ds'].items():
+        # For each ds_oid, min and max
         for oid_type in ['ds_oid', 'ds_min_oid', 'ds_max_oid']:
             if oid_type in ds and ds[oid_type] is not None and not (service['instance'] is None and service['mapping'] is not None):
                 oid = ds[oid_type] % service
-                ret[oid] = {'key': {'host': service['host'],
-                                    'service': service['service'],
-                                    'ds_name': ds_name,
-                                    'oid_type': oid_type,
-                                    },
-                            'type': ds['ds_type'],
-                            'value': None,
-                            'value_last': ds.get(oid_type + "_value"),
-                            'value_last_computed': ds.get(oid_type + "_value_computed"),
-                            'check_time': None,
-                            'check_time_last': service['check_time'],
-                            'calc': ds['ds_calc'],
-                            }
+                if oid in tmp_dict:
+                    tmp_dict[oid]['key']['ds_names'].append(ds_name)
+                else:
+                                     # The key is use to retreive the service in database
+                    tmp_dict[oid] = {'key': {'host': service['host'],
+                                             'service': service['service'],
+                                             'ds_names': [ds_name],
+                                             'oid_type': oid_type,
+                                             },
+                                     # ds_type == "DERIVE", "GAUGE", "TEXT", "DERIVE64", ...
+                                     'type': ds['ds_type'],
+                                     # We will put the collected value here
+                                     'value': None,
+                                     # We put the last collected value here
+                                     'value_last': ds.get(oid_type + "_value"),
+                                     # We put the last computed (derive and calculation) value here
+                                     'value_last_computed': ds.get(oid_type + "_value_computed"),
+                                     # We will put the timestamp when data arrive
+                                     'check_time': None,
+                                     # We put the last check time huere
+                                     'check_time_last': service['check_time'],
+                                     # We put the calculation here (to make calculation before database saving)
+                                     'calc': ds['ds_calc'],
+                                     }
     return ret

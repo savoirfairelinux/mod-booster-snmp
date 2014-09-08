@@ -69,11 +69,8 @@ class SnmpBoosterPoller(SnmpBooster):
 
                 # Ok we are good, we go on
                 #print args.get('real_check')
-                check_snmp(chk, args, self.db_client, self.task_queue, self.result_queue)
-                continue
                 if args.get('real_check', False):
                     check_snmp(chk, args, self.db_client, self.task_queue, self.result_queue)
-
                 else:
                     check_cache(chk, args, self.db_client)
 
@@ -148,9 +145,8 @@ class SnmpBoosterPoller(SnmpBooster):
         while not self.result_queue.empty():
             results = self.result_queue.get()
             for result in results.values():
-                #print "RESULT", result
+                # Get key from task
                 key = result.get('key')
-
                 # Clean raw_value:
                 if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
                     raw_value = float(result.get('value'))
@@ -166,9 +162,6 @@ class SnmpBoosterPoller(SnmpBooster):
                                                   key.get('service'),
                                                   ))
                     continue
-
-
-
                 # Compute value before saving
                 if key.get('oid_type') == 'ds_oid':
                     try:
@@ -184,29 +177,33 @@ class SnmpBoosterPoller(SnmpBooster):
                     # No calculation or transformation needed
                     # So value is raw_value
                     value = raw_value
-                # TODO?
-                # For ds_max and ds_min maybe we just have to luanch calculation ??? 
-
                 # Save to database
-                # Last value key
-                value_last_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_last"))
-                # New value 
-                value_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value"))
-                value_computed_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_computed"))
-                value_computed_last_key = ".".join(("ds", key.get('ds_name'), key.get('oid_type') + "_value_computed_last"))
-                mongo_filter = {"host": key.get('host'),
-                                "service": key.get('service')}
-                new_data = {"$set": {
-                                     value_key: raw_value,
-                                     value_last_key: result.get('value_last'),
-                                     value_computed_key: value,
-                                     value_computed_last_key: result.get('value_last_computed'),
-                                     "check_time": result.get('check_time'),
-                                     "check_time_last": result.get('check_time_last'),
-                                     }
-                            }
-                self.db_client.booster_snmp.services.update(mongo_filter,
+                for ds_name in key.get('ds_names'):
+                    # Last value key
+                    value_last_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_last"))
+                    # New value
+                    value_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value"))
+                    # New computed value
+                    value_computed_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed"))
+                    # Last computed value
+                    value_computed_last_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed_last"))
+                    # Mongo filter
+                    mongo_filter = {"host": key.get('host'),
+                                    "service": key.get('service')}
+                    # New mongo data
+                    new_data = {"$set": {
+                                         value_key: raw_value,
+                                         value_last_key: result.get('value_last'),
+                                         value_computed_key: value,
+                                         value_computed_last_key: result.get('value_last_computed'),
+                                         "check_time": result.get('check_time'),
+                                         "check_time_last": result.get('check_time_last'),
+                                         }
+                                }
+                    # Mongo update
+                    self.db_client.booster_snmp.services.update(mongo_filter,
                                                             new_data)
+            # Remove task from queue
             self.result_queue.task_done()
 
 

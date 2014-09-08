@@ -7,8 +7,6 @@ from shinken.log import logger
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args, dict_serialize
 from libs.utils import dict_serialize
-from libs.snmphost import SNMPHost
-from libs.snmpservice import SNMPService
 
 
 class SnmpBoosterArbiter(SnmpBooster):
@@ -27,18 +25,23 @@ class SnmpBoosterArbiter(SnmpBooster):
             if serv.check_command.command.module_type == 'snmp_booster':
                 dict_serv = dict_serialize(serv, mac_resol, self.datasource)
                 if dict_serv is None:
-                    logger.error("[SnmpBooster] [code 1] Bad service "
-                                 "detected: %s on %s" % (serv.get_name(), serv.host.get_name()))
-                    # ERRRRRRRRRRRRRRRRRROR bad service see the error above
+                    logger.error("[SnmpBooster] [code 1] Bad service detected"
+                                 ": %s on %s" % (serv.get_name(),
+                                                 serv.host.get_name()))
                     continue
 
                 mongo_filter = {"host": dict_serv['host'], "service": dict_serv['service']}
                 res = self.db_client.booster_snmp.services.update(mongo_filter,
                                                                   dict_serv,
                                                                   upsert=True)
-                # TODO function
+                # TODO make a function of it
                 if res['err'] is not None:
-                    # ERRRRRRRRRRRRRRRRRROR bad service see the error above
+                    logger.error("[SnmpBooster] [code 1] Error putting "
+                                 "[%s, %s] in cache: "
+                                 "%s" % (dict_serv['host'],
+                                         dict_serv['service'],
+                                         str(res['err']),
+                                         ))
                     continue
 
 
