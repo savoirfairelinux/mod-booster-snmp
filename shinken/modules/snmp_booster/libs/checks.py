@@ -1,67 +1,69 @@
-import os
-import re
-import sys
-import glob
-import signal
+""" This module contains two functions:
+* check_cache: Get data from cache
+* check_snmp: Get data from SNMP request
+"""
+
 import time
-import socket
-import struct
-import copy
-import binascii
-import getopt
-import shlex
-import operator
-import math
 from collections import namedtuple
 
-from datetime import datetime, timedelta
-from Queue import Empty
+try:
+    from pysnmp.entity.rfc3413.oneliner import cmdgen
+except ImportError as exp:
+    logger.error("[SnmpBooster] [code 21] Import error. Pysnmp is missing")
+    raise ImportError(exp)
 
 from shinken.log import logger
 
-try:
-    import pymongo
-    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
-    from pysnmp.carrier.asynsock.dgram import udp
-    from pyasn1.codec.ber import encoder, decoder
-    from pysnmp.entity.rfc3413.oneliner import cmdgen
-    from pysnmp.proto import api
-    from pysnmp.proto.api import v2c
-except ImportError, e:
-    logger.error("[SnmpBooster] [code 21] Import error. Maybe one of this module is "
-                 "missing: pymongo, pysnmp")
-    raise ImportError(e)
+from snmpworker import callback_mapping_next, \
+                       callback_mapping_bulk, \
+                       callback_get
 
-from shinken.check import Check
-from shinken.macroresolver import MacroResolver
 
-from snmpworker import callback_mapping_next,callback_mapping_bulk, callback_get
-
-SNMP_VERSIONS = ['1', 1, 2, '2', '2c']
+__all__ = ("check_cache", "check_snmp")
 
 
 def check_cache(check, arguments, db_client):
     """ Get data from database """
+    start_time = time.time()
     # Get current service
-    current_service = db_client.booster_snmp.services.find_one({"host": arguments.get('host'),
-                                                                "service": arguments.get('service')},
-                                                               {"_id": False},
-                                                               )
+    current_service = db_client.\
+                      booster_snmp.\
+                      services.find_one({"host": arguments.get('host'),
+                                         "service": arguments.get('service')},
+                                        {"_id": False})
+    # Check if the service is in the database
     if current_service is None:
-        # ERRRRRRRRRRRRRRRRRRRROR no service found in database
-        return
+        error_message = ("[SnmpBooster] [code 21] [%s, %s] Not found in "
+                         "database" % (arguments.get('host'),
+                                       arguments.get('service'),
+                                      ))
+        logger.error(error_message)
+        # Prepare service result if we don't find it in database
+        dict_result = {'host': arguments.get('host'),
+                       'service': arguments.get('service'),
+                       'exit_code': 3,
+                       'start_time': start_time,
+                       'state': 'received',
+                       'output': "Service not found in the database",
+                       'db_data': None,
+                       'execution_time': time.time() - start_time,
+                      }
+        setattr(check, "result", dict_result)
+        return None
 
     # Prepare service result
     dict_result = {'host': arguments.get('host'),
                    'service': arguments.get('service'),
                    'exit_code': 3,
-                   'execution_time': None,
-                   'start_time': time.time(),
+                   'start_time': start_time,
                    'state': 'received',
                    'output': None,
                    'db_data': current_service,
-                   }
+                  }
     setattr(check, "result", dict_result)
+    # Save execution time
+    check.result['execution_time'] = time.time() - start_time
+    # return current service
     return current_service
 
 
@@ -70,45 +72,57 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
     # Get current service
     current_service = check_cache(check, arguments, db_client)
 
+    if current_service is None:
+        return None
+
     # Get check_interval
     check_interval = current_service.get('check_interval')
 
 
     # Get all service with this host and check_interval
-    services = db_client.booster_snmp.services.find({"host": arguments.get('host'),
-                                                     "check_interval": check_interval})
+    services = db_client.\
+               booster_snmp.\
+               services.find({"host": arguments.get('host'),
+                              "check_interval": check_interval})
     services = [s for s in services]
 
 
     # Mapping needed ?
     # Get all services which need mapping
-    # TODO ADD COMMENTSSS
-    mappings = [serv for serv in services if serv['instance'] == None and serv['mapping'] != None]
+    mappings = [serv for serv in services
+                if serv.get('instance') == None
+                and serv.get('mapping') != None]
 
     # len(mappings) == nb of map missing
     if len(mappings) > 0:
         # WE NEED MAPPING !
         # Prepare mapping order
-        snmp_info = namedtuple("snmp_info", ['community', 'address', 'port', 'mapping', 'use_getbulk'])
+        snmp_info = namedtuple("snmp_info",
+                               ['community',
+                                'address',
+                                'port',
+                                'mapping',
+                                'use_getbulk'])
         snmp_infos = list(set([snmp_info(serv['community'],
                                          serv['address'],
                                          serv['port'],
                                          serv['mapping'],
                                          serv['use_getbulk']
-                                         )
+                                        )
                                for serv in mappings]))
-        # TODO do not make for loop
-        # Group mapping requets in one request (or not :) )
+        # Launch one requests for each mapping table
         for snmp_info in snmp_infos:
             result = {}
-            result['data'] = dict([(serv['instance_name'], None) for serv in mappings])
+            result['data'] = dict([(serv['instance_name'], None)
+                                   for serv in mappings])
             result['finished'] = False
 
             mapping_task = {}
             mapping_task['data'] = {"authData": cmdgen.CommunityData(snmp_info.community),
-                                     "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address, snmp_info.port)),
-                                     "varNames": (str(snmp_info.mapping[1:]), ),
-                                     }
+                                    "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address,
+                                                                                  snmp_info.port)),
+                                    "varNames": (str(snmp_info.mapping[1:]), ),
+                                   }
             if snmp_info.use_getbulk:
                 mapping_task['type'] = 'bulk'
                 mapping_task['data']["nonRepeaters"] = 0
@@ -116,11 +130,15 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                 mapping_task['data']['cbInfo'] = (callback_mapping_bulk, None)
             else:
                 mapping_task['type'] = 'next'
-                mapping_task['data']['cbInfo'] = (callback_mapping_next, (serv['mapping'], result))
+                mapping_task['data']['cbInfo'] = (callback_mapping_next,
+                                                  (serv['mapping'],
+                                                   result,
+                                                  )
+                                                 )
             task_queue.put(mapping_task, block=False)
 
         # Handle result
-        counter = 0 
+        counter = 0
         # TODO timeout => parameter
         while not result['finished'] or counter > 100:
             # Wait mapping completed or timeout (100 * 0.1 second)
@@ -130,17 +148,15 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         # Write to database
         for instance_name, instance in result['data'].items():
             db_client.booster_snmp.services.update({"host": arguments.get('host'),
-                                       "instance_name": instance_name},
-                                      {"$set": {"instance": instance}},
-                                      )
+                                                    "instance_name": instance_name},
+                                                   {"$set": {"instance": instance}},
+                                                  )
         # mapping done
         # refresh service list
         services = db_client.booster_snmp.services.find({"host": arguments.get('host'),
-                                                     "check_interval": check_interval})
+                                                         "check_interval": check_interval})
         services = [s for s in services]
-        #print "MAPPING DONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
-#    else:
-        #print "NO MAPPING NEEDED"
+        #print "MAPPING DONE"
 
     # Prepare oids
     splitted_oids_list = reduce(prepare_oids, services, [{}, ])
@@ -148,17 +164,34 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
     # Prepare get task
     for oids in splitted_oids_list:
         get_task = {}
+        # Add community, address, port and oids
         get_task['data'] = {"authData": cmdgen.CommunityData(arguments.get('community')),
-                        "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),arguments.get('port'))),
-                        "varNames": [str(oid[1:]) for oid in oids.keys()],
-                        }
+                            "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),
+                                                                          arguments.get('port'))),
+                            "varNames": [str(oid[1:]) for oid in oids.keys()],
+                           }
+        # Add snmp request type
         get_task['type'] = 'get'
+        # Add address
         get_task['host'] = arguments.get('address')
-        get_task['data']['cbInfo'] = (callback_get, (splitted_oids_list, check.result, result_queue))
+        # Put all oid in the same list
+        oids_list = {}
+        # Merge oids lists in one list
+        _ = [oids_list.update(oid_list) for oid_list in splitted_oids_list]
+        # Add Callback and callback args
+        get_task['data']['cbInfo'] = (callback_get,
+                                      (oids_list,
+                                       check.result,
+                                       result_queue,
+                                      )
+                                     )
         task_queue.put(get_task, block=False)
 
 
 def prepare_oids(ret, service):
+    """ This function, is in a reduce function,
+    groups oids to launch grouped SNMP requests
+    """
     # TODO 4 paramater
     # Split requets in group of 4
     if len(ret[-1]) < 4:
@@ -168,11 +201,12 @@ def prepare_oids(ret, service):
         ret.append(tmp_dict)
 
     # For each ds_name
-    for ds_name, ds in service['ds'].items():
+    for ds_name, ds_data in service['ds'].items():
         # For each ds_oid, min and max
         for oid_type in ['ds_oid', 'ds_min_oid', 'ds_max_oid']:
-            if oid_type in ds and ds[oid_type] is not None and not (service['instance'] is None and service['mapping'] is not None):
-                oid = ds[oid_type] % service
+            # Get all oids which are complete oids (ie the mapping is done)
+            if oid_type in ds_data and ds_data[oid_type] is not None and not (service['instance'] is None and service['mapping'] is not None):
+                oid = ds_data[oid_type] % service
                 if oid in tmp_dict:
                     tmp_dict[oid]['key']['ds_names'].append(ds_name)
                 else:
@@ -181,20 +215,20 @@ def prepare_oids(ret, service):
                                              'service': service['service'],
                                              'ds_names': [ds_name],
                                              'oid_type': oid_type,
-                                             },
+                                            },
                                      # ds_type == "DERIVE", "GAUGE", "TEXT", "DERIVE64", ...
-                                     'type': ds['ds_type'],
+                                     'type': ds_data['ds_type'],
                                      # We will put the collected value here
                                      'value': None,
                                      # We put the last collected value here
-                                     'value_last': ds.get(oid_type + "_value"),
+                                     'value_last': ds_data.get(oid_type + "_value"),
                                      # We put the last computed (derive and calculation) value here
-                                     'value_last_computed': ds.get(oid_type + "_value_computed"),
+                                     'value_last_computed': ds_data.get(oid_type + "_value_computed"),
                                      # We will put the timestamp when data arrive
                                      'check_time': None,
                                      # We put the last check time huere
                                      'check_time_last': service['check_time'],
                                      # We put the calculation here (to make calculation before database saving)
-                                     'calc': ds['ds_calc'],
-                                     }
+                                     'calc': ds_data['ds_calc'],
+                                    }
     return ret

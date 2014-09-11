@@ -20,52 +20,53 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import re
 import sys
-import glob
-import signal
-import time
-import socket
-import struct
-import copy
-import binascii
 import getopt
 import shlex
 import operator
-import math
-from datetime import datetime, timedelta
-from Queue import Empty, Queue
 
 from shinken.log import logger
 
+
+def handle_mongo_error(result, continue_=True):
+    """ Handle mongodb errors """
+    if result['err'] is not None:
+        error_message = ("Error putting data in cache: "
+                         "%s" % str(result['err'])
+                        )
+        logger.error(error_message)
+        if continue_ == False:
+            raise Exception(error_message)
+        return False
+    return False
+
+
 def rpn_calculator(rpn_list):
     """ Reverse Polish notation calculator """
-    st = []
-    for el in rpn_list:
-        if el is None:
+    stack = []
+    for element in rpn_list:
+        if element is None:
             continue
-        if hasattr(operator, str(el)):
-            y, x = st.pop(), st.pop()
-            z = getattr(operator, el)(x, y)
+        if hasattr(operator, str(element)):
+            el1, el2 = stack.pop(), stack.pop()
+            el3 = getattr(operator, element)(el1, el2)
         else:
-            z = float(el)
-        st.append(z)
+            el3 = float(element)
+        stack.append(el3)
 
-    assert len(st) <= 1
+    assert len(stack) <= 1
 
-    if len(st) == 1:
-        return(st.pop())
+    if len(stack) == 1:
+        return(stack.pop())
 
 
 def calculation(value, ds_calc):
     """ Get result from calc """
-    #print "calculationcalculationcalculation", [value, ] + ds_calc
     return rpn_calculator([value, ] + ds_calc)
 
 
 def derive(value, value_last, check_time, check_time_last, limit=4294967295):
-    # Get derive
+    """ Get a derive """
     t_delta = check_time - check_time_last
     if t_delta == 0:
         raise Exception("Time delta is 0s. We can not get derive")
@@ -80,16 +81,23 @@ def derive(value, value_last, check_time, check_time_last, limit=4294967295):
     return value
 
 
-
-#TODO NOTE
-# WE need to save computed value in database
-
-# Put this functions in utils
-# and call get_value in save_results()
-# and save value in ds_oid_value_computed and ds_oid_value_computed_last
-
-
 def compute_value(result):
+    """ Get a computed value from raw_value, ds_type and calculation
+    result argument must have this form:
+    {'value_last': u'0',
+     'calc': None,
+     'check_time': 1410456115.376102,
+     'key': {'host': u'myhost1',
+             'ds_names': [u'ifOutErrors'],
+             'service': u'if.lo',
+             'oid_type': 'ds_oid'},
+     'check_time_last': 1410456100.722268,
+     'value_last_computed': u'0',
+     'type': u'TEXT',
+     'value': Counter32(0),
+    }
+    """
+    print "compute_value", result
     # Get format function name
     format_func_name = 'format_' + result.get('type').lower() + '_value'
     format_func = getattr(sys.modules[__name__], format_func_name, None)
@@ -99,7 +107,6 @@ def compute_value(result):
 
     # Make calculation
     if result['calc'] is not None:
-        # TODO return this computed value for trigger
         value = calculation(value, result['calc'])
 
     return value
@@ -112,10 +119,10 @@ def format_text_value(result):
 
 def format_derive64_value(result):
     """ Format value for derive64 type """
-    return format_derive_value(result, limit=18446744073709551615)
+    return format_derive_value(result, limit=2**64 - 1)
 
 
-def format_derive_value(result, limit=4294967295):
+def format_derive_value(result, limit=2**32 - 1):
     """ Format value for derive type """
 
     if result['value_last'] is None:
@@ -123,7 +130,9 @@ def format_derive_value(result, limit=4294967295):
         raise Exception("Waiting an additional check to calculate derive")
 
     # Get derive
-    value = derive(result['value'], result['value_last'], result['check_time'], result['check_time_last'], limit)
+    value = derive(result['value'], result['value_last'],
+                   result['check_time'], result['check_time_last'],
+                   limit)
 
     return float(value)
 
@@ -135,113 +144,153 @@ def format_gauge_value(result):
 
 def format_counter64_value(result):
     """ Format value for counter64 type """
-    return format_counter_value(result, limit=18446744073709551615)
+    return format_counter_value(result, limit=2**64 - 1)
 
-def format_counter_value(result, limit=4294967295):
+def format_counter_value(result, limit=2**32 - 1):
     """ Format value for counter type """
-    # TODO ???
     # Handle limit ??
-    return float(result['ds_oid_value'])
-
+    return float(result['value'])
 
 
 def parse_args(cmd_args):
-    # TODO USE SHINKEN STYLE (PROPERTIES see item object)
+    """ Parse service command line and return a dict """
+    # NOTE USE SHINKEN STYLE (PROPERTIES see item object)
     # Set default values
-    args = {
-            "host": None,
-            "port": 161,
+
+            # Standard options
+    args = {"host": None,
+            "address": None,
+            "service": None,
+            # SNMP options
             "community": 'public',
             "version": '2c',
+            "port": 161,
+            "timeout": 10,
+            # Datasource options
             "dstemplate": None,
-            "triggergroup": None,
-            "instance": 0,
+            "instance": None,
             "instance_name": None,
             "mapping_name": None,
             "mapping": None,
+            "triggergroup": None,
+            # SNMP Bulk options
             "use_getbulk": False,
-            "real_check": False,
-            "timeout": 10,
             "max_rep_map": 64,
-            "max_rep": 64,
-            }
+            # Size of requests groups
+            "request_group_size": 64,
+            # Hidden option
+            "real_check": False,
+           }
 
-    #Manage the options
+    # Handle options
     try:
-        options, _ = getopt.getopt(cmd_args, 'H:A:S:C:V:i:t:T:n:P:M:m:br',
-                                      ['host-name=', 'community=', 'snmp-version=', 'service=',
-                                       'dstemplate=', 'triggergroup=', 'port=', 'real-check',
-                                       'instance=', 'instance-name=', 'mapping-name=', 'use-getbulk',
-                                       'max-rep-map=', 'max-rep=', 'host-address='])
-    except getopt.GetoptError, err:
-        # TODO raise instead of log error
-        logger.error("[SnmpBooster] %s" % cmd_args)
-        logger.error("[SnmpBooster] [code 16] Error in command: definition %s" % str(err))
-        return args
+        options, _ = getopt.getopt(cmd_args,
+                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:bM:R:r',
+                                   ['host-name=', 'host-address=', 'service=',
+                                    'community=', 'snmp-version=', 'port=',
+                                    'timeout=',
+                                    'dstemplate=', 'instance=',
+                                    'instance-name=',
+                                    'mapping=', 'mapping-name=',
+                                    'triggergroup=',
+                                    'use-getbulk', 'max-rep-map=',
+                                    'request-group-size',
+                                    'real-check',
+                                   ]
+                                  )
+    except getopt.GetoptError as err:
+        error_message = str(err)
+        raise Exception(error_message)
 
     for option_name, value in options:
+        # Standard options
         if option_name in ("-H", "--host-name"):
             args['host'] = value
-        if option_name in ("-A", "--host-address"):
+        elif option_name in ("-A", "--host-address"):
             args['address'] = value
         elif option_name in ("-S", "--service"):
             args['service'] = value
+        # SNMP options
         elif option_name in ("-C", "--community"):
             args['community'] = value
-        elif option_name in ("-t", "--dstemplate"):
-            args['dstemplate'] = value
-        elif option_name in ("-T", "--triggergroup"):
-            args['triggergroup'] = value
-        elif option_name in ("-i", "--instance"):
-            args['instance'] = value
         elif option_name in ("-V", "--snmp-version"):
             args['version'] = value
-        elif option_name in ("-n", "--instance-name"):
-            args['instance_name'] = value
-        elif option_name in ("-m", "--mapping-name"):
-            args['mapping_name'] = value
         elif option_name in ("-P", "--port"):
             args['port'] = value
-        elif option_name in ("-b", "--use-getbulk"):
-            args['use_getbulk'] = True
-        elif option_name in ("-r", "--real-check"):
-            args['real_check'] = True
         elif option_name in ("-s", "--timeout"):
             args['timeout'] = value
+        # Datasource options
+        elif option_name in ("-t", "--dstemplate"):
+            args['dstemplate'] = value
+        elif option_name in ("-i", "--instance"):
+            args['instance'] = value
+        elif option_name in ("-n", "--instance-name"):
+            args['instance_name'] = value
+        elif option_name in ("-m", "--mapping"):
+            args['mapping'] = value
+        elif option_name in ("-N", "--mapping-name"):
+            args['mapping_name'] = value
+        elif option_name in ("-T", "--triggergroup"):
+            args['triggergroup'] = value
+        # SNMP Bulk options
+        elif option_name in ("-b", "--use-getbulk"):
+            args['use_getbulk'] = True
         elif option_name in ("-M", "--max-rep-map"):
             try:
                 args['max_rep_map'] = int(value)
-            except:
+            except ValueError:
                 args['max_rep_map'] = 64
-                logger.warning('[SnmpBooster] [code 69] Bad max_rep_map: setting to 64)')
-        elif option_name in ("-m", "--max-rep"):
+                logger.warning('[SnmpBooster] [code 69] Bad max_rep_map: '
+                               'setting to 64)')
+        # Size of requests groups
+        elif option_name in ("-g", "--request-group-size"):
             try:
-                args['max_rep'] = int(value)
-            except:
-                args['max_rep'] = 64
-                logger.warning('[SnmpBooster] [code 69] Bad max_rep: setting to 64)')
+                args['request_group_size'] = int(value)
+            except ValueError:
+                args['request_group_size'] = 64
+                logger.warning('[SnmpBooster] [code 69] Bad '
+                               'request_group_size: setting to 64)')
+        # Hidden option
+        elif option_name in ("-r", "--real-check"):
+            args['real_check'] = True
 
-
-    for arg_name in ['mapping', 'mapping_name', 'instance', 'instance_name', 'dstemplate', 'triggergroup']:
+    # If a valut is set to "None" we convert it to None
+    nullable_args = ['mapping',
+                     'mapping_name',
+                     'instance',
+                     'instance_name',
+                     'dstemplate',
+                     'triggergroup',
+                    ]
+    for arg_name in nullable_args:
         if args[arg_name] and (args[arg_name].startswith('-') or args[arg_name].lower() == 'none'):
             args[arg_name] = None
-            if arg_name == 'dstemplate':
-                logger.error("[SnmpBooster] [code 17] Dstemplate is not defined in the command line")
 
-    #TODO
-    # handle mandatory args
-    # handle errors
+    # Mandatory args
+    mandatory_args = ['host',
+                      'address',
+                      'service',
+                      'dstemplate',
+                     ]
+    for arg_name in mandatory_args:
+        if args[arg_name] is None:
+            error_message = ("Argument %s is missing in the command "
+                             "line" % arg_name)
+            raise Exception(error_message)
 
-    # NEW SPECCCCCCCCCCCCCCCCCCCC
-#    if instance:
-#        res = re.search("map\((.*),(.*)\)", instance)
-#        if res:
-#            instance_name = res.groups()[1]
-
+    # Check if we have all arguments to map instance
+    if args['instance_name'] is not None and (args['mapping'] is None and args['mapping_name'] is None):
+        error_message = ("We need to find an instance from a mapping table, "
+                         "but mapping and mapping-name arguments are not "
+                         "defined.")
+        raise Exception(error_message)
 
     return args
 
 def dict_serialize(serv, mac_resol, datasource):
+    """ Get serv, datasource
+        And return the service serialized
+    """
     tmp_dict = {}
 
     # Comamnd processing
@@ -249,104 +298,113 @@ def dict_serialize(serv, mac_resol, datasource):
     data = serv.get_data_for_checks()
     command_line = mac_resol.resolve_command(serv.check_command,
                                              data)
-    
+
     ## Clean command
     clean_command = shlex.split(command_line.encode('utf8',
                                                     'ignore'))
     ## If the command doesn't seem good
     if len(clean_command) <= 1:
-        logger.error("[SnmpBooster] [code 1] Bad command "
-                     "detected: %s" % chk.command)
-        return None
+        raise Exception("Bad command detected: %s" % chk.command)
 
     ## we do not want the first member, check_snmp thing
-    command_args = parse_args(clean_command[1:])
+    try:
+        command_args = parse_args(clean_command[1:])
+    except Exception as exp:
+        raise Exception("Parse command error: %s" % str(exp))
 
     # Prepare dict
     tmp_dict.update(command_args)
     ## hostname
     tmp_dict['host'] = serv.host.get_name()
+    ## address
     tmp_dict['address'] = serv.host.address
+    ## service
     tmp_dict['service'] = serv.get_name()
+    ## check_interval
     tmp_dict['check_interval'] = serv.check_interval
+    ## check_time
     tmp_dict['check_time'] = None
+    ## check_time_last
     tmp_dict['check_time_last'] = None
-    tmp_dict['exit_code'] = None
-    tmp_dict['output'] = None
-
-    print 2
 
     # Get mapping table
     if 'MAP' not in datasource:
-        # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR no ds template in datasource files ???? BIG ERROR
-        return None
+        raise Exception("MAP section is missing in the datasource files")
     if tmp_dict['mapping_name'] is not None:
         tmp_dict['mapping'] = datasource.get('MAP').get(tmp_dict['mapping_name']).get('base_oid')
         if tmp_dict['mapping'] is None:
-            # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR the mapping doesnot exist in datasource files
-            return None
+            raise Exception("mapping %s is not defined in the "
+                            "datasource" % tmp_dict['mapping_name'])
     else:
         tmp_dict['mapping'] = None
 
     # Prepare datasources
     if 'DSTEMPLATE' not in datasource:
-        # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR no ds template in datasource files ???? BIG ERROR
-        return None
+        raise Exception("DSTEMPLATE section is missing in the datasource files")
     tmp_dict['ds'] = {}
 
     ds_list = datasource.get('DSTEMPLATE').get(tmp_dict['dstemplate'])
     if ds_list is None:
-        # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR no ds, so no oid to check
-        return None
+        raise Exception("DSTEMPLATE %s is empty" % tmp_dict['dstemplate'])
 
-    # TODO CLEAN DATASOURCE FILES in gendevconfig project
+    # We don't want to lose the instance id collectd by old snmp requests
+    # So we delete 'instance' entry in the data
+    if tmp_dict.get('instance_name') is not None and tmp_dict.get('mapping') is not None:
+        del(tmp_dict['instance'])
+
+    # Get DSs in the dstemplate
     ds_list = ds_list.get('ds')
+    # The 2 following must be useless, but I will let it
+    # In case of the datasource files are not clean ...
     if isinstance(ds_list, str):
+        # Handle if ds_list is a str and not a list.
         ds_list = [ds_name.strip() for ds_name in ds_list.split(',')]
     elif not isinstance(ds_list, list):
-        # ERRRRRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR ds is missing in datasource files
-        return None
+        raise Exception("Bad format: DS %s in datasource files" % str(ds_list))
 
     for ds_name in ds_list:
         ds_data = datasource.get('DATASOURCE').get(ds_name)
         if ds_data is None:
-            # ERRRRRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR ds is missing in datasource files
-            return None
+            raise Exception("ds %s is missing in datasource filess" % ds_name)
         ds_data = ds_data
 
         # Set default values
-        ds_data.setdefault("ds_name", ds_name) # If no name set, we use the ds name, ie: `dot3StatsExcessiveCollisions`
+        # If no ds name set, we use the ds key as name
+        # ie: `dot3StatsExcessiveCollisions`
+        ds_data.setdefault("ds_name", ds_name)
         ds_data.setdefault("ds_type", "TEXT")
-        for name in  ["ds_unit",
-                      "ds_max_oid_value",
-                      "ds_min_oid_value"]:
+        for name in ["ds_unit", ]:
             ds_data.setdefault(name, "")
-        for name in  ["ds_unit",
-                      "ds_limit",
-                      "ds_calc",
-                      "ds_max_oid",
-                      "ds_max_oid_value",
-                      "ds_min_oid",
-                      "ds_min_oid_value",
-                      "ds_oid_value",
-                      "ds_oid_value_last",
-                      "ds_oid_value_computed",
-                      "ds_oid_value_computed_last"]:
+        # Set default ds datas
+        for name in ["ds_calc",
+                     "ds_max_oid",
+                     "ds_min_oid",
+                    ]:
             ds_data.setdefault(name, None)
+
+        # Set values
+        # NOTE: delete it
+#        for name in  [
+#                      "ds_max_oid_value",
+#                      "ds_min_oid_value",
+#                      "ds_oid_value",
+#                      "ds_oid_value_last",
+#                      "ds_oid_value_computed",
+#                      "ds_oid_value_computed_last"]:
+#            ds_data.setdefault(name, None)
 
         # Add computed_value for max and min
         for max_min in ['ds_max_oid_value', 'ds_min_oid_value']:
             if ds_data.get(max_min) is not None:
                 try:
                     ds_data[max_min + '_computed'] = float(ds_data.get(max_min))
-                except:
-                    # ERRRRRRRRRRRROR bad ds_max_oid_value
-                    ds_data[max_min + '_computed'] = None
+                except Exception as exp:
+                    raise Exception("Bad format: %s value "
+                                    "(must be a float/int)" % max_min)
 
         # Check if ds_oid is set
         if "ds_oid" not in ds_data:
-            # ERRRRRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR oid missing in ds
-            return None
+            raise Exception("ds_oid is not defined in %s" % ds_name)
 
         # add ds in ds list
         tmp_dict['ds'][ds_name] = ds_data
@@ -354,20 +412,28 @@ def dict_serialize(serv, mac_resol, datasource):
     # Prepare triggers
     tmp_dict['triggers'] = {}
     if 'TRIGGERGROUP' not in datasource:
-        # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR no ds template in datasource files ???? BIG ERROR
-        return None
+        raise Exception("TRIGGERGROUP section is missing in the datasource "
+                        "files")
+
     trigger_list = datasource.get('TRIGGERGROUP').get(tmp_dict['triggergroup'])
     if trigger_list is not None:
-        for trigger_name in trigger_list :
+        for trigger_name in trigger_list:
             if 'TRIGGER' not in datasource:
-                # ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRROR no trigger defined in datasource files ???? BIG ERROR
-                return None
+                raise Exception("TRIGGER %s is not define in the "
+                                "datasource" % trigger_name)
+            # Get trigger data
             trigger_data = datasource.get('TRIGGER').get(trigger_name)
+            # Get critical trigger (list)
             trigger_data.setdefault("critical", None)
+            # Get warning trigger (list)
             trigger_data.setdefault("warning", None)
-            trigger_data.setdefault("default_status", datasource.get('TRIGGER').get("default_status", 3))
-
-            # add trigger in trigger list
+            # Get default trigger (int)
+            try:
+                trigger_data.setdefault("default_status", int(datasource.get('TRIGGER').get("default_status", 3)))
+            except:
+                raise Exception("Bad format: default_status value "
+                                "(must be a float/int)")
+            # Add trigger in trigger list
             tmp_dict['triggers'][trigger_name] = trigger_data
 
     return tmp_dict

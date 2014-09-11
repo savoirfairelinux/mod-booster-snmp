@@ -1,61 +1,40 @@
-import os
-import re
-import sys
-import glob
-import signal
-import time
-import socket
-import struct
-import copy
-import binascii
-import getopt
-import shlex
-import operator
-import math
-from datetime import datetime, timedelta
-from Queue import Empty
+""" This module contains the function which compute triggers and return the
+exit code of a service
+"""
 
 from shinken.log import logger
 
-try:
-    import memcache
-    from configobj import ConfigObj, Section
-    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
-    from pysnmp.carrier.asynsock.dgram import udp
-    from pyasn1.codec.ber import encoder, decoder
-    from pysnmp.proto.api import v2c
-except ImportError, e:
-    logger.error("[SnmpBooster] Import error. Maybe one of this module "
-                 "is missing: memcache, configobj, pysnmp")
-    raise ImportError(e)
+from utils import rpn_calculator
 
-from shinken.check import Check
-from shinken.macroresolver import MacroResolver
 
-from utils import rpn_calculator, calculation
+__all__ = ("get_trigger_result", )
 
-# Zabbix functions
-# AMELIORER LES MESSAGES D ERREUR SUR LE CALCUL DU TRIGGER
+
+# Triggers functions
 def diff(ds_data):
+    """ Are last computed value and last-1 computed  value the same ? """
     return ds_data['ds_oid_value_computed'] == ds_data['ds_oid_value_last_computed']
 
 def prct(ds_data):
-    #print ds_data
+    """ Do the percent of value computed using max value """
     try:
-        max = float(ds_data['ds_max_oid_value_computed'])
+        max_ = float(ds_data['ds_max_oid_value_computed'])
     except:
-        raise Exception("Cannot calculate prct, max value for the datasource '%s' is missing" % ds_data['ds_name'])
-    return float(ds_data['ds_oid_value_computed']) * 100 / max
+        raise Exception("Cannot calculate prct, max value for the "
+                        "datasource '%s' is missing" % ds_data['ds_name'])
+    return float(ds_data['ds_oid_value_computed']) * 100 / max_
 
 def last(ds_data):
+    """ Get the last value computed """
     return ds_data['ds_oid_value_computed']
 
-rpn_functions = {"diff": diff,
+RPN_FUNCTIONS = {"diff": diff,
                  "prct": prct,
                  "last": last,
-                 }
+                }
 
-# End zabbix functions
+# End Triggers functions
+
 def get_trigger_result(service):
     """ Get return code from trigger calculator
     return error_message, exit_code
@@ -66,104 +45,139 @@ def get_trigger_result(service):
               'critical': 2,
               'warning': 1,
               'ok': 0,
-              }
-    #print "get_trigger_resultget_trigger_resultget_trigger_resultget_trigger_resultget_trigger_result"
+             }
 
-    if True:
-#    try:
+    try:
         # First we launch critical triggers for each datasource
         # If one is true, then we are in critical
         # Second we launch warning triggers for each datasource
         # If one is true, then we are in waring
         for error_name in ['critical', 'warning']:
-            error_code = errors[error_name]
-            for trigger_name, trigger in service['triggers'].items():
+            # Browse all triggers
+            for trigger in service['triggers'].values():
                 rpn_list = []
                 if error_name in trigger:
-                    for el in trigger[error_name]:
-                        # function ?
-                        tmp = el.split(".")
+                    for element in trigger[error_name]:
+                        tmp = element.split(".")
                         if len(tmp) > 1:
                             # detect ds_name with function
-                            ds, fct = tmp
-                            if not ds in service['ds']:
+                            ds_name, fct = tmp
+                            # Check if ds_name is define in the service
+                            ds_data = service['ds'].get(ds_name)
+                            if ds_data is None:
                                 error_message = ("DS %s not found to compute "
                                                  "the trigger (%s). Please "
                                                  "check your datasource "
-                                                 "file." % (ds, trigger))
+                                                 "file." % (ds_name, trigger))
                                 logger.error("[SnmpBooster] [code 7] [%s, %s] "
                                              "%s" % (service['host'],
                                                      service['service'],
                                                      error_message))
-                                return error_message, int(trigger['default_status'])
-                            if service['ds'][ds]['ds_oid_value_computed'] is None:
-                                error_message = "No data found for DS: '%s'" % ds
-                                logger.warning("[SnmpBooster] [code 8] [%s, %s] "
-                                               "%s" % (service['host'],
-                                                       service['service'],
-                                                       error_message))
-                                return error_message, int(trigger['default_status'])
-                            # function
+                                return (error_message,
+                                        int(trigger['default_status']))
+                            # Check if the ds_name have a computed value
+                            if ds_data.get('ds_oid_value_computed', None) is None:
+                                # No computed value found
+                                # Check if we have a raw value
+                                if ds_data.get('ds_oid_value') is None:
+                                    # No raw value found
+                                    error_message = ("No data found for "
+                                                     "DS: '%s'" % ds_name)
+                                else:
+                                    # Raw value found
+                                    error_message = ("No computed data found "
+                                                     "for DS: '%s'" % ds_name)
+                                logger.warning("[SnmpBooster] [code 8] [%s, %s]"
+                                               " %s" % (service['host'],
+                                                        service['service'],
+                                                        error_message))
+                                return (error_message,
+                                        int(trigger['default_status']))
+                            # Prepare trigger function
                             func, args = fct.split("(")
-                            if func in rpn_functions:
+                            # Check if trigger function exists
+                            if func in RPN_FUNCTIONS:
                                 try:
                                     if args == ')':
-                                        value = rpn_functions[func](service['ds'][ds])
-                                    
+                                        # Launch trigger function
+                                        # without argument
+                                        value = RPN_FUNCTIONS[func](ds_data)
                                     else:
+                                        # Launch trigger function
+                                        # with arguments
                                         args = args[:-1]
                                         args = args.split(",")
-                                        value = rpn_functions[func](service['ds'][ds], *args)
-                                except Exception as e:
-                                    logger.error("[SnmpBooster] [code 9] [%s, %s] "
-                                                 "Trigger function error: "
-                                                 "found: %s" % (service['host'],
-                                                                service['service'],
-                                                                str(e)))
-                                    return str(e), int(trigger['default_status'])
+                                        value = RPN_FUNCTIONS[func](ds_data,
+                                                                    *args)
+                                except Exception as exp:
+                                    logger.error("[SnmpBooster] [code 9] "
+                                                 "[%s, %s] Trigger function "
+                                                 "error: found: "
+                                                 "%s" % (service['host'],
+                                                         service['service'],
+                                                         str(exp)))
+                                    return (str(exp),
+                                            int(trigger['default_status']))
 
                             else:
-                                error_message = "Trigger function '%s' not found" % fct
+                                # Trigger function doesn't exist
+                                error_message = ("Trigger function '%s' not "
+                                                 "found" % fct)
                                 logger.error("[SnmpBooster] [code 9] [%s, %s] "
                                              "%s" % (service['host'],
                                                      service['service'],
                                                      error_message))
-                                return error_message, int(trigger['default_status'])
-                        elif el in service['ds']:
-                            # detect oid
-                            # TODO NOTE
-                            # GET computed value instead of ds_oid_value
-                            value = service['ds'][ds]['ds_oid_value_computed']
+                                return (error_message,
+                                        int(trigger['default_status']))
+
+                        elif element in service['ds']:
+                            # Element is a ds_name,
+                            # sowe go get value in ds_data
+                            value = service['ds'][element].get('ds_oid_value_computed', None)
+                            if value is None:
+                                # The computed value is not here yet
+                                error_message = ("No data found for DS: "
+                                                 "'%s'" % element)
+                                logger.warning("[SnmpBooster] [code 8] "
+                                               "[%s, %s] "
+                                               "%s" % (service['host'],
+                                                       service['service'],
+                                                       error_message))
+                                return (error_message,
+                                        int(trigger['default_status']))
+
                         else:
-                            value = el
+                            # element is already a value
+                            value = element
                         rpn_list.append(value)
 
                     # Launch rpn calculator
                     try:
                         ret = rpn_calculator(rpn_list)
-                    except Exception as e:
-                        error_message = "RPN calculation Error: %s - %s" % str(e), str(rpn_list)
+                    except Exception as exp:
+                        error_message = ("RPN calculation Error: %s - "
+                                         "%s" % (str(exp), str(rpn_list)))
                         logger.error("[SnmpBooster] [code 15] [%s, %s] "
                                      "%s" % (service['host'],
                                              service['service'],
-                                             error_meessage))
-                        return error_message, int(trigger['default_status']) 
-                    
+                                             error_message))
+                        return (error_message,
+                                int(trigger['default_status']))
+
                     # rpn_calcultor return True
-                    # So the trigger triggered 
+                    # So the trigger triggered
                     if ret == True:
-                        print "TRIGGER TRIGGERED,rpn_listrpn_listrpn_list", rpn_list
+                        logger.debug("[SnmpBooster] [code 15] [%s, %s] "
+                                     "trigger triggered %s" % str(rpn_list))
                         return None, errors[error_name]
-                    print "rpn_calculatorrpn_calculatorrpn_calculatorrpn_calculator", ret
 
-
+        # Neither critical trigger, neither warning trigger triggered
+        # So the trigger return OK !
         return None, errors['ok']
-#    except Exception, e:
-#        logger.error("[SnmpBooster] [code 10] [%s, %s] Get Trigger "
-#                     "error: %s" % (service['host'],
-#                                    service['service'],
-#                                    str(e)))
-#        print "triggertriggertriggertriggertrigger", trigger
-#        return True, int(trigger['default_status'])
 
-
+    except Exception as exp:
+        # Handle all other errors
+        error_message = "Trigger error: %s" % (str(exp))
+        logger.error("[SnmpBooster] [code 10] [%s, %s] "
+                     "%s" % error_message)
+        return error_message, int(trigger['default_status'])

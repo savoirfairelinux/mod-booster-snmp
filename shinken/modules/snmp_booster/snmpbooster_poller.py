@@ -12,7 +12,7 @@ from shinken.util import to_int
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args, calculation, compute_value
-from libs.result import get_result
+from libs.result import set_output_and_status
 from libs.checks import check_snmp, check_cache
 from libs.snmpworker import SNMPWorker
 
@@ -108,15 +108,15 @@ class SnmpBoosterPoller(SnmpBooster):
                 result = chk.result
                 # Format result
                 # Launch trigger
-                # Get exit code
-                # Get execution time
-                #print "resultPOLLER", result
-                output, exit_code = get_result(result)
+                set_output_and_status(result)
+                # Set status
                 chk.status = 'done'
+                # Get exit code
                 chk.exit_status = result.get('exit_code', 3)
                 chk.get_outputs(str(result.get('output',
                                                'Output is missing')),
                                 8012)
+                # Get execution time
                 chk.execution_time = result.get('execution_time', 0.0)
 
                 # unlink our object from the original check
@@ -155,7 +155,7 @@ class SnmpBoosterPoller(SnmpBooster):
                 elif result.get('type') in ['TEXT', 'STRING']:
                     raw_value = str(result.get('value'))
                 else:
-                    logger.error("[SnmpBooster] [code 17] [%s, %s]"
+                    logger.error("[SnmpBooster] [code 17] [%s, %s] "
                                  "Value type is not in 'TEXT', 'STRING', "
                                  "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64', "
                                  "'COUNTER64'" % (key.get('host'),
@@ -167,7 +167,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     try:
                         value = compute_value(result)
                     except Exception as e:
-                        logger.error("[SnmpBooster] [code 17] [%s, %s]"
+                        logger.error("[SnmpBooster] [code 17] [%s, %s] "
                                      "%s" % (key.get('host'),
                                              key.get('service'),
                                              str(e)))
