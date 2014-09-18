@@ -167,8 +167,13 @@ def get_trigger_result(service):
                     # rpn_calcultor return True
                     # So the trigger triggered
                     if ret == True:
-                        logger.debug("[SnmpBooster] [code 15] [%s, %s] "
-                                     "trigger triggered %s" % str(rpn_list))
+                        #logger.debug("[SnmpBooster] [code 15] [%s, %s] "
+                        logger.error("[SnmpBooster] [code 15] [%s, %s] "
+                                     "trigger triggered "
+                                     "%s" % (service['host'],
+                                             service['service'],
+                                             str(rpn_list),
+                                            ))
                         return None, errors[error_name]
 
         # Neither critical trigger, neither warning trigger triggered
@@ -179,5 +184,7 @@ def get_trigger_result(service):
         # Handle all other errors
         error_message = "Trigger error: %s" % (str(exp))
         logger.error("[SnmpBooster] [code 10] [%s, %s] "
-                     "%s" % error_message)
+                     "%s" % (service['host'],
+                             service['service'],
+                             error_message))
         return error_message, int(trigger['default_status'])

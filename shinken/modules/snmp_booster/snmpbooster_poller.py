@@ -145,38 +145,46 @@ class SnmpBoosterPoller(SnmpBooster):
         while not self.result_queue.empty():
             results = self.result_queue.get()
             for result in results.values():
+                # Check error
+                snmp_error = result.get('error')
                 # Get key from task
                 key = result.get('key')
-                # Clean raw_value:
-                if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
-                    raw_value = float(result.get('value'))
-                elif result.get('type') in ['DERIVE64', 'COUNTER64']:
-                    raw_value = float(result.get('value'))
-                elif result.get('type') in ['TEXT', 'STRING']:
-                    raw_value = str(result.get('value'))
-                else:
-                    logger.error("[SnmpBooster] [code 17] [%s, %s] "
-                                 "Value type is not in 'TEXT', 'STRING', "
-                                 "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64', "
-                                 "'COUNTER64'" % (key.get('host'),
-                                                  key.get('service'),
-                                                  ))
-                    continue
-                # Compute value before saving
-                if key.get('oid_type') == 'ds_oid':
-                    try:
-                        value = compute_value(result)
-                    except Exception as e:
+                if snmp_error is None:
+                    # We don't got a SNMP error
+                    # Clean raw_value:
+                    if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
+                        raw_value = float(result.get('value'))
+                    elif result.get('type') in ['DERIVE64', 'COUNTER64']:
+                        raw_value = float(result.get('value'))
+                    elif result.get('type') in ['TEXT', 'STRING']:
+                        raw_value = str(result.get('value'))
+                    else:
                         logger.error("[SnmpBooster] [code 17] [%s, %s] "
-                                     "%s" % (key.get('host'),
-                                             key.get('service'),
-                                             str(e)))
-                        value = None
+                                     "Value type is not in 'TEXT', 'STRING', "
+                                     "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64', "
+                                     "'COUNTER64'" % (key.get('host'),
+                                                      key.get('service'),
+                                                      ))
+                        continue
+                    # Compute value before saving
+                    if key.get('oid_type') == 'ds_oid':
+                        try:
+                            value = compute_value(result)
+                        except Exception as e:
+                            logger.error("[SnmpBooster] [code 17] [%s, %s] "
+                                         "%s" % (key.get('host'),
+                                                 key.get('service'),
+                                                 str(e)))
+                            value = None
+                    else:
+                        # For oid_type == ds_max or ds_min
+                        # No calculation or transformation needed
+                        # So value is raw_value
+                        value = raw_value
                 else:
-                    # For oid_type == ds_max or ds_min
-                    # No calculation or transformation needed
-                    # So value is raw_value
-                    value = raw_value
+                    # We got a SNMP error
+                    raw_value = None
+                    value = None
                 # Save to database
                 for ds_name in key.get('ds_names'):
                     # Last value key
@@ -187,26 +195,27 @@ class SnmpBoosterPoller(SnmpBooster):
                     value_computed_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed"))
                     # Last computed value
                     value_computed_last_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed_last"))
-                    # Mongo filter
-                    mongo_filter = {"host": key.get('host'),
-                                    "service": key.get('service')}
+                    # Error
+                    error_key = ".".join(("ds", ds_name, "error"))
                     # New mongo data
                     new_data = {"$set": {
                                          value_key: raw_value,
                                          value_last_key: result.get('value_last'),
                                          value_computed_key: value,
                                          value_computed_last_key: result.get('value_last_computed'),
+                                         error_key: snmp_error,
                                          "check_time": result.get('check_time'),
                                          "check_time_last": result.get('check_time_last'),
                                          }
                                 }
-                    # Mongo update
-                    self.db_client.booster_snmp.services.update(mongo_filter,
-                                                            new_data)
+                # Mongo filter
+                mongo_filter = {"host": key.get('host'),
+                                "service": key.get('service')}
+                # Mongo update
+                self.db_client.booster_snmp.services.update(mongo_filter,
+                                                        new_data)
             # Remove task from queue
             self.result_queue.task_done()
-
-
 
 
     # id = id of the worker

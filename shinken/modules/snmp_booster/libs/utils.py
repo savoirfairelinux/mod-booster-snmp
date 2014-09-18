@@ -41,6 +41,28 @@ def handle_mongo_error(result, continue_=True):
     return False
 
 
+def flatten_dict(tree_dict):
+    """ Convert unlimited tree dictionnary to a flat dictionnary
+
+    >>> flatten_dict({'a': 1, 'b': {'c': {'d': 2, 'e': 4}}})
+    {'a': 1, 'b.c.d': 2, 'b.c.e': 4}
+    >>> flatten_dict("bad_input")
+    
+    """
+    if not isinstance(tree_dict, dict):
+        return None
+    flat_dict = {}
+    for t_key, t_value in tree_dict.items():
+        if isinstance(t_value, dict):
+            ret = flatten_dict(t_value)
+            for f_key, f_value in ret.items():
+                flat_dict[".".join((t_key, f_key))] = f_value
+        else:
+            flat_dict[t_key] = t_value
+
+    return flat_dict
+
+
 def rpn_calculator(rpn_list):
     """ Reverse Polish notation calculator """
     stack = []
@@ -49,7 +71,7 @@ def rpn_calculator(rpn_list):
             continue
         if hasattr(operator, str(element)):
             el1, el2 = stack.pop(), stack.pop()
-            el3 = getattr(operator, element)(el1, el2)
+            el3 = getattr(operator, element)(el2, el1)
         else:
             el3 = float(element)
         stack.append(el3)
@@ -97,7 +119,6 @@ def compute_value(result):
      'value': Counter32(0),
     }
     """
-    print "compute_value", result
     # Get format function name
     format_func_name = 'format_' + result.get('type').lower() + '_value'
     format_func = getattr(sys.modules[__name__], format_func_name, None)
@@ -165,7 +186,7 @@ def parse_args(cmd_args):
             "community": 'public',
             "version": '2c',
             "port": 161,
-            "timeout": 10,
+            "timeout": 5,
             # Datasource options
             "dstemplate": None,
             "instance": None,
@@ -279,7 +300,7 @@ def parse_args(cmd_args):
             raise Exception(error_message)
 
     # Check if we have all arguments to map instance
-    if args['instance_name'] is not None and (args['mapping'] is None and args['mapping_name'] is None):
+    if args['instance_name'] != '' and args['instance_name'] is not None and (args['mapping'] is None and args['mapping_name'] is None):
         error_message = ("We need to find an instance from a mapping table, "
                          "but mapping and mapping-name arguments are not "
                          "defined.")

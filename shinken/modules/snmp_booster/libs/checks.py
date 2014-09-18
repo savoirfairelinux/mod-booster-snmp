@@ -4,6 +4,7 @@
 """
 
 import time
+from functools import partial
 from collections import namedtuple
 
 try:
@@ -120,7 +121,11 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             mapping_task = {}
             mapping_task['data'] = {"authData": cmdgen.CommunityData(snmp_info.community),
                                     "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address,
-                                                                                  snmp_info.port)),
+                                                                                  snmp_info.port
+                                                                                 ),
+                                                                                 timeout=serv['timeout'],
+                                                                                 retries=0,
+                                                                                ),
                                     "varNames": (str(snmp_info.mapping[1:]), ),
                                    }
             if snmp_info.use_getbulk:
@@ -139,14 +144,17 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
 
         # Handle result
         counter = 0
-        # TODO timeout => parameter
-        while not result['finished'] or counter > 100:
+        # Waiting mapping snmp requests
+        while not result['finished'] or counter > (5 + serv['timeout'] * 10):
             # Wait mapping completed or timeout (100 * 0.1 second)
             counter += 1
             time.sleep(0.1)
 
         # Write to database
         for instance_name, instance in result['data'].items():
+            if instance is None:
+                # Don't save instances which are not mapped
+                continue
             db_client.booster_snmp.services.update({"host": arguments.get('host'),
                                                     "instance_name": instance_name},
                                                    {"$set": {"instance": instance}},
@@ -159,7 +167,8 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         #print "MAPPING DONE"
 
     # Prepare oids
-    splitted_oids_list = reduce(prepare_oids, services, [{}, ])
+    fnc = partial(prepare_oids, group_size=serv.get('request_group_size', 64))
+    splitted_oids_list = reduce(fnc, services, [{}, ])
 
     # Prepare get task
     for oids in splitted_oids_list:
@@ -167,7 +176,11 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         # Add community, address, port and oids
         get_task['data'] = {"authData": cmdgen.CommunityData(arguments.get('community')),
                             "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),
-                                                                          arguments.get('port'))),
+                                                                          arguments.get('port')
+                                                                         ),
+                                                                         timeout=serv['timeout'],
+                                                                         retries=0,
+                                                                        ),
                             "varNames": [str(oid[1:]) for oid in oids.keys()],
                            }
         # Add snmp request type
@@ -188,13 +201,12 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         task_queue.put(get_task, block=False)
 
 
-def prepare_oids(ret, service):
+def prepare_oids(ret, service, group_size=64):
     """ This function, is in a reduce function,
     groups oids to launch grouped SNMP requests
     """
-    # TODO 4 paramater
-    # Split requets in group of 4
-    if len(ret[-1]) < 4:
+    # Split requets in group of 'group_size'
+    if len(ret[-1]) < group_size:
         tmp_dict = ret[-1]
     else:
         tmp_dict = {}
@@ -204,12 +216,19 @@ def prepare_oids(ret, service):
     for ds_name, ds_data in service['ds'].items():
         # For each ds_oid, min and max
         for oid_type in ['ds_oid', 'ds_min_oid', 'ds_max_oid']:
-            # Get all oids which are complete oids (ie the mapping is done)
-            if oid_type in ds_data and ds_data[oid_type] is not None and not (service['instance'] is None and service['mapping'] is not None):
+            # Get all oids
+            if oid_type in ds_data and ds_data[oid_type] is not None:
+                if service.get('instance') is None and service.get('mapping') is not None:
+                    # Pass oid when it needs instance and the mapping is not done
+                    continue
+                # Construct oid
                 oid = ds_data[oid_type] % service
                 if oid in tmp_dict:
+                    # If we have already added the oid
+                    # We only add the ds_name
                     tmp_dict[oid]['key']['ds_names'].append(ds_name)
                 else:
+                    # This is a new oid, we add it to the result list
                                      # The key is use to retreive the service in database
                     tmp_dict[oid] = {'key': {'host': service['host'],
                                              'service': service['service'],

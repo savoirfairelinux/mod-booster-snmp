@@ -5,7 +5,7 @@ from shinken.macroresolver import MacroResolver
 from shinken.log import logger
 
 from snmpbooster import SnmpBooster
-from libs.utils import parse_args, dict_serialize, handle_mongo_error
+from libs.utils import parse_args, dict_serialize, handle_mongo_error, flatten_dict
 
 
 class SnmpBoosterArbiter(SnmpBooster):
@@ -36,10 +36,19 @@ class SnmpBoosterArbiter(SnmpBooster):
                 # Prepare mongo
                 mongo_filter = {"host": dict_serv['host'],
                                 "service": dict_serv['service']}
+                # Flatten dict serv
+                dict_serv = flatten_dict(dict_serv)
                 # Save in mongo
-                mongo_res = self.db_client.booster_snmp.services.update(mongo_filter,
+                try:
+                    mongo_res = self.db_client.booster_snmp.services.update(mongo_filter,
                                                                         {"$set": dict_serv},
                                                                         upsert=True)
+                except Exception as exp:
+                    logger.error("[SnmpBooster] [code 1] [%s, %s] "
+                                 "%s" % (serv.get_name(),
+                                         serv.host.get_name(),
+                                         str(exp),
+                                        ))
                 # Check database error
                 if handle_mongo_error(mongo_res):
                     continue

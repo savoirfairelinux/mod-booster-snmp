@@ -25,6 +25,11 @@ def format_output(service, ds_name):
     """ Format value for derive type """
     ds_data = service['ds'][ds_name]
 
+    # Check if we have an error
+    if ds_data.get('error') is not None:
+        output = ds_data.get('error')
+        return output, ''
+
     # Here get computed_value
     value = ds_data.get('ds_oid_value_computed')
     if value is None:

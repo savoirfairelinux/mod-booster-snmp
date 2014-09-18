@@ -78,6 +78,27 @@ class SNMPWorker(Thread):
         self.must_run = False
 
 
+def handle_snmp_error(error_indication, cb_ctx, request_type):
+    """ Handle SNMP errors """
+    if error_indication is None:
+        # No error
+        return False
+
+    # Get results
+    results = cb_ctx[0]
+    # Log SNMP error
+    logger.error("[SnmpBooster] [code 21] [%s] SNMP Error: "
+                 "%s" % (results.values()[0]['key']['host'],
+                         str(error_indication)))
+    # If is a get request
+    if request_type == "get":
+        # We set SNMP error in all oids
+        for result in results.values():
+            result['error'] = str(error_indication)
+
+    return True
+
+
 def callback_get(send_request_handle, error_indication, error_status,
                  error_index, var_binds, cb_ctx):
     """ Callback function for GET SNMP requests """
@@ -88,6 +109,13 @@ def callback_get(send_request_handle, error_indication, error_status,
     service_result = cb_ctx[1]
     # Get queue to submit result
     result_queue = cb_ctx[2]
+
+    # Handle errors
+    if handle_snmp_error(error_indication, cb_ctx, "get"):
+        ## set as received
+        service_result['state'] = 'received'
+        result_queue.put(results)
+        return False
 
     # browse reponses
     for oid, value in var_binds:
@@ -148,8 +176,17 @@ def callback_get(send_request_handle, error_indication, error_status,
 def callback_mapping_next(send_request_handle, error_indication,
                           error_status, error_index, var_binds, cb_ctx):
     """ Callback function for GENEXT SNMP requests """
+
+    # Retrive context
     mapping_oid = cb_ctx[0]
     result = cb_ctx[1]
+
+    # Handle errors
+    if handle_snmp_error(error_indication, cb_ctx, "next"):
+        result['finished'] = True
+        return False
+
+    # Parse snmp results
     for table_row in var_binds:
         for oid, instance_name in table_row:
             oid = "." + oid.prettyPrint()
