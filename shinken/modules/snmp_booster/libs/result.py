@@ -16,10 +16,15 @@ def set_output_and_status(check_result):
         # ERRRORRRRRRRRRRRRRRRRRRRRRRRRRRRR
         return
 
-    # check if all oids are in error
-    if all([ds_data['error'] for ds_data in check_result['db_data']['ds'].values()]):
-        random_data = [ds_data['error']
-                       for ds_data in check_result['db_data']['ds'].values()]
+    # Check if all oids in the current service have an error
+    if all([ds_data.get('error') for ds_data in check_result['db_data']['ds'].values()]):
+        # Each ds_data.get('error') is a string
+        # ds_data.get('error') == None means No error
+        # If all oids have an error, We show only the first one
+        random_data = [ds_data.get('error')
+                       for ds_data in check_result['db_data']['ds'].values()
+                       if ds_data.get('error') != None
+                      ]
         output = random_data[0]
         exit_code = 3
     else:
