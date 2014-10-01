@@ -387,7 +387,6 @@ def dict_serialize(serv, mac_resol, datasource):
         ds_data = datasource.get('DATASOURCE').get(ds_name)
         if ds_data is None:
             raise Exception("ds %s is missing in datasource filess" % ds_name)
-        ds_data = ds_data
 
         # Set default values
         # If no ds name set, we use the ds key as name
@@ -438,12 +437,19 @@ def dict_serialize(serv, mac_resol, datasource):
 
     trigger_list = datasource.get('TRIGGERGROUP').get(tmp_dict['triggergroup'])
     if trigger_list is not None:
+        # Check if it's a string, if yes we transform it into a list
+        if isinstance(trigger_list, str):
+            trigger_list = [trigger_list]
+        # Browse all triggers in the triggergroup
         for trigger_name in trigger_list:
             if 'TRIGGER' not in datasource:
-                raise Exception("TRIGGER %s is not define in the "
-                                "datasource" % trigger_name)
+                raise Exception("TRIGGER section is not define in the "
+                                "datasource" )
             # Get trigger data
             trigger_data = datasource.get('TRIGGER').get(trigger_name)
+            if trigger_data is None:
+                raise Exception("TRIGGER %s is not define in the "
+                                "datasource" % trigger_name)
             # Get critical trigger (list)
             trigger_data.setdefault("critical", None)
             # Get warning trigger (list)

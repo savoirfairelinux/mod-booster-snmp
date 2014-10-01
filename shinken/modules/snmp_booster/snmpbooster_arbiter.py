@@ -1,4 +1,6 @@
 import shlex
+import os
+import glob
 import socket
 
 from shinken.macroresolver import MacroResolver
@@ -6,6 +8,13 @@ from shinken.log import logger
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args, dict_serialize, handle_mongo_error, flatten_dict
+
+try:
+    from configobj import ConfigObj, Section
+except ImportError, e:
+    logger.error("[SnmpBooster] [code 52] Import error. Maybe one of this module is "
+                 "missing: pymongo, configobj, pysnmp")
+    raise ImportError(e)
 
 
 class SnmpBoosterArbiter(SnmpBooster):

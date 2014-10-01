@@ -7,7 +7,6 @@ from shinken.util import to_bool, to_int
 
 try:
     from pymongo import MongoClient
-    from configobj import ConfigObj, Section
 except ImportError, e:
     logger.error("[SnmpBooster] [code 52] Import error. Maybe one of this module is "
                  "missing: pymongo, configobj, pysnmp")
