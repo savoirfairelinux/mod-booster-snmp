@@ -24,46 +24,7 @@
 Entry file for SNMP Booster module
 """
 
-import os
-import re
-import sys
-import glob
-import signal
-import time
-import socket
-import struct
-import copy
-import binascii
-import getopt
-import shlex
-import operator
-import math
-from datetime import datetime, timedelta
-from Queue import Empty
-
 from shinken.log import logger
-
-try:
-    import memcache
-except ImportError as e:
-    logger.error("[SnmpBooster] Import error. Module memcache is missing")
-    raise ImportError(e)
-try:
-    from configobj import ConfigObj, Section
-except ImportError as e:
-    logger.error("[SnmpBooster] Import error. Module configobj is missing")
-    raise ImportError(e)
-try:
-    from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
-    from pysnmp.carrier.asynsock.dgram import udp
-    from pyasn1.codec.ber import encoder, decoder
-    from pysnmp.proto.api import v2c
-except ImportError as e:
-    logger.error("[SnmpBooster] Import error. Module pysnmp is missing")
-    raise ImportError(e)
-
-from shinken.check import Check
-from shinken.macroresolver import MacroResolver
 
 from snmpbooster_arbiter import SnmpBoosterArbiter
 from snmpbooster_poller import SnmpBoosterPoller
@@ -82,18 +43,23 @@ properties = {
 
 def get_instance(mod_conf):
     """called by the plugin manager to get a poller"""
-    logger.info("[SnmpBooster] [code 67] Get a snmp poller module "
+    logger.info("[SnmpBooster] [code 0101] Get a snmp poller module "
                 "for plugin %s" % mod_conf.get_name())
+    # Check if the attribute loaded_by is set
     if not hasattr(mod_conf, 'loaded_by'):
-        logger.error("[SnmpBooster] Couldn't find loaded_by configuration "
-                     "directive.")
-        raise Exception("[SnmpBooster] Couldn't find loaded_by configuration "
-                        "directive.")
-    if not mod_conf.loaded_by in mod_conf.properties['daemons']:
-        logger.error("[SnmpBooster] [code 68] Import errorfor plugin %s. "
-                    "Please check your configuration" % mod_conf.get_name())
-        raise Exception("[SnmpBooster] Cannot load SnmpBooster. "
-                        "Please check your configuration")
+        message = ("[SnmpBooster] [code 0102] Couldn't find 'loaded_by' "
+                   "configuration directive.")
+        logger.error(message)
+        raise Exception(message)
+    # Check if the attribute loaded_by is correctly used
+    if mod_conf.loaded_by not in mod_conf.properties['daemons']:
+        message = ("[SnmpBooster] [code 0103] 'loaded_by' attribute must be "
+                   "in %s" % str(mod_conf.properties['daemons']))
+        logger.error(message)
+        raise Exception(message)
+    # Get class name (arbiter, scheduler or poller)
     class_name = "SnmpBooster%s" % mod_conf.loaded_by.capitalize()
+    # Instance it
     instance = globals()[class_name](mod_conf)
+    # Return it
     return instance
