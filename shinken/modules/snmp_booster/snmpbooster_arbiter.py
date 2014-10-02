@@ -1,20 +1,25 @@
-import shlex
+
+"""
+This module contains the SnmpBoosterArbiter class which is the part
+of SNMP Booster loaded in the Arbiter
+"""
+
 import os
 import glob
-import socket
 
 from shinken.macroresolver import MacroResolver
 from shinken.log import logger
 
 from snmpbooster import SnmpBooster
-from libs.utils import parse_args, dict_serialize, handle_mongo_error, flatten_dict
+from libs.utils import dict_serialize
+from libs.utils import handle_mongo_error, flatten_dict
 
 try:
-    from configobj import ConfigObj, Section
-except ImportError, e:
-    logger.error("[SnmpBooster] [code 52] Import error. Maybe one of this module is "
-                 "missing: pymongo, configobj, pysnmp")
-    raise ImportError(e)
+    from configobj import ConfigObj
+except ImportError, exp:
+    logger.error("[SnmpBooster] [code 0901] Import error. Maybe one of this "
+                 "module is missing: ConfigObj")
+    raise ImportError(exp)
 
 
 class SnmpBoosterArbiter(SnmpBooster):
@@ -27,16 +32,17 @@ class SnmpBoosterArbiter(SnmpBooster):
 
         # Read datasource files
         # Config validation
-        f = None
+        current_file = None
         if not isinstance(self.datasource, dict):
             try:
                 # Test if self.datasource_file, is file or directory
-                #if file
+                # if file
                 if os.path.isfile(self.datasource_file):
                     self.datasource = ConfigObj(self.datasource_file,
                                                 interpolation='template')
-                    logger.info("[SnmpBooster] [code 59] Reading input configuration "
-                               "file: %s" % self.datasource_file)
+                    logger.info("[SnmpBooster] [code 0902] Reading input "
+                                "configuration file: "
+                                "%s" % self.datasource_file)
 
                 # if directory
                 elif os.path.isdir(self.datasource_file):
@@ -45,15 +51,17 @@ class SnmpBoosterArbiter(SnmpBooster):
                     files = glob.glob(os.path.join(self.datasource_file,
                                                    'Default*.ini')
                                       )
-                    for f in files:
+                    for current_file in files:
                         if self.datasource is None:
-                            self.datasource = ConfigObj(f,
+                            self.datasource = ConfigObj(current_file,
                                                         interpolation='template')
                         else:
-                            ctemp = ConfigObj(f, interpolation='template')
+                            ctemp = ConfigObj(current_file,
+                                              interpolation='template')
                             self.datasource.merge(ctemp)
-                            logger.info("[SnmpBooster] [code 60] Reading input "
-                                        "configuration file: %s" % f)
+                            logger.info("[SnmpBooster] [code 0903] Reading "
+                                        "input configuration file: "
+                                        "%s" % current_file)
                 else:
                     # Normal error with scheduler and poller module
                     # The configuration will be read in the database
@@ -61,14 +69,15 @@ class SnmpBoosterArbiter(SnmpBooster):
                                   "found: %s" % self.datasource_file)
 
             # raise if reading error
-            except Exception as e:
-                if f is not None:
-                    error_message = ("[SnmpBooster] [code 61] Datasource error "
-                                     "while reading or merging in %s : "
-                                     "`%s'" % (str(f), str(e)))
+            except Exception as exp:
+                if current_file is not None:
+                    error_message = ("[SnmpBooster] [code 0904] Datasource "
+                                     "error while reading or merging in %s: "
+                                     "`%s'" % (str(current_file), str(exp)))
                 else:
-                    error_message = ("[SnmpBooster] [code 62] Datasource error "
-                                     "while reading or merging : `%s'" % str(e))
+                    error_message = ("[SnmpBooster] [code 0905] Datasource "
+                                     "error while reading or merging: "
+                                     "`%s'" % str(exp))
                 logger.error(error_message)
                 raise Exception(error_message)
 
@@ -76,12 +85,11 @@ class SnmpBoosterArbiter(SnmpBooster):
         if isinstance(self.datasource, ConfigObj):
             try:
                 self.datasource = self.datasource.dict()
-            except Exception as e:
-                error_message = ("[SnmpBooster] [code 65] Error during the "
-                                 "config conversion: %s" % (str(e)))
+            except Exception as exp:
+                error_message = ("[SnmpBooster] [code 0906] Error during the "
+                                 "config conversion: %s" % (str(exp)))
                 logger.error(error_message)
                 raise Exception(error_message)
-
 
     def hook_late_configuration(self, arb):
         """ Read config and fill memcached """
@@ -91,14 +99,14 @@ class SnmpBoosterArbiter(SnmpBooster):
             if serv.check_command.command.module_type == 'snmp_booster':
                 try:
                     # Serialize service
-                    dict_serv = dict_serialize(serv, mac_resol, self.datasource)
+                    dict_serv = dict_serialize(serv,
+                                               mac_resol,
+                                               self.datasource)
                 except Exception as exp:
-                    logger.error("[SnmpBooster] [code 1] [%s,%s] "
+                    logger.error("[SnmpBooster] [code 0907] [%s,%s] "
                                  "%s" % (serv.get_name(),
                                          serv.host.get_name(),
-                                         str(exp),
-                                        )
-                                )
+                                         str(exp)))
                     continue
                 # Prepare mongo
                 mongo_filter = {"host": dict_serv['host'],
@@ -108,14 +116,13 @@ class SnmpBoosterArbiter(SnmpBooster):
                 # Save in mongo
                 try:
                     mongo_res = self.db_client.booster_snmp.services.update(mongo_filter,
-                                                                        {"$set": dict_serv},
-                                                                        upsert=True)
+                                                                            {"$set": dict_serv},
+                                                                            upsert=True)
                 except Exception as exp:
-                    logger.error("[SnmpBooster] [code 2] [%s, %s] "
+                    logger.error("[SnmpBooster] [code 0908] [%s, %s] "
                                  "%s" % (serv.get_name(),
                                          serv.host.get_name(),
-                                         str(exp),
-                                        ))
+                                         str(exp)))
                 # Check database error
                 if handle_mongo_error(mongo_res):
                     continue

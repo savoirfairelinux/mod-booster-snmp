@@ -45,7 +45,7 @@ class SNMPWorker(Thread):
          }
         """
         self.must_run = True
-        logger.info("[SnmpBooster] [code 21] is startting")
+        logger.info("[SnmpBooster] [code 0601] is starting")
         while self.must_run:
             task_prepared = 0
             # Process all tasks
@@ -54,12 +54,15 @@ class SNMPWorker(Thread):
                 snmp_task = self.mapping_queue.get()
                 if snmp_task['type'] in ['bulk', 'next', 'get']:
                     # Append snmp requests
-                    getattr(self.cmdgen, "async" + snmp_task['type'].capitalize() + "Cmd")(**snmp_task['data'])
+                    snmp_command_name = ("async" +
+                                         snmp_task['type'].capitalize() +
+                                         "Cmd")
+                    getattr(self.cmdgen, snmp_command_name)(**snmp_task['data'])
                 else:
                     # If the request is not handled
                     error_message = ("Bad SNMP requets type: '%s'. Must be "
                                      "get, next or bulk." % snmp_task['type'])
-                    logger.error("[SnmpBooster] [code 21] [%s] "
+                    logger.error("[SnmpBooster] [code 0602] [%s] "
                                  "%s" % (snmp_task['host'],
                                          error_message))
                     continue
@@ -72,11 +75,11 @@ class SNMPWorker(Thread):
             # Sleep
             time.sleep(0.1)
 
-        logger.info("[SnmpBooster] [code 21] is stopped")
+        logger.info("[SnmpBooster] [code 0603] is stopped")
 
     def stop_worker(self):
         """ Stop SNMP worker thread """
-        logger.info("[SnmpBooster] [code 21] will be stopped")
+        logger.info("[SnmpBooster] [code 0604] will be stopped")
         self.must_run = False
 
 
@@ -89,7 +92,7 @@ def handle_snmp_error(error_indication, cb_ctx, request_type):
     # Get results
     results = cb_ctx[0]
     # Log SNMP error
-    logger.error("[SnmpBooster] [code 21] [%s] SNMP Error: "
+    logger.error("[SnmpBooster] [code 0605] [%s] SNMP Error: "
                  "%s" % (results.values()[0]['key']['host'],
                          str(error_indication)))
     # If is a get request
@@ -114,7 +117,7 @@ def callback_get(send_request_handle, error_indication, error_status,
 
     # Handle errors
     if handle_snmp_error(error_indication, cb_ctx, "get"):
-        ## set as received
+        # set as received
         service_result['state'] = 'received'
         result_queue.put(results)
         return False
@@ -130,10 +133,10 @@ def callback_get(send_request_handle, error_indication, error_status,
             if value == noSuchInstance:
                 # Log NoSuchInstance SNMP error
                 message = "Oid not found on the device: %s" % oid
-                logger.error("[SnmpBooster] [code 21] [%s, %s] SNMP Error: "
-                 "%s" % (results.values()[0]['key']['host'],
-                         results[oid]['key']['service'],
-                         message))
+                logger.error("[SnmpBooster] [code 0606] [%s, %s] SNMP Error: "
+                             "%s" % (results.values()[0]['key']['host'],
+                                     results[oid]['key']['service'],
+                                     message))
                 results[oid]['error'] = message
             else:
                 # save value
@@ -164,30 +167,31 @@ def callback_get(send_request_handle, error_indication, error_status,
                 last_value_key = ".".join(("ds",
                                            ds_name,
                                            key.get('oid_type') + "_value_last"
+                                           )
                                           )
-                                         )
                 # New value
                 value_key = ".".join(("ds",
                                       ds_name,
                                       key.get('oid_type') + "_value"
+                                      )
                                      )
-                                    )
                 # Set last value
                 service_result['db_data']['ds'][ds_name][last_value_key] = tmp_result.get('value_last')
                 # Set value
                 service_result['db_data']['ds'][ds_name][value_key] = tmp_result.get('value')
-        ## Set last check time
+        # Set last check time
         service_result['db_data']['last_check_time'] = service_result['db_data'].get('check_time')
-        ## Set check time
+        # Set check time
         service_result['db_data']['check_time'] = time.time()
-        ## set as received
+        # set as received
         service_result['state'] = 'received'
-        ### Calculate execution time
+        # Calculate execution time
         service_result['execution_time'] = time.time() - service_result['start_time']
 
     else:
         pass
         # Not all data are received, we need to wait an other query
+
 
 def callback_mapping_next(send_request_handle, error_indication,
                           error_status, error_index, var_binds, cb_ctx):
@@ -214,9 +218,9 @@ def callback_mapping_next(send_request_handle, error_indication,
             instance = oid.replace(mapping_oid + ".", "")
 
             # DEBUGGING
-            #print "OID", oid
-            #print "MAPPING", mapping_oid
-            #print "VAL", instance_name.prettyPrint()
+            # print "OID", oid
+            # print "MAPPING", mapping_oid
+            # print "VAL", instance_name.prettyPrint()
             # END DEBUGGING
 
             # Handle illegal characters
@@ -253,9 +257,9 @@ def callback_mapping_bulk(send_request_handle, error_indication,
             instance = oid.replace(mapping_oid + ".", "")
 
             # DEBUGGING
-            #print "OID", oid
-            #print "MAPPING", mapping_oid
-            #print "VAL", instance_name.prettyPrint()
+            # print "OID", oid
+            # print "MAPPING", mapping_oid
+            # print "VAL", instance_name.prettyPrint()
             # END DEBUGGING
 
             # Handle illegal characters

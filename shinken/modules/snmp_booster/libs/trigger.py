@@ -15,6 +15,7 @@ def diff(ds_data):
     """ Are last computed value and last-1 computed  value the same ? """
     return ds_data['ds_oid_value_computed'] == ds_data['ds_oid_value_last_computed']
 
+
 def prct(ds_data):
     """ Do the percent of value computed using max value """
     try:
@@ -24,16 +25,19 @@ def prct(ds_data):
                         "datasource '%s' is missing" % ds_data['ds_name'])
     return float(ds_data['ds_oid_value_computed']) * 100 / max_
 
+
 def last(ds_data):
     """ Get the last value computed """
     return ds_data['ds_oid_value_computed']
 
+
 RPN_FUNCTIONS = {"diff": diff,
                  "prct": prct,
                  "last": last,
-                }
+                 }
 
 # End Triggers functions
+
 
 def get_trigger_result(service):
     """ Get return code from trigger calculator
@@ -45,7 +49,7 @@ def get_trigger_result(service):
               'critical': 2,
               'warning': 1,
               'ok': 0,
-             }
+              }
 
     try:
         # First we launch critical triggers for each datasource
@@ -74,7 +78,8 @@ def get_trigger_result(service):
                                                  "the trigger (%s). Please "
                                                  "check your datasource "
                                                  "file." % (ds_name, trigger))
-                                logger.error("[SnmpBooster] [code 7] [%s, %s] "
+                                logger.error("[SnmpBooster] [code 0701] "
+                                             "[%s, %s] "
                                              "%s" % (service['host'],
                                                      service['service'],
                                                      error_message))
@@ -92,10 +97,11 @@ def get_trigger_result(service):
                                     # Raw value found
                                     error_message = ("No computed data found "
                                                      "for DS: '%s'" % ds_name)
-                                logger.warning("[SnmpBooster] [code 801] [%s, %s]"
-                                               " %s" % (service['host'],
-                                                        service['service'],
-                                                        error_message))
+                                logger.warning("[SnmpBooster] [code 0702] "
+                                               "[%s, %s] "
+                                               "%s" % (service['host'],
+                                                       service['service'],
+                                                       error_message))
                                 return (error_message,
                                         int(trigger['default_status']))
                             # Prepare trigger function
@@ -115,7 +121,7 @@ def get_trigger_result(service):
                                         value = RPN_FUNCTIONS[func](ds_data,
                                                                     *args)
                                 except Exception as exp:
-                                    logger.error("[SnmpBooster] [code 9] "
+                                    logger.error("[SnmpBooster] [code 0703] "
                                                  "[%s, %s] Trigger function "
                                                  "error: found: "
                                                  "%s" % (service['host'],
@@ -128,7 +134,7 @@ def get_trigger_result(service):
                                 # Trigger function doesn't exist
                                 error_message = ("Trigger function '%s' not "
                                                  "found" % fct)
-                                logger.error("[SnmpBooster] [code 9] [%s, %s] "
+                                logger.error("[SnmpBooster] [code 0704] [%s, %s] "
                                              "%s" % (service['host'],
                                                      service['service'],
                                                      error_message))
@@ -143,7 +149,7 @@ def get_trigger_result(service):
                                 # The computed value is not here yet
                                 error_message = ("No data found for DS: "
                                                  "'%s'" % element)
-                                logger.warning("[SnmpBooster] [code 802] "
+                                logger.warning("[SnmpBooster] [code 0705] "
                                                "[%s, %s] "
                                                "%s" % (service['host'],
                                                        service['service'],
@@ -162,7 +168,7 @@ def get_trigger_result(service):
                     except Exception as exp:
                         error_message = ("RPN calculation Error: %s - "
                                          "%s" % (str(exp), str(rpn_list)))
-                        logger.error("[SnmpBooster] [code 15] [%s, %s] "
+                        logger.error("[SnmpBooster] [code 0706] [%s, %s] "
                                      "%s" % (service['host'],
                                              service['service'],
                                              error_message))
@@ -171,14 +177,12 @@ def get_trigger_result(service):
 
                     # rpn_calcultor return True
                     # So the trigger triggered
-                    if ret == True:
-                        #logger.debug("[SnmpBooster] [code 15] [%s, %s] "
-                        logger.error("[SnmpBooster] [code 15] [%s, %s] "
+                    if ret is True:
+                        logger.error("[SnmpBooster] [code 0707] [%s, %s] "
                                      "trigger triggered "
                                      "%s" % (service['host'],
                                              service['service'],
-                                             str(rpn_list),
-                                            ))
+                                             str(rpn_list)))
                         return None, errors[error_name]
 
         # Neither critical trigger, neither warning trigger triggered
@@ -188,7 +192,7 @@ def get_trigger_result(service):
     except Exception as exp:
         # Handle all other errors
         error_message = "Trigger error: %s" % (str(exp))
-        logger.error("[SnmpBooster] [code 10] [%s, %s] "
+        logger.error("[SnmpBooster] [code 0708] [%s, %s] "
                      "%s" % (service['host'],
                              service['service'],
                              error_message))

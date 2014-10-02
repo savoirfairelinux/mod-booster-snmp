@@ -1,9 +1,13 @@
+"""
+This module contains the SnmpBoosterPoller class which is the part
+of SNMP Booster loaded in the Poller
+"""
+
 import signal
 import time
 import shlex
 from Queue import Empty, Queue
-from threading import Thread
-
+import sys
 
 
 from shinken.log import logger
@@ -11,7 +15,7 @@ from shinken.util import to_int
 
 
 from snmpbooster import SnmpBooster
-from libs.utils import parse_args, calculation, compute_value
+from libs.utils import parse_args, compute_value
 from libs.result import set_output_and_status
 from libs.checks import check_snmp, check_cache
 from libs.snmpworker import SNMPWorker
@@ -35,15 +39,15 @@ class SnmpBoosterPoller(SnmpBooster):
             REF: doc/shinken-action-queues.png (3)
         """
         try:
-            while(True):
+            while True:
                 try:
-                    msg = self.s.get(block=False)
-                except IOError, e:
+                    msg = self.master_slave_queue.get(block=False)
+                except IOError:
                     # IOError: [Errno 104] Connection reset by peer
                     msg = None
                 if msg is not None:
                     self.checks.append(msg.get_data())
-        except Empty, exp:
+        except Empty:
             if len(self.checks) == 0:
                 time.sleep(1)
 
@@ -68,16 +72,22 @@ class SnmpBoosterPoller(SnmpBooster):
                     args = parse_args(clean_command[1:])
 
                 # Ok we are good, we go on
-                #print args.get('real_check')
                 if args.get('real_check', False):
-                    check_snmp(chk, args, self.db_client, self.task_queue, self.result_queue)
+                    # Make a SNMP check
+                    check_snmp(chk, args, self.db_client,
+                               self.task_queue, self.result_queue)
                 else:
+                    # Make fake check (get datas from mongodb)
                     check_cache(chk, args, self.db_client)
 
     # Check the status of checks
     # if done, return message finished :)
     # REF: doc/shinken-action-queues.png (5)
     def manage_finished_checks(self):
+        """ This function handles finished check
+        It gets output and exit_code and
+        Add check to the return queue
+        """
         to_del = []
 
         # First look for checks in timeout
@@ -86,8 +96,8 @@ class SnmpBoosterPoller(SnmpBooster):
                 continue
             if chk.status == 'launched' and chk.result.get('state') != 'received':
                 pass
-                # TODO cimpore check.result['execution_time'] > timeout
-#                chk.con.look_for_timeout()
+                # TODO compore check.result['execution_time'] > timeout
+                # chk.con.look_for_timeout()
 
         # Now we look for finished checks
         for chk in self.checks:
@@ -97,8 +107,9 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 49]"
+                    logger.critical("[SnmpBooster] [code 1001]"
                                     "[%d] Exiting: %s" % (str(self), exp))
+                    # NOTE Do we really want to exit ???
                     sys.exit(2)
                 continue
             # Then we check for good checks
@@ -129,8 +140,9 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 50]"
-                                    "[%d] Exiting: %s" % (self.id, exp))
+                    logger.critical("[SnmpBooster] [code 1002]"
+                                    "FIX-ME-ID Exiting: %s" % exp)
+                    # NOTE Do we really want to exit ???
                     sys.exit(2)
 
         # And delete finished checks
@@ -138,7 +150,6 @@ class SnmpBoosterPoller(SnmpBooster):
             self.checks.remove(chk)
             # Count checks done
             self.checks_done += 1
-
 
     def save_results(self):
         """ Save results to database """
@@ -159,22 +170,22 @@ class SnmpBoosterPoller(SnmpBooster):
                     elif result.get('type') in ['TEXT', 'STRING']:
                         raw_value = str(result.get('value'))
                     else:
-                        logger.error("[SnmpBooster] [code 17] [%s, %s] "
+                        logger.error("[SnmpBooster] [code 1002] [%s, %s] "
                                      "Value type is not in 'TEXT', 'STRING', "
-                                     "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64', "
-                                     "'COUNTER64'" % (key.get('host'),
-                                                      key.get('service'),
-                                                      ))
+                                     "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64'"
+                                     ", 'COUNTER64'" % (key.get('host'),
+                                                        key.get('service'),
+                                                        ))
                         continue
                     # Compute value before saving
                     if key.get('oid_type') == 'ds_oid':
                         try:
                             value = compute_value(result)
-                        except Exception as e:
-                            logger.error("[SnmpBooster] [code 171] [%s, %s] "
+                        except Exception as exp:
+                            logger.error("[SnmpBooster] [code 1003] [%s, %s] "
                                          "%s" % (key.get('host'),
                                                  key.get('service'),
-                                                 str(e)))
+                                                 str(exp)))
                             value = None
                     else:
                         # For oid_type == ds_max or ds_min
@@ -188,18 +199,25 @@ class SnmpBoosterPoller(SnmpBooster):
                 # Save to database
                 for ds_name in key.get('ds_names'):
                     # Last value key
-                    value_last_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_last"))
+                    value_last_key = ".".join(("ds",
+                                               ds_name,
+                                               key.get('oid_type') + "_value_last"))
                     # New value
-                    value_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value"))
+                    value_key = ".".join(("ds",
+                                          ds_name,
+                                          key.get('oid_type') + "_value"))
                     # New computed value
-                    value_computed_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed"))
+                    value_computed_key = ".".join(("ds",
+                                                   ds_name,
+                                                   key.get('oid_type') + "_value_computed"))
                     # Last computed value
-                    value_computed_last_key = ".".join(("ds", ds_name, key.get('oid_type') + "_value_computed_last"))
+                    value_computed_last_key = ".".join(("ds",
+                                                        ds_name,
+                                                        key.get('oid_type') + "_value_computed_last"))
                     # Error
                     error_key = ".".join(("ds", ds_name, "error"))
                     # New mongo data
-                    new_data = {"$set": {
-                                         value_key: raw_value,
+                    new_data = {"$set": {value_key: raw_value,
                                          value_last_key: result.get('value_last'),
                                          value_computed_key: value,
                                          value_computed_last_key: result.get('value_last_computed'),
@@ -213,62 +231,66 @@ class SnmpBoosterPoller(SnmpBooster):
                                 "service": key.get('service')}
                 # Mongo update
                 self.db_client.booster_snmp.services.update(mongo_filter,
-                                                        new_data)
+                                                            new_data)
             # Remove task from queue
             self.result_queue.task_done()
 
-
     # id = id of the worker
-    # s = Global Queue Master->Slave
+    # master_slave_queue = Global Queue Master->Slave
     # m = Queue Slave->Master
     # return_queue = queue managed by manager
-    # c = Control Queue for the worker
-    def work(self, s, returns_queue, c):
-        logger.info("[SnmpBooster] [code 51] Module SNMP Booster started!")
-        ## restore default signal handler for the workers:
+    # control_queue = Control Queue for the worker
+    def work(self, master_slave_queue, returns_queue, control_queue):
+        """ Main loop of SNMP Booster """
+        logger.info("[SnmpBooster] [code 1004] Module SNMP Booster started!")
+        # restore default signal handler for the workers:
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         timeout = 1.0
         self.checks = []
 
         self.returns_queue = returns_queue
-        self.s = s
+        self.master_slave_queue = master_slave_queue
         self.t_each_loop = time.time()
-        # TODO check snmpworker health
         self.snmpworker = SNMPWorker(self.task_queue)
         self.snmpworker.start()
 
         while True:
             begin = time.time()
-            msg = None
             cmsg = None
+            # Check snmp worker status
+            if not self.snmpworker.is_alive():
+                # The snmpworker seems down ...
+                # We respawn one
+                self.snmpworker = SNMPWorker(self.task_queue)
+                # and start it
+                self.snmpworker.start()
 
             # If we are diyin (big problem!) we do not
             # take new jobs, we just finished the current one
             if not self.i_am_dying:
-                # REF: doc/shinken-action-queues.png (3)
+                # Get new checks to do
                 self.get_new_checks()
-            # REF: doc/shinken-action-queues.png (4)
+            # Launch checks
             self.launch_new_checks()
-
+            # Save collected datas from checks in mongodb
             self.save_results()
-
-            # REF: doc/shinken-action-queues.png (5)
+            # Prepare checks output
             self.manage_finished_checks()
 
             # Now get order from master
             try:
-                cmsg = c.get(block=False)
+                cmsg = control_queue.get(block=False)
                 if cmsg.get_type() == 'Die':
-                    #TODO : What is self.id undefined variable
+                    # TODO : What is self.id undefined variable
                     # logger.info("[SnmpBooster] [%d]
                     # Dad say we are dying..." % self.id)
-                    logger.info("[SnmpBooster] FIX-ME-ID Parent "
+                    logger.info("[SnmpBooster] [code 1005] FIX-ME-ID Parent "
                                 "requests termination.")
                     break
-            except:
+            except Exception:
                 pass
 
-            #TODO : better time management
+            # TODO : better time management
             time.sleep(.1)
 
             timeout -= time.time() - begin

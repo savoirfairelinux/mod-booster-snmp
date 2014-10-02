@@ -20,6 +20,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
 
+
+"""
+Usefull functions used everywhere in snmp booster
+"""
+
 import sys
 import getopt
 import shlex
@@ -31,11 +36,11 @@ from shinken.log import logger
 def handle_mongo_error(result, continue_=True):
     """ Handle mongodb errors """
     if result['err'] is not None:
-        error_message = ("Error putting data in cache: "
-                         "%s" % str(result['err'])
-                        )
+        error_message = ("[SnmpBooster] [code 0801] Error putting data in "
+                         "cache: %s" % str(result['err'])
+                         )
         logger.error(error_message)
-        if continue_ == False:
+        if continue_ is False:
             raise Exception(error_message)
         return False
     return False
@@ -47,7 +52,7 @@ def flatten_dict(tree_dict):
     >>> flatten_dict({'a': 1, 'b': {'c': {'d': 2, 'e': 4}}})
     {'a': 1, 'b.c.d': 2, 'b.c.e': 4}
     >>> flatten_dict("bad_input")
-    
+
     """
     if not isinstance(tree_dict, dict):
         return None
@@ -79,7 +84,7 @@ def rpn_calculator(rpn_list):
     assert len(stack) <= 1
 
     if len(stack) == 1:
-        return(stack.pop())
+        return stack.pop()
 
 
 def calculation(value, ds_calc):
@@ -167,9 +172,10 @@ def format_counter64_value(result):
     """ Format value for counter64 type """
     return format_counter_value(result, limit=2**64 - 1)
 
+
 def format_counter_value(result, limit=2**32 - 1):
     """ Format value for counter type """
-    # Handle limit ??
+    # NOTE Handle limit ??
     return float(result['value'])
 
 
@@ -178,7 +184,7 @@ def parse_args(cmd_args):
     # NOTE USE SHINKEN STYLE (PROPERTIES see item object)
     # Set default values
 
-            # Standard options
+    # Standard options
     args = {"host": None,
             "address": None,
             "service": None,
@@ -201,7 +207,7 @@ def parse_args(cmd_args):
             "request_group_size": 64,
             # Hidden option
             "real_check": False,
-           }
+            }
 
     # Handle options
     try:
@@ -217,8 +223,8 @@ def parse_args(cmd_args):
                                     'use-getbulk', 'max-rep-map=',
                                     'request-group-size',
                                     'real-check',
-                                   ]
-                                  )
+                                    ]
+                                   )
     except getopt.GetoptError as err:
         error_message = str(err)
         raise Exception(error_message)
@@ -261,7 +267,7 @@ def parse_args(cmd_args):
                 args['max_rep_map'] = int(value)
             except ValueError:
                 args['max_rep_map'] = 64
-                logger.warning('[SnmpBooster] [code 69] Bad max_rep_map: '
+                logger.warning('[SnmpBooster] [code 0802] Bad max_rep_map: '
                                'setting to 64)')
         # Size of requests groups
         elif option_name in ("-g", "--request-group-size"):
@@ -269,7 +275,7 @@ def parse_args(cmd_args):
                 args['request_group_size'] = int(value)
             except ValueError:
                 args['request_group_size'] = 64
-                logger.warning('[SnmpBooster] [code 69] Bad '
+                logger.warning('[SnmpBooster] [code 0803] Bad '
                                'request_group_size: setting to 64)')
         # Hidden option
         elif option_name in ("-r", "--real-check"):
@@ -282,7 +288,7 @@ def parse_args(cmd_args):
                      'instance_name',
                      'dstemplate',
                      'triggergroup',
-                    ]
+                     ]
     for arg_name in nullable_args:
         if args[arg_name] and (args[arg_name].startswith('-') or args[arg_name].lower() == 'none'):
             args[arg_name] = None
@@ -292,7 +298,7 @@ def parse_args(cmd_args):
                       'address',
                       'service',
                       'dstemplate',
-                     ]
+                      ]
     for arg_name in mandatory_args:
         if args[arg_name] is None:
             error_message = ("Argument %s is missing in the command "
@@ -308,6 +314,7 @@ def parse_args(cmd_args):
 
     return args
 
+
 def dict_serialize(serv, mac_resol, datasource):
     """ Get serv, datasource
         And return the service serialized
@@ -320,14 +327,14 @@ def dict_serialize(serv, mac_resol, datasource):
     command_line = mac_resol.resolve_command(serv.check_command,
                                              data)
 
-    ## Clean command
+    # Clean command
     clean_command = shlex.split(command_line.encode('utf8',
                                                     'ignore'))
-    ## If the command doesn't seem good
+    # If the command doesn't seem good
     if len(clean_command) <= 1:
         raise Exception("Bad command detected: %s" % chk.command)
 
-    ## we do not want the first member, check_snmp thing
+    # we do not want the first member, check_snmp thing
     try:
         command_args = parse_args(clean_command[1:])
     except Exception as exp:
@@ -335,18 +342,14 @@ def dict_serialize(serv, mac_resol, datasource):
 
     # Prepare dict
     tmp_dict.update(command_args)
-    ## hostname
+    # hostname
     tmp_dict['host'] = serv.host.get_name()
-    ## address
+    # address
     tmp_dict['address'] = serv.host.address
-    ## service
+    # service
     tmp_dict['service'] = serv.get_name()
-    ## check_interval
+    # check_interval
     tmp_dict['check_interval'] = serv.check_interval
-    ## check_time
-    #tmp_dict['check_time'] = None
-    ## check_time_last
-    #tmp_dict['check_time_last'] = None
 
     # Get mapping table
     if 'MAP' not in datasource:
@@ -371,7 +374,7 @@ def dict_serialize(serv, mac_resol, datasource):
     # We don't want to lose the instance id collectd by old snmp requests
     # So we delete 'instance' entry in the data
     if tmp_dict.get('instance_name') is not None and tmp_dict.get('mapping') is not None:
-        del(tmp_dict['instance'])
+        del tmp_dict['instance']
 
     # Get DSs in the dstemplate
     ds_list = ds_list.get('ds')
@@ -399,19 +402,8 @@ def dict_serialize(serv, mac_resol, datasource):
         for name in ["ds_calc",
                      "ds_max_oid",
                      "ds_min_oid",
-                    ]:
+                     ]:
             ds_data.setdefault(name, None)
-
-        # Set values
-        # NOTE: delete it
-#        for name in  [
-#                      "ds_max_oid_value",
-#                      "ds_min_oid_value",
-#                      "ds_oid_value",
-#                      "ds_oid_value_last",
-#                      "ds_oid_value_computed",
-#                      "ds_oid_value_computed_last"]:
-#            ds_data.setdefault(name, None)
 
         # Add computed_value for max and min
         for max_min in ['ds_max_oid_value', 'ds_min_oid_value']:
@@ -444,7 +436,7 @@ def dict_serialize(serv, mac_resol, datasource):
         for trigger_name in trigger_list:
             if 'TRIGGER' not in datasource:
                 raise Exception("TRIGGER section is not define in the "
-                                "datasource" )
+                                "datasource")
             # Get trigger data
             trigger_data = datasource.get('TRIGGER').get(trigger_name)
             if trigger_data is None:

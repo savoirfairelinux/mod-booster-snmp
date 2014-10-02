@@ -13,32 +13,39 @@ def set_output_and_status(check_result):
     start_time = time.time()
     # Check if the service is in database
     if check_result.get('db_data') is None:
-        # ERRRORRRRRRRRRRRRRRRRRRRRRRRRRRRR
-        return
+        # This is a really strange problem
+        # You should never see this error
+        logger.warning("[SnmpBooster] [0501] No data found in cache. "
+                       "Impossible to know which host and service is "
+                       "impacted")
+        output = "No Data found in cache"
+        exit_code = 3
 
     # Check if all oids in the current service have an error
-    if all([ds_data.get('error') for ds_data in check_result['db_data']['ds'].values()]):
+    elif all([ds_data.get('error')
+              for ds_data in check_result['db_data']['ds'].values()]):
         # Each ds_data.get('error') is a string
         # ds_data.get('error') == None means No error
         # If all oids have an error, We show only the first one
         random_data = [ds_data.get('error')
                        for ds_data in check_result['db_data']['ds'].values()
-                       if ds_data.get('error') != None
-                      ]
+                       if ds_data.get('error') is not None
+                       ]
         output = random_data[0]
         exit_code = 3
     else:
         # Check if mapping is done
-        if check_result['db_data'].get('instance') == None and check_result['db_data'].get('mapping') != None:
+        if check_result['db_data'].get('instance') is None \
+           and check_result['db_data'].get('mapping') is not None:
             # Mapping is not done
             output = ("Mapping of instance '%s' not "
                       "done" % check_result['db_data'].get('instance_name'))
-            logger.warning("[SnmpBooster] [code 49] [%s, %s]: "
+            logger.warning("[SnmpBooster] [code 0502] [%s, %s]: "
                            "%s" % (check_result['db_data'].get('host'),
                                    check_result['db_data'].get('service'),
                                    output,
-                                  )
-                          )
+                                   )
+                           )
             exit_code = 3
         else:
             # If the mapping is done
@@ -49,7 +56,8 @@ def set_output_and_status(check_result):
                 error_message, exit_code = get_trigger_result(check_result['db_data'])
                 # Handle errors
                 if error_message is not None:
-                    output = "TRIGGER ERROR: '%s' - %s" % (str(error_message), output)
+                    output = "TRIGGER ERROR: '%s' - %s" % (str(error_message),
+                                                           output)
             else:
                 exit_code = 0
 
