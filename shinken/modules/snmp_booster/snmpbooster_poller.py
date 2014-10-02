@@ -171,7 +171,7 @@ class SnmpBoosterPoller(SnmpBooster):
                         try:
                             value = compute_value(result)
                         except Exception as e:
-                            logger.error("[SnmpBooster] [code 17] [%s, %s] "
+                            logger.error("[SnmpBooster] [code 171] [%s, %s] "
                                          "%s" % (key.get('host'),
                                                  key.get('service'),
                                                  str(e)))

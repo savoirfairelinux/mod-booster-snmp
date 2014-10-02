@@ -246,7 +246,7 @@ def prepare_oids(ret, service, group_size=64):
                                      # We will put the timestamp when data arrive
                                      'check_time': None,
                                      # We put the last check time huere
-                                     'check_time_last': service['check_time'],
+                                     'check_time_last': service.get('check_time'),
                                      # We put the calculation here (to make calculation before database saving)
                                      'calc': ds_data['ds_calc'],
                                     }

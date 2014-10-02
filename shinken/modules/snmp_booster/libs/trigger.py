@@ -57,6 +57,11 @@ def get_trigger_result(service):
             for trigger in service['triggers'].values():
                 rpn_list = []
                 if error_name in trigger:
+                    # Check if the trigger is set for this state
+                    if trigger[error_name] is None:
+                        # Trigger not set for this state (warning or critical)
+                        continue
+                    # If yes we will try to evaluate it
                     for element in trigger[error_name]:
                         tmp = element.split(".")
                         if len(tmp) > 1:
@@ -87,7 +92,7 @@ def get_trigger_result(service):
                                     # Raw value found
                                     error_message = ("No computed data found "
                                                      "for DS: '%s'" % ds_name)
-                                logger.warning("[SnmpBooster] [code 8] [%s, %s]"
+                                logger.warning("[SnmpBooster] [code 801] [%s, %s]"
                                                " %s" % (service['host'],
                                                         service['service'],
                                                         error_message))
@@ -138,7 +143,7 @@ def get_trigger_result(service):
                                 # The computed value is not here yet
                                 error_message = ("No data found for DS: "
                                                  "'%s'" % element)
-                                logger.warning("[SnmpBooster] [code 8] "
+                                logger.warning("[SnmpBooster] [code 802] "
                                                "[%s, %s] "
                                                "%s" % (service['host'],
                                                        service['service'],

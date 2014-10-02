@@ -3,9 +3,11 @@ and handle answers with callbacks
 """
 
 from threading import Thread
+import re
 import time
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.smi.exval import noSuchInstance
 
 from shinken.log import logger
 
@@ -124,13 +126,27 @@ def callback_get(send_request_handle, error_indication, error_status,
         oid = "." + oid.prettyPrint()
         # if we need this oid
         if oid in results:
-            # save value
-            results[oid]['value'] = value
+            # Check if we have a nosuchinstance error
+            if value == noSuchInstance:
+                # Log NoSuchInstance SNMP error
+                message = "Oid not found on the device: %s" % oid
+                logger.error("[SnmpBooster] [code 21] [%s, %s] SNMP Error: "
+                 "%s" % (results.values()[0]['key']['host'],
+                         results[oid]['key']['service'],
+                         message))
+                results[oid]['error'] = message
+            else:
+                # save value
+                results[oid]['value'] = value
+
             # save check time
             results[oid]['check_time'] = time.time()
 
     # Check if we get all values
-    if not any([True for oid in results.values() if oid['value'] is None]):
+    result_with_value_or_error = [oid['value'] for oid in results.values()
+                                  if oid.get('value') is None
+                                  and oid.get('error') is None]
+    if len(result_with_value_or_error) == 0:
         # Add a saving task to the saving queue
         # (processed by the function save_results)
         result_queue.put(results)
@@ -161,7 +177,7 @@ def callback_get(send_request_handle, error_indication, error_status,
                 # Set value
                 service_result['db_data']['ds'][ds_name][value_key] = tmp_result.get('value')
         ## Set last check time
-        service_result['db_data']['last_check_time'] = service_result['db_data']['check_time']
+        service_result['db_data']['last_check_time'] = service_result['db_data'].get('check_time')
         ## Set check time
         service_result['db_data']['check_time'] = time.time()
         ## set as received
@@ -196,11 +212,22 @@ def callback_mapping_next(send_request_handle, error_indication,
                 result['finished'] = True
                 return False
             instance = oid.replace(mapping_oid + ".", "")
+
+            # DEBUGGING
             #print "OID", oid
             #print "MAPPING", mapping_oid
             #print "VAL", instance_name.prettyPrint()
+            # END DEBUGGING
+
+            # Handle illegal characters
+            cleaned_instance_name = re.sub("[,:/ ]", "_", str(instance_name))
+            # If we need this instance we store it
             if instance_name in result['data']:
                 result['data'][instance_name] = instance
+            # If we need this 'cleaned' instance we store it
+            elif cleaned_instance_name in result['data']:
+                result['data'][cleaned_instance_name] = instance
+
             # Check if mapping is finished
             if all(result.values()):
                 result['finished'] = True
@@ -222,12 +249,25 @@ def callback_mapping_bulk(send_request_handle, error_indication,
                 # We are not in the mapping oid
                 result['finished'] = True
                 return False
+            # Get instance
             instance = oid.replace(mapping_oid + ".", "")
+
+            # DEBUGGING
             #print "OID", oid
             #print "MAPPING", mapping_oid
             #print "VAL", instance_name.prettyPrint()
+            # END DEBUGGING
+
+            # Handle illegal characters
+            cleaned_instance_name = re.sub("[,:/ ]", "_", str(instance_name))
+            print "cleaned_instance_name", cleaned_instance_name
+            # If we need this instance we store it
             if instance_name in result['data']:
                 result['data'][instance_name] = instance
+            # If we need this 'cleaned' instance we store it
+            elif cleaned_instance_name in result['data']:
+                result['data'][cleaned_instance_name] = instance
+
             # Check if mapping is finished
             if all(result.values()):
                 result['finished'] = True
