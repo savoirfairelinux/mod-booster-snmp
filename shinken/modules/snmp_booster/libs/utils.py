@@ -344,9 +344,9 @@ def dict_serialize(serv, mac_resol, datasource):
     ## check_interval
     tmp_dict['check_interval'] = serv.check_interval
     ## check_time
-    tmp_dict['check_time'] = None
+    #tmp_dict['check_time'] = None
     ## check_time_last
-    tmp_dict['check_time_last'] = None
+    #tmp_dict['check_time_last'] = None
 
     # Get mapping table
     if 'MAP' not in datasource:

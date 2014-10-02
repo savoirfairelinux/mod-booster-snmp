@@ -111,7 +111,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                                                                         {"$set": dict_serv},
                                                                         upsert=True)
                 except Exception as exp:
-                    logger.error("[SnmpBooster] [code 1] [%s, %s] "
+                    logger.error("[SnmpBooster] [code 2] [%s, %s] "
                                  "%s" % (serv.get_name(),
                                          serv.host.get_name(),
                                          str(exp),
