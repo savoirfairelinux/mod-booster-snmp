@@ -8,7 +8,7 @@ except ImportError:
 
 setup(
     name='mod-snmpbooster',
-    version="1.2",
+    version="1.99.1",
     description='SNMP booster module for Shinken',
     author='Thibault Cohen',
     author_email='thibault.cohen@savoirfairelinux.com',
