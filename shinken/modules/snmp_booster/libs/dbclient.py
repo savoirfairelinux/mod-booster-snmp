@@ -162,7 +162,7 @@ class DBClient(object):
         """ This function Gets all services with the same host
         and check_interval
         Return
-        :query_result: generator (list of dicts)
+        :query_result: list of dicts
         """
         # Prepare mongo Filter
         mongo_filter = {"host": host,
@@ -178,4 +178,4 @@ class DBClient(object):
                                  str(exp)))
             return None
 
-        return services
+        return [s for s in services]
