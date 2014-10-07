@@ -33,19 +33,6 @@ import operator
 from shinken.log import logger
 
 
-def handle_mongo_error(result, continue_=True):
-    """ Handle mongodb errors """
-    if result['err'] is not None:
-        error_message = ("[SnmpBooster] [code 0801] Error putting data in "
-                         "cache: %s" % str(result['err'])
-                         )
-        logger.error(error_message)
-        if continue_ is False:
-            raise Exception(error_message)
-        return False
-    return False
-
-
 def flatten_dict(tree_dict):
     """ Convert unlimited tree dictionnary to a flat dictionnary
 

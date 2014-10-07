@@ -223,6 +223,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     raw_value = None
                     value = None
                 # Save to database
+                # NOTE this loop is TOO MONGODB SPECIFIC
                 for ds_name in key.get('ds_names'):
                     # Last value key
                     value_last_key = ".".join(("ds",
@@ -252,12 +253,10 @@ class SnmpBoosterPoller(SnmpBooster):
                                          "check_time_last": result.get('check_time_last'),
                                          }
                                 }
-                # Mongo filter
-                mongo_filter = {"host": key.get('host'),
-                                "service": key.get('service')}
-                # Mongo update
-                self.db_client.booster_snmp.services.update(mongo_filter,
-                                                            new_data)
+
+                self.db_client.update_service(key.get('host'),
+                                              key.get('service'),
+                                              new_data)
             # Remove task from queue
             self.result_queue.task_done()
 

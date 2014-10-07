@@ -12,7 +12,6 @@ from shinken.log import logger
 
 from snmpbooster import SnmpBooster
 from libs.utils import dict_serialize
-from libs.utils import handle_mongo_error, flatten_dict
 
 try:
     from configobj import ConfigObj
@@ -108,24 +107,10 @@ class SnmpBoosterArbiter(SnmpBooster):
                                          serv.host.get_name(),
                                          str(exp)))
                     continue
-                # Prepare mongo
-                mongo_filter = {"host": dict_serv['host'],
-                                "service": dict_serv['service']}
-                # Flatten dict serv
-                dict_serv = flatten_dict(dict_serv)
-                # Save in mongo
-                try:
-                    mongo_res = self.db_client.booster_snmp.services.update(mongo_filter,
-                                                                            {"$set": dict_serv},
-                                                                            upsert=True)
-                except Exception as exp:
-                    logger.error("[SnmpBooster] [code 0908] [%s, %s] "
-                                 "%s" % (serv.get_name(),
-                                         serv.host.get_name(),
-                                         str(exp)))
-                # Check database error
-                if handle_mongo_error(mongo_res):
-                    continue
+
+                self.db_client.upsert_service(dict_serv['host'],
+                                              dict_serv['service'],
+                                              dict_serv)
 
             # Disconnect from database
             self.db_client.disconnect()

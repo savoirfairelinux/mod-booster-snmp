@@ -26,11 +26,8 @@ def check_cache(check, arguments, db_client):
     """ Get data from database """
     start_time = time.time()
     # Get current service
-    current_service = db_client.\
-                      booster_snmp.\
-                      services.find_one({"host": arguments.get('host'),
-                                         "service": arguments.get('service')},
-                                        {"_id": False})
+    current_service = db_client.get_service(arguments.get('host'),
+                                                   arguments.get('service'))
     # Check if the service is in the database
     if current_service is None:
         error_message = ("[SnmpBooster] [code 0202] [%s, %s] Not found in "
@@ -77,13 +74,9 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
     # Get check_interval
     check_interval = current_service.get('check_interval')
 
-    # Get all service with this host and check_interval
-    services = db_client.\
-               booster_snmp.\
-               services.find({"host": arguments.get('host'),
-                              "check_interval": check_interval})
-    services = [s for s in services]
-
+    # Get all services with this host and check_interval
+    services = db_client.get_services(arguments.get('host'),
+                                         current_service.get('check_interval'))
     # Mapping needed ?
     # Get all services which need mapping
     mappings = [serv for serv in services
@@ -152,16 +145,14 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             if instance is None:
                 # Don't save instances which are not mapped
                 continue
-            db_client.booster_snmp.services.update({"host": arguments.get('host'),
-                                                    "instance_name": instance_name},
-                                                   {"$set": {"instance": instance}},
-                                                   )
-        # mapping done
-        # refresh service list
-        services = db_client.booster_snmp.services.find({"host": arguments.get('host'),
-                                                         "check_interval": check_interval})
-        services = [s for s in services]
-        # print "MAPPING DONE"
+            db_client.update_service_instance(arguments.get('host'),
+                                              instance_name,
+                                              instance)
+        # refresh all services list
+        # NOTE Is this refresh mandatory ????
+        services = db_client.get_services(arguments.get('host'),
+                                             current_service.get('check_interval'))
+        # MAPPING DONE
 
     # Prepare oids
     fnc = partial(prepare_oids, group_size=serv.get('request_group_size', 64))

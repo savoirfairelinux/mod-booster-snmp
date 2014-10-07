@@ -267,7 +267,6 @@ def callback_mapping_bulk(send_request_handle, error_indication,
 
             # Handle illegal characters
             cleaned_instance_name = re.sub("[,:/ ]", "_", str(instance_name))
-            print "cleaned_instance_name", cleaned_instance_name
             # If we need this instance we store it
             if instance_name in result['data']:
                 result['data'][instance_name] = instance
