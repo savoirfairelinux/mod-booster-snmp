@@ -69,16 +69,42 @@ class SnmpBoosterPoller(SnmpBooster):
                 # If the command seems good
                 if len(clean_command) > 1:
                     # we do not want the first member, check_snmp thing
-                    args = parse_args(clean_command[1:])
+                    try:
+                        args = parse_args(clean_command[1:])
+                    except Exception as exp:
+                        # if we get a parsing error
+                        error_message = ("Command line { %s } parsing error: "
+                                         "%s" % (chk.command.encode('utf8',
+                                                                    'ignore'),
+                                                 str(exp)))
+                        logger.error("[SnmpBooster] [code 1001] "
+                                     "Command line { %s } parsing error: "
+                                     "%s" % (chk.command.encode('utf8',
+                                                                'ignore'),
+                                             str(exp)))
+                        # Check is now marked as done
+                        chk.status = 'done'
+                        # Get exit code
+                        chk.exit_status = 3
+                        chk.get_outputs("Command line parsing error: `%s' - "
+                                        "Please verify your check "
+                                        "command" %  str(exp),
+                                        8012)
+                        # Get execution time
+                        chk.execution_time = 0
+
+                        continue
 
                 # Ok we are good, we go on
                 if args.get('real_check', False):
                     # Make a SNMP check
                     check_snmp(chk, args, self.db_client,
                                self.task_queue, self.result_queue)
+                    logger.debug("CHECK SNMP %(host)s:%(service)s" % args)
                 else:
                     # Make fake check (get datas from mongodb)
                     check_cache(chk, args, self.db_client)
+                    logger.debug("CHECK cache %(host)s:%(service)s" % args)
 
     # Check the status of checks
     # if done, return message finished :)
@@ -107,7 +133,7 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 1001]"
+                    logger.critical("[SnmpBooster] [code 1002]"
                                     "[%d] Exiting: %s" % (str(self), exp))
                     # NOTE Do we really want to exit ???
                     sys.exit(2)
@@ -140,7 +166,7 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 1002]"
+                    logger.critical("[SnmpBooster] [code 1003]"
                                     "FIX-ME-ID Exiting: %s" % exp)
                     # NOTE Do we really want to exit ???
                     sys.exit(2)
@@ -170,7 +196,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     elif result.get('type') in ['TEXT', 'STRING']:
                         raw_value = str(result.get('value'))
                     else:
-                        logger.error("[SnmpBooster] [code 1002] [%s, %s] "
+                        logger.error("[SnmpBooster] [code 1004] [%s, %s] "
                                      "Value type is not in 'TEXT', 'STRING', "
                                      "'DERIVE', 'GAUGE', 'COUNTER', 'DERIVE64'"
                                      ", 'COUNTER64'" % (key.get('host'),
@@ -182,7 +208,7 @@ class SnmpBoosterPoller(SnmpBooster):
                         try:
                             value = compute_value(result)
                         except Exception as exp:
-                            logger.error("[SnmpBooster] [code 1003] [%s, %s] "
+                            logger.error("[SnmpBooster] [code 1005] [%s, %s] "
                                          "%s" % (key.get('host'),
                                                  key.get('service'),
                                                  str(exp)))
@@ -242,7 +268,7 @@ class SnmpBoosterPoller(SnmpBooster):
     # control_queue = Control Queue for the worker
     def work(self, master_slave_queue, returns_queue, control_queue):
         """ Main loop of SNMP Booster """
-        logger.info("[SnmpBooster] [code 1004] Module SNMP Booster started!")
+        logger.info("[SnmpBooster] [code 1006] Module SNMP Booster started!")
         # restore default signal handler for the workers:
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         timeout = 1.0
@@ -284,7 +310,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     # TODO : What is self.id undefined variable
                     # logger.info("[SnmpBooster] [%d]
                     # Dad say we are dying..." % self.id)
-                    logger.info("[SnmpBooster] [code 1005] FIX-ME-ID Parent "
+                    logger.info("[SnmpBooster] [code 1007] FIX-ME-ID Parent "
                                 "requests termination.")
                     break
             except Exception:

@@ -49,7 +49,7 @@ class SNMPWorker(Thread):
         while self.must_run:
             task_prepared = 0
             # Process all tasks
-            while (not self.mapping_queue.empty()) and task_prepared <= 1:
+            while (not self.mapping_queue.empty()) and task_prepared <= 50:
                 task_prepared += 1
                 snmp_task = self.mapping_queue.get()
                 if snmp_task['type'] in ['bulk', 'next', 'get']:
@@ -91,9 +91,12 @@ def handle_snmp_error(error_indication, cb_ctx, request_type):
 
     # Get results
     results = cb_ctx[0]
+    # Current elected service result
+    service_result = cb_ctx[1]
+
     # Log SNMP error
     logger.error("[SnmpBooster] [code 0605] [%s] SNMP Error: "
-                 "%s" % (results.values()[0]['key']['host'],
+                 "%s" % (service_result['host'],
                          str(error_indication)))
     # If is a get request
     if request_type == "get":
@@ -199,7 +202,7 @@ def callback_mapping_next(send_request_handle, error_indication,
 
     # Retrive context
     mapping_oid = cb_ctx[0]
-    result = cb_ctx[1]
+    result = cb_ctx[2]
 
     # Handle errors
     if handle_snmp_error(error_indication, cb_ctx, "next"):
@@ -244,7 +247,7 @@ def callback_mapping_bulk(send_request_handle, error_indication,
                           error_status, error_index, var_binds, cb_ctx):
     """ Callback function for BULK SNMP requests """
     mapping_oid = cb_ctx[0]
-    result = cb_ctx[1]
+    result = cb_ctx[2]
     for table_row in var_binds:
         for oid, instance_name in table_row:
             oid = "." + oid.prettyPrint()
