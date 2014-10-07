@@ -46,10 +46,11 @@ class SnmpBooster(BaseModule):
             return
 
         # Prepare database connection
-        try:
-            self.db_client = MongoClient(self.db_host, self.db_port)
-        except Exception as exp:
-            logger.error("[SnmpBooster] [code 1104] Mongodb Connection error: "
-                         "%s" % exp)
-            self.i_am_dying = True
-            return
+        if self.loaded_by in ['arbiter', 'poller']:
+            try:
+                self.db_client = MongoClient(self.db_host, self.db_port)
+            except Exception as exp:
+                logger.error("[SnmpBooster] [code 1104] Mongodb Connection error: "
+                             "%s" % exp)
+                self.i_am_dying = True
+                return
