@@ -42,7 +42,11 @@ class Mock(object):
 
 MOCK_MODULES = [
                 'shinken.log',
-                'memcache',
+                'pysnmp'
+                'pysnmp.entity'
+                'pysnmp.entity.rfc3413'
+                'pysnmp.entity.rfc3413.oneliner'
+                'pysnmp.entity.rfc3413.oneliner.cmdgen'
                 'pysnmp',
                 'pysnmp.carrier',
                 'pysnmp.carrier.asynsock',
