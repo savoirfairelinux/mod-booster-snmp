@@ -56,7 +56,15 @@ def flatten_dict(tree_dict):
 
 
 def rpn_calculator(rpn_list):
-    """ Reverse Polish notation calculator """
+    """ Reverse Polish notation calculator
+
+    >>> rpn_calculator([4, 5, "add"])
+    9.0
+    >>> rpn_calculator([1, 2, "eq"])
+    False
+    >>> rpn_calculator([3, 2, "gt", 1, 1, "eq", "and_"])
+    True
+    """
     stack = []
     for element in rpn_list:
         if element is None:
@@ -75,12 +83,20 @@ def rpn_calculator(rpn_list):
 
 
 def calculation(value, ds_calc):
-    """ Get result from calc """
+    """ Get result from calc
+
+    >>> calculation(1, [2, "add"])
+    3.0
+    """
     return rpn_calculator([value, ] + ds_calc)
 
 
 def derive(value, value_last, check_time, check_time_last, limit=4294967295):
-    """ Get a derive """
+    """ Get a derive
+
+    >>> derive(20, 10, 1412776670, 1412776660)
+    1
+    """
     t_delta = check_time - check_time_last
     if t_delta == 0:
         raise Exception("Time delta is 0s. We can not get derive")
@@ -110,6 +126,21 @@ def compute_value(result):
      'type': u'TEXT',
      'value': Counter32(0),
     }
+    >>> data = {}
+    >>> data['value_last'] = u'0'
+    >>> data['calc'] = None
+    >>> data['check_time'] = 1410456115.376102
+    >>> data['key'] = {}
+    >>> data['key']['host'] = u'myhost1'
+    >>> data['key']['ds_names'] = [u'ifOutErrors']
+    >>> data['key']['service'] = u'if.lo'
+    >>> data['key']['oid_type'] = 'ds_oid'
+    >>> data['check_time_last'] = 1410456100.722268
+    >>> data['value_last_computed'] = u'Text collected from SNMP'
+    >>> data['type'] = u'TEXT'
+    >>> data['value'] = "Text collected from SNMP"
+    >>> compute_value(data)
+    'Text collected from SNMP'
     """
     # Get format function name
     format_func_name = 'format_' + result.get('type').lower() + '_value'

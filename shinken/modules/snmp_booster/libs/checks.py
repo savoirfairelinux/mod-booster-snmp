@@ -119,7 +119,8 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             if snmp_info.use_getbulk:
                 mapping_task['type'] = 'bulk'
                 mapping_task['data']["nonRepeaters"] = 0
-                mapping_task['data']["maxRepetitions"] = 64
+                mapping_task['data']["maxRepetitions"] = serv.get('max_rep_map',
+                                                                  64)
                 mapping_task['data']['cbInfo'] = (callback_mapping_bulk,
                                                   (serv['mapping'],
                                                    check.result,
@@ -185,6 +186,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                                        result_queue))
         task_queue.put(get_task, block=False)
 
+    # NOTE Is it useful ?
     del services
 
 
