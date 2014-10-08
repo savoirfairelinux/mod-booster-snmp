@@ -1,3 +1,4 @@
 Put license header in all files
 Documentation of all error codes
 Migration Documentation from 1.x to 2.x
+CLI manager for mongodb

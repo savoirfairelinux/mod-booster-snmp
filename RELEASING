@@ -6,6 +6,7 @@ Releasing a New Version
  * Bump version numbers
    - setup.py
    - debian/changelog
+   - snmpbooster.py
  * Commit changes
    $ git commit -a -m "Update to X.Y.Z"
    $ git tag -s "X.Y.Z"
