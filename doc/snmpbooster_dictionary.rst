@@ -54,7 +54,7 @@ TRIGGERGROUP DICTIONNARY
 MAP DICTIONNARY
 ---------------
 
-....
+...
 
 
 SnmpBooster.ini example configuration

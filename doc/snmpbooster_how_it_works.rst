@@ -32,22 +32,31 @@ Shinken Integration
 
 .. image:: /_static/images/snmpbooster_data_model.png
 
-- 1 - The SnmpBooster Arbiter module reads the Shinken SnmpBooster configuration file(s). It reads the check commands and based on the values in the check commands that use the snmp_poller module it will creates a shared configuration cache using memcached/memcachedb. The memcache key is always the combination of the hostname. This permits to tie together Shinken Hosts and Services with the SNMP specific configuration. (MongoDB and Redis are planned to be supported in the future) The Scheduler daemon schedules Host and Service checks as it normally does. 
+- 1 - The SnmpBooster Arbiter module reads the Shinken SnmpBooster configuration file(s). It reads the check commands and based on the values in the check commands that use the snmp_poller module it will creates a shared configuration cache using Mongodb. This permits to tie together Shinken Hosts and Services with the SNMP specific configuration. The Scheduler daemon schedules Host and Service checks as it normally does. 
 
-- **3 - The SnmpBooster module will check that a memcache host key exists for the check to be launched. Then the SnmpBooster poller module will query all services related to a host for a given acquisition frequency in one pass**. (all checks done every 2 minutes will be executed in bulk, same for those every 5 minutes)
+- 2 - The SnmpBooster Arbiter module computes Shinken configuration with datasource files (.ini files) and prepare datas for MongoDB
 
-- **5 - Check results are cached for the acquisition check_interval.** The next time a check request for data from the same host is received from the Scheduler, the data will be fetched from memcache. Resulting is extremely low check latency.
+- 3 - The SnmpBooster Arbiter module stores an entry in MongoDB for each service defined in Shinken configuration
 
-- **2 and 6 - The SNMP checks still benefit from retries, timeouts, forced checks, dependencies and the powerful Scheduler daemon logic.** 
+- 4 - The SnmpBooster Scheduler module determines which services will launch a SNMP requests and which will be a MongoDB requests
 
-- 6 - The Scheduler daemon can still force an immediate re-check by flushing the cache. This is required for the dependency model.
+- 5 - Scheduler give tasks to pollers
+
+- 6 - The SnmpBooster Poller module gets datas from MongoDB:
+
+      - It get the current service if it's a MongoDB request
+      - It get all services from the host of the current service if it's a SNMP request
+
+- 7 - The SnmpBooster Poller module makes SNMP requests
+
+- 8 - The SnmpBooster Poller module computes and stores collected datas from SNMP in MongoDB
 
 Performance
 -----------
 
 SnmpBooster uses SNMP v2c getbulk for high efficiency, unless forced to use SNMP v2c get-next or SNMPv1 get-next. GetBulk uses a single request PDU to ask for multiple OIDs or even entire tables, instead of sending one request PDU per OID. 
 
-For example: *A typical 24 port network switch with two uplinks might use 375 OIDS (8 OIDs per interface, plus general OIDs for chassis health, memory, cpu, fans, etc.). **SnmpBooster will only require around 4 request PDUs instead of 375 request PDUs**. Each PDU is a request packet which takes time to create, send get processed and return. More timeouts to manage, more connections, more impact on the remote device and more latency means much fewer checks per second.*
+For example: *A typical 24 port network switch with two uplinks might use 375 OIDS (8 OIDs per interface, plus general OIDs for chassis health, memory, cpu, fans, etc.). SnmpBooster will only require around 4 request PDUs instead of 375 request PDUs. Each PDU is a request packet which takes time to create, send get processed and return. More timeouts to manage, more connections, more impact on the remote device and more latency means much fewer checks per second.*
 
 The SnmpBooster module supports automatic instance mapping for OIDs. (Ex. Based on the interface name it will figure out that the SNMP index(or instance) is 136. This is automatically handled by genDevConfig and SnmpBooster, no user input required. :-)
 
@@ -60,11 +69,9 @@ The generic SNMP configuration information is stored in the Shinken SnmpBooster 
 Limitations
 ===========
 
-You should have memcached instances running on each poller responsible for snmp polling.
+You should have your pollers with SnmpBooster in the same datacenter, as they need to be on the same machine with good connectivity to the active MongoDB server.
 
-You should have your pollers with SnmpBooster in the same datacenter, as they need to be on the same machine with good connectivity to the active memcached instance.
-
-SnmpBooster is not compatible with distributed pollers in multiple datacenters, sorry, the current design of SnmpBooster uses a single centralized memcached instance for storing the timeseries data. For distributed datacenters to be supported, each poller+scheduler+memcached must be realm restrained, which is not the case today.
+SnmpBooster is not compatible with distributed pollers in multiple datacenters, sorry, the current design of SnmpBooster uses a single centralized MongoDB instance for storing the timeseries data. For distributed datacenters to be supported, each poller+scheduler+mongoDB must be realm restrained, which is not the case today.
 
 
 Design specification

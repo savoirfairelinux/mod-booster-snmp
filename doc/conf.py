@@ -47,22 +47,6 @@ MOCK_MODULES = [
                 'pysnmp.entity.rfc3413'
                 'pysnmp.entity.rfc3413.oneliner'
                 'pysnmp.entity.rfc3413.oneliner.cmdgen'
-                'pysnmp',
-                'pysnmp.carrier',
-                'pysnmp.carrier.asynsock',
-                'pysnmp.carrier.asynsock.dispatch',
-                'pysnmp.carrier.asynsock.dgram',
-                'pyasn1',
-                'pyasn1.codec',
-                'pyasn1.codec.ber',
-                'pysnmp',
-                'pysnmp.proto',
-                'pysnmp.proto.api',
-                'shinken',
-                'shinken.check',
-                'shinken.macroresolver',
-                'shinken.basemodule',
-                'shinken.util',
                 ]
 
 for mod_name in MOCK_MODULES:

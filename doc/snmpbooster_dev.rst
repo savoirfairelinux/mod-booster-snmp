@@ -47,32 +47,32 @@ SNMP Booster libs
      :show-inheritance:
 
 
-.. automodule:: modules.snmp_booster.libs.snmpasynclient
+.. automodule:: modules.snmp_booster.libs.checks
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmpfrequence
+.. automodule:: modules.snmp_booster.libs.dbclient
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmphost
+.. automodule:: modules.snmp_booster.libs.output
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmpmcclient
+.. automodule:: modules.snmp_booster.libs.result
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmpoid
+.. automodule:: modules.snmp_booster.libs.snmpworker
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmpservice
+.. automodule:: modules.snmp_booster.libs.trigger
      :members:
      :undoc-members:
      :show-inheritance:

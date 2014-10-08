@@ -113,19 +113,21 @@ def derive(value, value_last, check_time, check_time_last, limit=4294967295):
 
 def compute_value(result):
     """ Get a computed value from raw_value, ds_type and calculation
-    result argument must have this form:
-    {'value_last': u'0',
-     'calc': None,
-     'check_time': 1410456115.376102,
-     'key': {'host': u'myhost1',
-             'ds_names': [u'ifOutErrors'],
-             'service': u'if.lo',
-             'oid_type': 'ds_oid'},
-     'check_time_last': 1410456100.722268,
-     'value_last_computed': u'0',
-     'type': u'TEXT',
-     'value': Counter32(0),
-    }
+    result argument must have this form ::
+
+        {'value_last': u'0',
+         'calc': None,
+         'check_time': 1410456115.376102,
+         'key': {'host': u'myhost1',
+                 'ds_names': [u'ifOutErrors'],
+                 'service': u'if.lo',
+                 'oid_type': 'ds_oid'},
+         'check_time_last': 1410456100.722268,
+         'value_last_computed': u'0',
+         'type': u'TEXT',
+         'value': Counter32(0),
+        }
+
     >>> data = {}
     >>> data['value_last'] = u'0'
     >>> data['calc'] = None

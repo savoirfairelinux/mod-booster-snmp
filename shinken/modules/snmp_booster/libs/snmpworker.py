@@ -6,8 +6,14 @@ from threading import Thread
 import re
 import time
 
-from pysnmp.entity.rfc3413.oneliner import cmdgen
-from pysnmp.smi.exval import noSuchInstance
+
+try:
+    from pysnmp.entity.rfc3413.oneliner import cmdgen
+    from pysnmp.smi.exval import noSuchInstance
+except ImportError as exp:
+    logger.error("[SnmpBooster] [code 0601] Import error. Pysnmp is missing")
+    raise ImportError(exp)
+
 
 from shinken.log import logger
 
@@ -23,29 +29,34 @@ class SNMPWorker(Thread):
     def run(self):
         """ Process SNMP tasks
         SNMP task is a dict:
-        - For a bulk request
-        {"authData": cmdgen.CommunityData('public')
-         "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
-         "nonRepeaters": 0
-         "maxRepetitions": 64
-         "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
-         "cbInfo:: (cbFun, (arg1, arg2, ...))
-         }
-        - For a next request
-        {"authData": cmdgen.CommunityData('public')
-         "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
-         "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
-         "cbInfo:: (cbFun, (arg1, arg2, ...))
-         }
-        - For a get request
-        {"authData": cmdgen.CommunityData('public)
-         "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
-         "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
-         "cbInfo:: (cbFun, (arg1, arg2, ...))
-         }
+        - For a bulk request ::
+
+            {"authData": cmdgen.CommunityData('public')
+             "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
+             "nonRepeaters": 0
+             "maxRepetitions": 64
+             "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
+             "cbInfo:: (cbFun, (arg1, arg2, ...))
+             }
+
+        - For a next request ::
+
+            {"authData": cmdgen.CommunityData('public')
+             "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
+             "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
+             "cbInfo:: (cbFun, (arg1, arg2, ...))
+            }
+
+        - For a get request ::
+
+            {"authData": cmdgen.CommunityData('public)
+             "transportTarget": cmdgen.UdpTransportTarget((transportTarget, 161))
+             "varNames": ['1.3.6.1.2.1.2.2.1.2.0', '...']
+             "cbInfo:: (cbFun, (arg1, arg2, ...))
+            }
         """
         self.must_run = True
-        logger.info("[SnmpBooster] [code 0601] is starting")
+        logger.info("[SnmpBooster] [code 0602] is starting")
         while self.must_run:
             task_prepared = 0
             # Process all tasks
@@ -62,7 +73,7 @@ class SNMPWorker(Thread):
                     # If the request is not handled
                     error_message = ("Bad SNMP requets type: '%s'. Must be "
                                      "get, next or bulk." % snmp_task['type'])
-                    logger.error("[SnmpBooster] [code 0602] [%s] "
+                    logger.error("[SnmpBooster] [code 0603] [%s] "
                                  "%s" % (snmp_task['host'],
                                          error_message))
                     continue
@@ -75,11 +86,11 @@ class SNMPWorker(Thread):
             # Sleep
             time.sleep(0.1)
 
-        logger.info("[SnmpBooster] [code 0603] is stopped")
+        logger.info("[SnmpBooster] [code 0604] is stopped")
 
     def stop_worker(self):
         """ Stop SNMP worker thread """
-        logger.info("[SnmpBooster] [code 0604] will be stopped")
+        logger.info("[SnmpBooster] [code 0605] will be stopped")
         self.must_run = False
 
 
@@ -95,7 +106,7 @@ def handle_snmp_error(error_indication, cb_ctx, request_type):
     service_result = cb_ctx[1]
 
     # Log SNMP error
-    logger.error("[SnmpBooster] [code 0605] [%s] SNMP Error: "
+    logger.error("[SnmpBooster] [code 0606] [%s] SNMP Error: "
                  "%s" % (service_result['host'],
                          str(error_indication)))
     # If is a get request
@@ -136,7 +147,7 @@ def callback_get(send_request_handle, error_indication, error_status,
             if value == noSuchInstance:
                 # Log NoSuchInstance SNMP error
                 message = "Oid not found on the device: %s" % oid
-                logger.error("[SnmpBooster] [code 0606] [%s, %s] SNMP Error: "
+                logger.error("[SnmpBooster] [code 0607] [%s, %s] SNMP Error: "
                              "%s" % (results.values()[0]['key']['host'],
                                      results[oid]['key']['service'],
                                      message))

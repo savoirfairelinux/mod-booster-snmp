@@ -21,7 +21,7 @@ Downloads
 
 The SnmpBooster module and genDevConfig are currently in public beta prior to integration within Shinken. You can consult the design specification to see the :ref:`current development status <snmpbooster_design_specification>`.
   * https://github.com/xkilian/genDevConfig
-  * https://github.com/titilambert/mod-booster-snmp  (use for_shinken_1.4 branch)
+  * https://github.com/savoirfairelinux/mod-booster-snmp  (use for_shinken_1.4 branch)
 
     * Download and copy mod-booster-snmp/shinken/modules/snmp_booster to shinken/modules/
 
@@ -34,19 +34,12 @@ The SnmpBooster module requires:
   * Shinken 1.2+ < 2.0
   * `PySNMP 4.2.1+ (Python module and its dependencies)`_
   * `ConfigObj (Python module)`_
-  * `python-memcached`_
-  * memcachedb or memcached package for your operating system (ex. For Ubuntu: apt-get install memcachedb) `See memcached note`_.
-
-.. _See memcached note:
-
-.. note::
-   On Ubuntu 12.04 the default instalation is on port 21201 instead of 11211.
-   This causes the error ”[SnmpBooster] Memcache server (127.0.0.1:11211) is not reachable” when shinken starts.
-   To change it, you must edit the file /etc/memcachedb.conf
+  * `python-pymongo`_ <= 2.6.3
+  * MongoDB package for your operating system (ex. For Ubuntu: apt-get install mongodb)
 
 .. _PySNMP 4.2.1+ (Python module and its dependencies): http://pysnmp.sourceforge.net/download.html
 .. _ConfigObj (Python module): http://www.voidspace.org.uk/python/configobj.html#downloading
-.. _python-memcached: http://pypi.python.org/pypi/python-memcached/
+.. _python-pymongo: https://pypi.python.org/pypi/pymongo
 
 The genDevConfig profile generator depends on:
 
@@ -117,10 +110,8 @@ One for the Arbiter:
         module_name          SnmpBoosterArbiter
         module_type          snmp_booster
         datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
-        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
-        memcached_port       21201   ; default port for a memcached process
+        db_host              192.168.1.2   ; SET THE IP ADDRESS OF YOUR mongodb SERVER
         loaded_by            arbiter
-        show_from_cache      False
     }
 
 One for the Scheduler:
@@ -130,11 +121,7 @@ One for the Scheduler:
     define module {
         module_name          SnmpBoosterScheduler
         module_type          snmp_booster
-        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
-        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
-        memcached_port       21201   ; default port for a memcached process
         loaded_by            scheduler
-        show_from_cache      False
     }
 
 One for the Poller:
@@ -144,22 +131,19 @@ One for the Poller:
     define module {
         module_name          SnmpBoosterPoller
         module_type          snmp_booster
-        datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
-        memcached_host       192.168.1.2   ; SET THE IP ADDRESS OF YOUR memcached SERVER
-        memcached_port       21201   ; default port for a memcached process
         loaded_by            poller
-        show_from_cache      False
-        life_time            1000 ; Nb of checks done before kill the worker (and restart an other one)
+        db_host              192.168.1.2
+
     }
 
 
-If you do not know the IP adress on which your memcache is listening, check under /etc/memcached.conf. Or do a:
+If you do not know the IP adress on which your MongoDB is listening, check under /etc/mongodb.conf. Or do a:
 
 ::
 
-  netstat -a | grep memcached
+  netstat -a | grep mongodb
 
-If you are running a test on the local machine you can leave memcached on 127.0.0.1 (localhost), but if your poller, scheduler or arbiter is on a different machine, set the memcached to listen on a real IP address.
+If you are running a test on the local machine you can leave mongodb on 127.0.0.1 (localhost), but if your poller, scheduler or arbiter is on a different machine, set the mongodb to listen on a real IP address.
 
 
 Parameters
@@ -168,10 +152,9 @@ Parameters
 :module_name:          Module Name. Example: `SnmpBoosterPoller`
 :module_type:          Module type. Must be: `snmp_booster`
 :datasource:           Datasource folder. Where all your Defaults*.ini are. Example: `/etc/shinken/snmpbooster_datasource/`
-:memcached_host:       Memcached host IP. Example: `192.168.1.2`
-:memcached_port:       Memcached host port. Example: `21201`
+:db_host:              Memcached host IP. Default: `127.0.0.1`. Example: `192.168.1.2`
+:db_port:              Memcached host port. Default: `27017`. Example: `27017`
 :loaded_by:            Which part of Shinken load this module. Must be: `poller`, `arbiter` or `scheduler`. Example: `arbiter`
-:show_from_cache:      Prefix output by `FROM CACHE` string when datas come from memcached. Usefull for debugging. Default: False
 
 
 How to define a Host and Service
@@ -198,51 +181,114 @@ To edit the file
 
   define command {
     command_name    check_snmp_booster
-    command_line    check_snmp_booster -H $HOSTNAME$ -C $SNMPCOMMUNITYREAD$ -V 2c -t $ARG1$ -i $_SERVICEINST$ -T $_SERVICETRIGGERGROUP$
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$
     module_type     snmp_booster
   }
+  
+  define command {
+    command_name    check_snmp_booster_bulk
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b
+    module_type     snmp_booster
+  }
+  
 
 Parameters for check_snmp_booster command
 +++++++++++++++++++++++++++++++++++++++++
 
-:-H: server hostname
-:-P: SNMP port. Default: 161
-:-C: SNMP community
-:-V: SNMP version
-:-t: dstemplate name
-:-i: instance mapping
-:-T: trigger group
-:-b: Use snmp getbulk requests. Default: False
-:-M: Instance mapping max_repetititon parameters for snmp getbulk requests. Default: 64
-:-m: max_repetition parameters for snmp getbulk requests. Default: 64
+-H, --host-name
+  server hostname; (**mandatory**)
+
+-A, --host-address
+  server address; (**mandatory**)
+
+-S, --service
+  service description; (**mandatory**)
+
+-C, --community
+  SNMP community; Default: `public`
+
+-P, --port
+  SNMP port; Default: `161`
+
+-V, --snmp-version
+  SNMP version; Default: `2c`
+
+-s, --timeout
+  SNMP request timeout; Default: `5` (seconds)
+
+-t, --dstemplate
+  dstemplate name; Example: `standard-interface`; (**mandatory**)
+
+-i, --instance
+  instance (no mapping need); Example: `1.32.4`
+
+-n, --instance-name
+  instance name use for mapping; Example: `Intel_Corporation_82579LM_Gigabit_Network_Connection`
+
+-m, --mapping
+  OID used to do the mapping; Example: `.1.3.6.1.2.1.2.2.1.2`
+
+-N, --mapping-name 
+  name of the OID used to do the mapping; Example: `interface-name`
+
+-T, --triggergroup
+  name of the trigger group which contains several triggers; Example: `interface-hc`
+
+-b, --use_getbulk
+  use snmp getbulk requests to do the mapping; Default: `False`
+
+-M, --max-rep-map
+  max_repetition parameters for snmp getbulk requests; Default: `64`
+
+-g, --request_group_size
+  max number of asked oids in one SNMP request; Default: `64`
+
+
+Template definitions
+++++++++++++++++++++
 
 
 ::
 
-  define service {
-    name                    default-snmp-template
-    check_command           check_snmp_booster!$_SERVICEDSTEMPLATE$!$_SERVICEINST$!$_SERVICETRIGGERGROUP
-    _inst                   None
-    _triggergroup           None
-    max_check_attempts      3
-    check_interval          1
-    retry_interval          1
-    register                0
-  }
-
-
-::
-
-  host {
+  define host{
     name                    SnmpBooster-host
     alias                   SnmpBooster-host template
-    check_command	        check_host_alive
+    check_command           check_host_alive
     max_check_attempts      3
     check_interval          1
     retry_interval          1
     use                     generic-host
     register                0
+    _SNMPCOMMUNITYREAD      $SNMPCOMMUNITYREAD$
+    _SNMPCOMMUNITYVERSION   $SNMPCOMMUNITYVERSION$
   }
+  
+  
+  
+  define service {
+    name                    default-snmp-template
+    check_command           check_snmp_booster
+    _inst                   None
+    _triggergroup           None
+    _mapping                None
+    max_check_attempts      3
+    check_interval          1
+    retry_interval          1
+    register                0
+  }
+
+  define service {
+    name                    default-snmpbulk-template
+    check_command           check_snmp_booster_bulk
+    _inst                   None
+    _triggergroup           None
+    _mapping                None
+    max_check_attempts      3
+    check_interval          1
+    retry_interval          1
+    register                0
+  }
+
 
 
 Step 2
@@ -261,8 +307,16 @@ Optional service arguments related to SNMP polling with default values:
 
 ::
 
-    _inst                   None   ; Could be numeric: 0, None or an instance mapping function like: map(interface-name,FastEthernet0_1)
+    _inst                   None   ; Could be numeric: 0, 0.0.1, None
     _triggergroup           None   ; Name of the triggergroup defined in the SnmpBooster config.ini file to use for setting warning and critical thresholds
+
+
+Here an example how to configure a service to use instance mapping
+
+::
+
+    _instname               FastEthernet0_1
+    _mapping                interface-name
    
   
 Sample Shinken host and service configuration:
@@ -316,7 +370,8 @@ Sample Shinken host and service configuration:
      service_description	if.FastEthernet0_1
      display_name		FastEthernet0_1 Description: Link to Router-1 100.0 MBits/s ethernetCsmacd
      _dstemplate		standard-interface
-     _inst		map(interface-name,FastEthernet0_1)
+     _instname		FastEthernet0_1
+     _mapping		interface-name
      use			default-snmp-template
      register		1
   }

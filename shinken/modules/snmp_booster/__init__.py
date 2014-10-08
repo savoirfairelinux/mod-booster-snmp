@@ -43,7 +43,7 @@ properties = {
 
 def get_instance(mod_conf):
     """called by the plugin manager to get a poller"""
-    logger.info("[SnmpBooster] [code 0101] Get a snmp poller module "
+    logger.info("[SnmpBooster] [code 0101] Loading SNMP Booster module "
                 "for plugin %s" % mod_conf.get_name())
     # Check if the attribute loaded_by is set
     if not hasattr(mod_conf, 'loaded_by'):
