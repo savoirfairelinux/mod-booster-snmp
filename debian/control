@@ -6,13 +6,14 @@ Vcs-Git: git://anonscm.debian.org/collab-maint/shinken.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/shinken.git;a=summary
 Standards-Version: 3.9.6
 XS-Python-Version: >= 2.5, << 2.8
-Build-Depends: python, debhelper (>= 9), quilt
+Build-Depends: python, debhelper (>= 9), quilt, python-pymongo (>= 2.6.3),
+               python-configobj, python-pysnmp4, python-pyasn1
 Homepage: http://www.shinken-monitoring.org
 
 Package: shinken-module-snmpbooster
 Architecture: any
 Depends: shinken-common (<< 2.0), python-pysnmp4, python-pyasn1,
-         python-configobj, python-pymongo, ${misc:Depends}
+         python-configobj, python-pymongo (>= 2.6.3), ${misc:Depends}
 Conflicts: shinken-core
 Suggests: shinken-module-snmpbooster-doc
 Description:  Flexible monitoring tool - NRPE module for Poller
