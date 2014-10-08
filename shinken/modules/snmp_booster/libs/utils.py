@@ -285,7 +285,7 @@ def parse_args(cmd_args):
                 args['max_rep_map'] = int(value)
             except ValueError:
                 args['max_rep_map'] = 64
-                logger.warning('[SnmpBooster] [code 0802] Bad max_rep_map: '
+                logger.warning('[SnmpBooster] [code 0801] Bad max_rep_map: '
                                'setting to 64)')
         # Size of requests groups
         elif option_name in ("-g", "--request-group-size"):
@@ -293,7 +293,7 @@ def parse_args(cmd_args):
                 args['request_group_size'] = int(value)
             except ValueError:
                 args['request_group_size'] = 64
-                logger.warning('[SnmpBooster] [code 0803] Bad '
+                logger.warning('[SnmpBooster] [code 0802] Bad '
                                'request_group_size: setting to 64)')
         # Hidden option
         elif option_name in ("-r", "--real-check"):

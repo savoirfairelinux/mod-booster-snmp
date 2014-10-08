@@ -5,7 +5,7 @@ from shinken.log import logger
 try:
     from pymongo import MongoClient
 except ImportError as exp:
-    logger.error("[SnmpBooster] [code 1101] Import error. Maybe one of this "
+    logger.error("[SnmpBooster] [code 1201] Import error. Maybe one of this "
                  "module is pymongo")
     raise ImportError(exp)
 
@@ -50,7 +50,7 @@ class DBClient(object):
             elif context:
                 context_str = str(context_str)
             # Prepare error message
-            error_message = ("[SnmpBooster] [code 0801] %s error putting "
+            error_message = ("[SnmpBooster] [code 1202] %s error putting "
                              "data in cache: %s" % (context_str,
                                                     str(result['err'])))
             logger.error(error_message)
@@ -77,7 +77,7 @@ class DBClient(object):
                                                               {"$set": data},
                                                               upsert=True)
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 0908] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1203] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -102,7 +102,7 @@ class DBClient(object):
                                                               data,
                                                               )
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 0908] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1204] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -128,7 +128,7 @@ class DBClient(object):
                                                               data,
                                                               )
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 0908] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1205] [%s, %s] "
                          "%s" % (host,
                                  instance_name,
                                  str(exp)))
@@ -150,7 +150,7 @@ class DBClient(object):
                               self.db_name).services.find_one(mongo_filter,
                                                               {"_id": False})
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 0908] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1206] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -173,7 +173,7 @@ class DBClient(object):
                                self.db_name).services.find(mongo_filter)
 
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 0908] [%s] "
+            logger.error("[SnmpBooster] [code 1207] [%s] "
                          "%s" % (host,
                                  str(exp)))
             return None

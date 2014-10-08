@@ -29,13 +29,13 @@ class SnmpBooster(BaseModule):
         # Called by poller to say 'let's prepare yourself guy'
     def init(self):
         """Called by poller to say 'let's prepare yourself guy'"""
-        logger.info("[SnmpBooster] [code 1102] Initialization of "
+        logger.info("[SnmpBooster] [code 1101] Initialization of "
                     "the SNMP Booster %s" % self.version)
         self.i_am_dying = False
 
         if self.datasource_file is None and self.loaded_by == 'arbiter':
             # Kill snmp booster if config_file is not set
-            logger.error("[SnmpBooster] [code 1103] Please set "
+            logger.error("[SnmpBooster] [code 1102] Please set "
                          "datasource parameter")
             self.i_am_dying = True
             return
@@ -45,7 +45,7 @@ class SnmpBooster(BaseModule):
             try:
                 self.db_client = DBClient(self.db_host, self.db_port, self.db_name)
             except Exception as exp:
-                logger.error("[SnmpBooster] [code 1104] Mongodb Connection error: "
+                logger.error("[SnmpBooster] [code 1103] Mongodb Connection error: "
                              "%s" % exp)
                 self.i_am_dying = True
                 return

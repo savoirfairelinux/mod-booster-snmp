@@ -15,7 +15,7 @@ def set_output_and_status(check_result):
     if check_result.get('db_data') is None:
         # This is a really strange problem
         # You should never see this error
-        logger.warning("[SnmpBooster] [0501] No data found in cache. "
+        logger.warning("[SnmpBooster] [code 0501] No data found in cache. "
                        "Impossible to know which host and service is "
                        "impacted")
         output = "No Data found in cache"
