@@ -4,7 +4,7 @@ Section: net
 Priority: extra
 Vcs-Git: git://anonscm.debian.org/collab-maint/shinken.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/shinken.git;a=summary
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 XS-Python-Version: >= 2.5, << 2.8
 Build-Depends: python, debhelper (>= 9), quilt
 Homepage: http://www.shinken-monitoring.org
@@ -12,10 +12,9 @@ Homepage: http://www.shinken-monitoring.org
 Package: shinken-module-snmpbooster
 Architecture: any
 Depends: shinken-common (<< 2.0), python-pysnmp4, python-pyasn1,
-         python-configobj, python-memcache, ${misc:Depends}
+         python-configobj, python-pymongo, ${misc:Depends}
 Conflicts: shinken-core
 Suggests: shinken-module-snmpbooster-doc
-Recommends: 
 Description:  Flexible monitoring tool - NRPE module for Poller
  SNMP module for Arbiter/Scheduler/Poller. This module makes SNMP requests
  without any SNMP plugin.
