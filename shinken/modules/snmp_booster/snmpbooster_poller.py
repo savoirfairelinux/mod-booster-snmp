@@ -133,8 +133,8 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 1002]"
-                                    "[%d] Exiting: %s" % (str(self), exp))
+                    logger.error("[SnmpBooster] [code 1002]"
+                                 "[%d] Exiting: %s" % (str(self), exp))
                     # NOTE Do we really want to exit ???
                     sys.exit(2)
                 continue
@@ -166,8 +166,8 @@ class SnmpBoosterPoller(SnmpBooster):
                 try:
                     self.returns_queue.put(chk)
                 except IOError, exp:
-                    logger.critical("[SnmpBooster] [code 1003]"
-                                    "FIX-ME-ID Exiting: %s" % exp)
+                    logger.error("[SnmpBooster] [code 1003]"
+                                 "FIX-ME-ID Exiting: %s" % exp)
                     # NOTE Do we really want to exit ???
                     sys.exit(2)
 

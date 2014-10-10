@@ -42,10 +42,8 @@ class SnmpBooster(BaseModule):
 
         # Prepare database connection
         if self.loaded_by in ['arbiter', 'poller']:
-            try:
-                self.db_client = DBClient(self.db_host, self.db_port, self.db_name)
-            except Exception as exp:
-                logger.error("[SnmpBooster] [code 1103] Mongodb Connection error: "
-                             "%s" % exp)
+            self.db_client = DBClient(self.db_host, self.db_port, self.db_name)
+            # Connecting
+            if not self.db_client.connect():
                 self.i_am_dying = True
                 return

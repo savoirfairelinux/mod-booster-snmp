@@ -22,11 +22,15 @@ class DBClient(object):
 
         self.db_conn = None
 
-        self.connect()
-
     def connect(self):
         """ This function inits the connection to the database """
-        self.db_conn = MongoClient(self.db_host, self.db_port)
+        try:
+            self.db_conn = MongoClient(self.db_host, self.db_port)
+        except Exception as exp:
+            logger.error("[SnmpBooster] [code 1202] Mongodb Connection error:"
+                          " %s" % str(exp))
+            return False
+        return True
 
     def disconnect(self):
         """ This function kills the connection to the database """
@@ -50,7 +54,7 @@ class DBClient(object):
             elif context:
                 context_str = str(context_str)
             # Prepare error message
-            error_message = ("[SnmpBooster] [code 1202] %s error putting "
+            error_message = ("[SnmpBooster] [code 1203] %s error putting "
                              "data in cache: %s" % (context_str,
                                                     str(result['err'])))
             logger.error(error_message)
@@ -77,7 +81,7 @@ class DBClient(object):
                                                               {"$set": data},
                                                               upsert=True)
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 1203] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1204] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -102,7 +106,7 @@ class DBClient(object):
                                                               data,
                                                               )
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 1204] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1205] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -128,7 +132,7 @@ class DBClient(object):
                                                               data,
                                                               )
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 1205] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1206] [%s, %s] "
                          "%s" % (host,
                                  instance_name,
                                  str(exp)))
@@ -150,7 +154,7 @@ class DBClient(object):
                               self.db_name).services.find_one(mongo_filter,
                                                               {"_id": False})
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 1206] [%s, %s] "
+            logger.error("[SnmpBooster] [code 1207] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
@@ -173,7 +177,7 @@ class DBClient(object):
                                self.db_name).services.find(mongo_filter)
 
         except Exception as exp:
-            logger.error("[SnmpBooster] [code 1207] [%s] "
+            logger.error("[SnmpBooster] [code 1208] [%s] "
                          "%s" % (host,
                                  str(exp)))
             return None

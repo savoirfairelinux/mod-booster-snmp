@@ -1,3 +1,4 @@
+.. _snmpbooster_troubleshooting:
 
 ===========================
 SnmpBooster Troubleshooting
@@ -80,21 +81,21 @@ You can simply do a ``grep SnmpBooster *`` in your shinken/var directory to see 
 Error codes
 ===========
 
-code 0101
+Code 0101
     =========== ===========================================================================
     Type        INFO
     Description SNMP Booster module starts loading
     File        `__init__.py`
     =========== ===========================================================================
 
-code 0102
+Code 0102
     =========== ===========================================================================
     Type        ERROR
     Description The attribute **loaded_by** is not set in the Shinken configuration
     File        `__init__.py`
     =========== ===========================================================================
 
-code 0103
+Code 0103
     =========== ===========================================================================
     Type        ERROR
     Description The attribute **loaded_by** must be `poller`, `scheduler` or `arbiter` and
@@ -102,14 +103,14 @@ code 0103
     File        `__init__.py`
     =========== ===========================================================================
 
-code 0201
+Code 0201
     =========== ===========================================================================
     Type        ERROR
     Description **PySNMP** module can not be loaded. Please checks your installation
     File        `libs/checks.py`
     =========== ===========================================================================
 
-code 0202
+Code 0202
     =========== ===========================================================================
     Type        ERROR
     Description The current service is not found in the cache (MongoDB). Maybe you flush it
@@ -118,7 +119,7 @@ code 0202
     File        `libs/checks.py`
     =========== ===========================================================================
 
-code 0501
+Code 0501
     =========== ===========================================================================
     Type        WARNING
     Description The Poller didn't found the asked service in the cache (MongoDB). This
@@ -126,7 +127,7 @@ code 0501
     File        `libs/results.py`
     =========== ===========================================================================
 
-code 0502
+Code 0502
     =========== ===========================================================================
     Type        WARNING
     Description We try to get data from a service which the mapping is not done. We have
@@ -142,21 +143,21 @@ code 0502
     File        `libs/results.py`
     =========== ===========================================================================
 
-code 0601
+Code 0601
     =========== ===========================================================================
     Type        ERROR
     Description **PySNMP** module can not be loaded. Please checks your installation
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0602
+Code 0602
     =========== ===========================================================================
     Type        INFO
     Description The SNMP worker thread is starting
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0603
+Code 0603
     =========== ===========================================================================
     Type        ERROR
     Description We got a SNMP request which is not `get`, `getnext` or `getbulk`
@@ -164,28 +165,28 @@ code 0603
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0604
+Code 0604
     =========== ===========================================================================
     Type        INFO
     Description The SNMP worker thread is now stopped
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0605
+Code 0605
     =========== ===========================================================================
     Type        INFO
     Description The SNMP worker thread will be stopped
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0606
+Code 0606
     =========== ===========================================================================
     Type        ERROR
     Description We got a SNMP error. This could be a timeout, a bad response, ...
     File        `libs/snmpworker.py`
     =========== ===========================================================================
 
-code 0701
+Code 0701
     =========== ===========================================================================
     Type        ERROR
     Description We got a trigger error. It seems that the datasource name use in the
@@ -193,7 +194,7 @@ code 0701
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0702
+Code 0702
     =========== ===========================================================================
     Type        ERROR
     Description We didn't found any collected data in the cache (MongoDB) to use in the
@@ -206,7 +207,7 @@ code 0702
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0703
+Code 0703
     =========== ===========================================================================
     Type        ERROR
     Description We didn't found any computed data in the cache (MongoDB) to use in the
@@ -218,7 +219,7 @@ code 0703
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0704
+Code 0704
     =========== ===========================================================================
     Type        ERROR
     Description We got an error during the execution of trigger function.
@@ -227,7 +228,7 @@ code 0704
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0705
+Code 0705
     =========== ===========================================================================
     Type        ERROR
     Description We got an error during the execution of trigger function. The trigger
@@ -236,7 +237,7 @@ code 0705
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0706
+Code 0706
     =========== ===========================================================================
     Type        ERROR
     Description We didn't found the asked datasource name defined in the trigger. This
@@ -244,7 +245,7 @@ code 0706
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0707
+Code 0707
     =========== ===========================================================================
     Type        ERROR
     Description We got an error during the execution of a trigger. Please check your
@@ -252,7 +253,7 @@ code 0707
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0708
+Code 0708
     =========== ===========================================================================
     Type        INFO
     Description The trigger triggered. It means the service state will be WARNING or
@@ -260,14 +261,14 @@ code 0708
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0709
+Code 0709
     =========== ===========================================================================
     Type        ERROR
     Description Unknown trigger error. Maybe it's a good idea to report a bug ?
     File        `libs/trigger.py`
     =========== ===========================================================================
 
-code 0801
+Code 0801
     =========== ===========================================================================
     Type        WARNING
     Description The parameter **-M** or **--max_rep_map** define in the check command has a
@@ -275,7 +276,7 @@ code 0801
     File        `libs/utils.py`
     =========== ===========================================================================
 
-code 0802
+Code 0802
     =========== ===========================================================================
     Type        WARNING
     Description The parameter **-g** or **--request_group_size** define in the check
@@ -283,42 +284,42 @@ code 0802
     File        `libs/utils.py`
     =========== ===========================================================================
 
-code 0901
+Code 0901
     =========== ===========================================================================
     Type        ERROR
     Description **configobj** module can not be loaded. Please checks your installation
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0902
+Code 0902
     =========== ===========================================================================
     Type        INFO
     Description The SNMP Booster module is reading datasource file
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0903
+Code 0903
     =========== ===========================================================================
     Type        INFO
     Description The SNMP Booster module is reading datasource files
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0904
+Code 0904
     =========== ===========================================================================
     Type        ERROR
     Description We got an error merging datasource files. Please check your configuration
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0905
+Code 0905
     =========== ===========================================================================
     Type        ERROR
     Description We got an error merging datasource files. Please check your configuration
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0906
+Code 0906
     =========== ===========================================================================
     Type        ERROR
     Description We got an error during the conversion of the datasource configuration from
@@ -326,7 +327,7 @@ code 0906
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 0907
+Code 0907
     =========== ===========================================================================
     Type        ERROR
     Description We got an error during the serialization of service configuration just
@@ -334,44 +335,133 @@ code 0907
     File        `snmpbooster_arbiter.py`
     =========== ===========================================================================
 
-code 1001
-code 1002
-code 1003
-code 1004
-code 1005
-code 1006
-code 1007
-code 1101
-code 1102
-code 1103
-code 1201
-code 1202
-code 1203
-code 1204
-code 1205
-code 1206
-code 1207
+Code 1001
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error during command line parsing. Please check your check
+                command definition in your Shinken configuration
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-Errors should be fairly explicit and mean what they say, though there can be exceptions. Lets try to clear some of them.
+Code 1002
+    =========== ===========================================================================
+    Type        ERROR
+    Description The SNMP Booster module in the poller can't write check results in the
+                Scheduler queue. You may restart your Poller and/or your Scheduler
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-Arbiter log errors
-~~~~~~~~~~~~~~~~~~
+Code 1003
+    =========== ===========================================================================
+    Type        ERROR
+    Description The SNMP Booster module in the poller can't write check results in the
+                Scheduler queue. You may restart your Poller and/or your Scheduler
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-``Missing ds_oid``
+Code 1004
+    =========== ===========================================================================
+    Type        ERROR
+    Description The datasource type is not 'TEXT', 'STRING', 'DERIVE', 'GAUGE', 'COUNTER',
+                'DERIVE64' or 'COUNTER64'. Please check your Datasource configuration
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-    This means that a variable in your OID definitions is missing, or your DATASOURCE is not named correctly or your ds_oid variable is missing. There is a typo in your ds_oid variable (ex. ds-oid, or ds_oid = $OidNameIncorrectFFFRA.%(instance)s).
+Code 1005
+    =========== ===========================================================================
+    Type        ERROR
+    Description We get an error while computing service values
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-``Datasource not defined``
+Code 1006
+    =========== ===========================================================================
+    Type        INFO
+    Description SNMP Booster Poller module started
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-    Your DSTEMPLATE uses a DATASOURCE that doesn't exist check the [DataSourceName] you are referring to. Does it contain the expected OID variable, $OidName.
+Code 1007
+    =========== ===========================================================================
+    Type        ERROR
+    Description The SNMP Booster module in the poller can't read checks results from the
+                Scheduler queue. You may restart your Poller and/or your Scheduler
+    File        `snmpbooster_poller.py`
+    =========== ===========================================================================
 
-``Missing ds_type``
+Code 1101
+    =========== ===========================================================================
+    Type        INFO
+    Description SNMP Booster module loaded
+    File        `snmpbooster.py`
+    =========== ===========================================================================
 
-    The DATASOURCE always needs to have a ds_type definition, GAUGE, COUNTER, DERIVE, TEXT, TIMETICK, DERIVE64, COUNTER64.
+Code 1102
+    =========== ===========================================================================
+    Type        ERROR
+    Description The attribute **datasource** is missing in the Shinken module settings.
+                Please check your configuration
+    File        `snmpbooster.py`
+    =========== ===========================================================================
 
-Poller log errors
-~~~~~~~~~~~~~~~~~
+Code 1201
+    =========== ===========================================================================
+    Type        ERROR
+    Description **PyMongo** module can not be loaded. Please check your installation
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
 
-Problems with calculations, repeated polling, hosts not responding, etc.
+Code 1202
+    =========== ===========================================================================
+    Type        ERROR
+    Description Can not connect to the MongoDB server. Please check your configuration
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
 
+Code 1203
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error while writing in the MongoDB. The data passed doesn't
+                seem correct
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
 
+Code 1204
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error while a the upsert in the MongoDB of a service. This
+                error can only occur on the Arbiter
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
+
+Code 1205
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error updating collected data in the MongoDB of a service.
+                Thiserror can only occur on the Poller
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
+
+Code 1206
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error updating instance mapping of a service in the
+                MongoDB. This error can only occur on the Poller
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
+
+Code 1207
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting ONE service in the MongoDB. This error can only
+                occur on the Poller
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
+
+Code 1208
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting several services in the MongoDB. This error can
+                only occur on the Poller
+    File        `libs/dbclient.py`
+    =========== ===========================================================================
