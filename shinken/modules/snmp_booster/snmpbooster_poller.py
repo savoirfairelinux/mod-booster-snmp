@@ -48,7 +48,7 @@ class SnmpBoosterPoller(SnmpBooster):
     """
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
-        self.max_checks_done = to_int(getattr(mod_conf, 'life_time', 1000))
+        self.max_prepared_tasks = to_int(getattr(mod_conf, 'max_prepared_tasks', 50))
         self.checks_done = 0
         self.task_queue = Queue()
         self.result_queue = Queue()
@@ -297,7 +297,7 @@ class SnmpBoosterPoller(SnmpBooster):
         self.returns_queue = returns_queue
         self.master_slave_queue = master_slave_queue
         self.t_each_loop = time.time()
-        self.snmpworker = SNMPWorker(self.task_queue)
+        self.snmpworker = SNMPWorker(self.task_queue, self.max_prepared_tasks)
         self.snmpworker.start()
 
         while True:

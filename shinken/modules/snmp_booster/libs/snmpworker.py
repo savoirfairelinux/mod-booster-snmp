@@ -43,10 +43,11 @@ except ImportError as exp:
 
 class SNMPWorker(Thread):
     """ Thread which execute all SNMP tasks/requests """
-    def __init__(self, mapping_queue):
+    def __init__(self, mapping_queue, max_prepared_tasks):
         Thread.__init__(self)
         self.cmdgen = cmdgen.AsynCommandGenerator()
         self.mapping_queue = mapping_queue
+        self.max_prepared_tasks = max_prepared_tasks
         self.must_run = False
 
     def run(self):
@@ -83,7 +84,7 @@ class SNMPWorker(Thread):
         while self.must_run:
             task_prepared = 0
             # Process all tasks
-            while (not self.mapping_queue.empty()) and task_prepared <= 50:
+            while (not self.mapping_queue.empty()) and task_prepared <= self.max_prepared_tasks:
                 task_prepared += 1
                 snmp_task = self.mapping_queue.get()
                 if snmp_task['type'] in ['bulk', 'next', 'get']:
