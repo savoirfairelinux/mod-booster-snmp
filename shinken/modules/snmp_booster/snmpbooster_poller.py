@@ -1,7 +1,30 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2012-2014:
+#    Thibault Cohen, thibault.cohen@savoirfairelinux.com
+#
+# This file is part of SNMP Booster Shinken Module.
+#
+# Shinken is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Shinken is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with SNMP Booster Shinken Module.
+# If not, see <http://www.gnu.org/licenses/>.
+
+
 """
 This module contains the SnmpBoosterPoller class which is the part
 of SNMP Booster loaded in the Poller
 """
+
 
 import signal
 import time
@@ -9,10 +32,8 @@ import shlex
 from Queue import Empty, Queue
 import sys
 
-
 from shinken.log import logger
 from shinken.util import to_int
-
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args, compute_value
@@ -88,7 +109,7 @@ class SnmpBoosterPoller(SnmpBooster):
                         chk.exit_status = 3
                         chk.get_outputs("Command line parsing error: `%s' - "
                                         "Please verify your check "
-                                        "command" %  str(exp),
+                                        "command" % str(exp),
                                         8012)
                         # Get execution time
                         chk.execution_time = 0

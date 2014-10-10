@@ -1,6 +1,29 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2012-2014:
+#    Thibault Cohen, thibault.cohen@savoirfairelinux.com
+#
+# This file is part of SNMP Booster Shinken Module.
+#
+# Shinken is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Shinken is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with SNMP Booster Shinken Module.
+# If not, see <http://www.gnu.org/licenses/>.
+
+
 """ This module contains the function which compute triggers and return the
 exit code of a service
 """
+
 
 from shinken.log import logger
 
@@ -139,7 +162,8 @@ def get_trigger_result(service):
                                 # Trigger function doesn't exist
                                 error_message = ("Trigger function '%s' not "
                                                  "found" % fct)
-                                logger.error("[SnmpBooster] [code 0705] [%s, %s] "
+                                logger.error("[SnmpBooster] [code 0705] "
+                                             "[%s, %s] "
                                              "%s" % (service['host'],
                                                      service['service'],
                                                      error_message))
@@ -149,7 +173,8 @@ def get_trigger_result(service):
                         elif element in service['ds']:
                             # Element is a ds_name,
                             # sowe go get value in ds_data
-                            value = service['ds'][element].get('ds_oid_value_computed', None)
+                            value = service['ds'][element].get('ds_oid_value_computed',
+                                                               None)
                             if value is None:
                                 # The computed value is not here yet
                                 error_message = ("No data found for DS: "
@@ -184,10 +209,10 @@ def get_trigger_result(service):
                     # So the trigger triggered
                     if ret is True:
                         logger.info("[SnmpBooster] [code 0708] [%s, %s] "
-                                     "trigger triggered "
-                                     "%s" % (service['host'],
-                                             service['service'],
-                                             str(rpn_list)))
+                                    "trigger triggered "
+                                    "%s" % (service['host'],
+                                            service['service'],
+                                            str(rpn_list)))
                         return None, errors[error_name]
 
         # Neither critical trigger, neither warning trigger triggered

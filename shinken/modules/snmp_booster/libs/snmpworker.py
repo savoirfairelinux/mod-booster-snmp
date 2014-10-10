@@ -1,10 +1,36 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2012-2014:
+#    Thibault Cohen, thibault.cohen@savoirfairelinux.com
+#
+# This file is part of SNMP Booster Shinken Module.
+#
+# Shinken is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Shinken is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with SNMP Booster Shinken Module.
+# If not, see <http://www.gnu.org/licenses/>.
+
+
 """ This module contains a class to create a Thread which make SNMP requests
 and handle answers with callbacks
+
 """
 
 from threading import Thread
 import re
 import time
+
+
+from shinken.log import logger
 
 
 try:
@@ -13,9 +39,6 @@ try:
 except ImportError as exp:
     logger.error("[SnmpBooster] [code 0601] Import error. Pysnmp is missing")
     raise ImportError(exp)
-
-
-from shinken.log import logger
 
 
 class SNMPWorker(Thread):

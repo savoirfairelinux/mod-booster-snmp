@@ -1,11 +1,9 @@
-#!/usr/bin/python
-
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2009-2012:
+# Copyright (C) 2012-2014:
 #    Thibault Cohen, thibault.cohen@savoirfairelinux.com
 #
-# This file is part of Shinken.
+# This file is part of SNMP Booster Shinken Module.
 #
 # Shinken is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,12 +16,14 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
+# along with SNMP Booster Shinken Module.
+# If not, see <http://www.gnu.org/licenses/>.
 
 
 """
 Usefull functions used everywhere in snmp booster
 """
+
 
 import sys
 import getopt
@@ -384,7 +384,8 @@ def dict_serialize(serv, mac_resol, datasource):
 
     # Prepare datasources
     if 'DSTEMPLATE' not in datasource:
-        raise Exception("DSTEMPLATE section is missing in the datasource files")
+        raise Exception("DSTEMPLATE section is missing in the "
+                        "datasource files")
     tmp_dict['ds'] = {}
 
     ds_list = datasource.get('DSTEMPLATE').get(tmp_dict['dstemplate'])

@@ -1,7 +1,30 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2012-2014:
+#    Thibault Cohen, thibault.cohen@savoirfairelinux.com
+#
+# This file is part of SNMP Booster Shinken Module.
+#
+# Shinken is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Shinken is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with SNMP Booster Shinken Module.
+# If not, see <http://www.gnu.org/licenses/>.
+
+
 """ This module contains two functions:
 * check_cache: Get data from cache
 * check_snmp: Get data from SNMP request
 """
+
 
 import time
 from functools import partial
@@ -27,7 +50,7 @@ def check_cache(check, arguments, db_client):
     start_time = time.time()
     # Get current service
     current_service = db_client.get_service(arguments.get('host'),
-                                                   arguments.get('service'))
+                                            arguments.get('service'))
     # Check if the service is in the database
     if current_service is None:
         error_message = ("[SnmpBooster] [code 0202] [%s, %s] Not found in "
@@ -76,7 +99,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
 
     # Get all services with this host and check_interval
     services = db_client.get_services(arguments.get('host'),
-                                         current_service.get('check_interval'))
+                                      current_service.get('check_interval'))
     # Mapping needed ?
     # Get all services which need mapping
     mappings = [serv for serv in services
@@ -152,7 +175,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         # refresh all services list
         # NOTE Is this refresh mandatory ????
         services = db_client.get_services(arguments.get('host'),
-                                             current_service.get('check_interval'))
+                                          current_service.get('check_interval'))
         # MAPPING DONE
 
     # Prepare oids
