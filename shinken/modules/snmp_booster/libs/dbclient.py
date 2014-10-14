@@ -28,8 +28,7 @@ from shinken.log import logger
 try:
     from pymongo import MongoClient
 except ImportError as exp:
-    logger.error("[SnmpBooster] [code 1201] Import error. Maybe one of this "
-                 "module is pymongo")
+    logger.error("[SnmpBooster] [code 1201] Import error. Pymongo seems missing.")
     raise ImportError(exp)
 
 from utils import flatten_dict
