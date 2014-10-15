@@ -45,7 +45,7 @@ class SNMPWorker(Thread):
     """ Thread which execute all SNMP tasks/requests """
     def __init__(self, mapping_queue, max_prepared_tasks):
         Thread.__init__(self)
-        self.cmdgen = cmdgen.AsynCommandGenerator()
+        self.cmdgen = None # will be cmdgen.AsynCommandGenerator()
         self.mapping_queue = mapping_queue
         self.max_prepared_tasks = max_prepared_tasks
         self.must_run = False
@@ -82,6 +82,10 @@ class SNMPWorker(Thread):
         self.must_run = True
         logger.info("[SnmpBooster] [code 0602] is starting")
         while self.must_run:
+            # Prevent memory leak
+            del(self.cmdgen)
+            self.cmdgen = cmdgen.AsynCommandGenerator()
+            # End prevent memory leak
             task_prepared = 0
             # Process all tasks
             while (not self.mapping_queue.empty()) and task_prepared <= self.max_prepared_tasks:
@@ -103,6 +107,9 @@ class SNMPWorker(Thread):
                     continue
                 # Mark task as done
                 self.mapping_queue.task_done()
+                # Prevent memory leak
+                # del(snmp_task)
+                # End prevent memory leak
 
             if task_prepared > 0:
                 # Launch SNMP requests
