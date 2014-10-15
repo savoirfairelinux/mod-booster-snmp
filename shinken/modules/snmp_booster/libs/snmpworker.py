@@ -271,7 +271,7 @@ def callback_mapping_next(send_request_handle, error_indication,
                 result['data'][cleaned_instance_name] = instance
 
             # Check if mapping is finished
-            if all(result.values()):
+            if all(resultp['data'].values()):
                 result['finished'] = True
                 return False
 
@@ -281,8 +281,17 @@ def callback_mapping_next(send_request_handle, error_indication,
 def callback_mapping_bulk(send_request_handle, error_indication,
                           error_status, error_index, var_binds, cb_ctx):
     """ Callback function for BULK SNMP requests """
+
+    # Retrive context
     mapping_oid = cb_ctx[0]
     result = cb_ctx[2]
+
+    # Handle errors
+    if handle_snmp_error(error_indication, cb_ctx, "bulk"):
+        result['finished'] = True
+        return False
+
+    # Parse snmp results
     for table_row in var_binds:
         for oid, instance_name in table_row:
             oid = "." + oid.prettyPrint()
@@ -310,7 +319,7 @@ def callback_mapping_bulk(send_request_handle, error_indication,
                 result['data'][cleaned_instance_name] = instance
 
             # Check if mapping is finished
-            if all(result.values()):
+            if all(result['data'].values()):
                 result['finished'] = True
                 return False
 

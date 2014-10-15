@@ -159,7 +159,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         # Handle result
         counter = 0
         # Waiting mapping snmp requests
-        while not result['finished'] or counter < (5 + serv['timeout'] * 10):
+        while not result['finished'] and counter < (5 + serv['timeout'] * 10):
             # Wait mapping completed or timeout (100 * 0.1 second)
             counter += 1
             time.sleep(0.1)
