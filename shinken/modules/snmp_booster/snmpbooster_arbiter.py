@@ -134,5 +134,5 @@ class SnmpBoosterArbiter(SnmpBooster):
                                               dict_serv['service'],
                                               dict_serv)
 
-            # Disconnect from database
-            self.db_client.disconnect()
+        # Disconnect from database
+        self.db_client.disconnect()
