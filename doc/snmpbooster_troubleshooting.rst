@@ -369,7 +369,7 @@ Code 1004
 
 Code 1005
     =========== ===========================================================================
-    Type        ERROR
+    Type        WARNING
     Description We get an error while computing service values
     File        `snmpbooster_poller.py`
     =========== ===========================================================================

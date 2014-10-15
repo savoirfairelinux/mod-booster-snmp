@@ -229,10 +229,11 @@ class SnmpBoosterPoller(SnmpBooster):
                         try:
                             value = compute_value(result)
                         except Exception as exp:
-                            logger.error("[SnmpBooster] [code 1005] [%s, %s] "
-                                         "%s" % (key.get('host'),
-                                                 key.get('service'),
-                                                 str(exp)))
+                            logger.warning("[SnmpBooster] [code 1005]"
+                                           " [%s, %s] "
+                                           "%s" % (key.get('host'),
+                                                   key.get('service'),
+                                                   str(exp)))
                             value = None
                     else:
                         # For oid_type == ds_max or ds_min
