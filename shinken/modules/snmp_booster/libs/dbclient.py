@@ -83,7 +83,7 @@ class DBClient(object):
             return True
         return False
 
-    def upsert_service(self, host, service, data):
+    def update_service(self, host, service, data):
         """ This function updates/inserts a service
         It used by arbiter in hook_late_configuration
         to put the configuration in the database
@@ -104,31 +104,6 @@ class DBClient(object):
                                                               upsert=True)
         except Exception as exp:
             logger.error("[SnmpBooster] [code 1204] [%s, %s] "
-                         "%s" % (host,
-                                 service,
-                                 str(exp)))
-            return (None, True)
-
-        return (None, self.handle_error(mongo_res, mongo_filter))
-
-    def update_service(self, host, service, data):
-        """ This function update one service with datas collectd
-        from SNMP requests
-        Return
-        * query_result: None
-        * error: bool
-        """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "service": service}
-        # Save in mongo
-        try:
-            mongo_res = getattr(self.db_conn,
-                                self.db_name).services.update(mongo_filter,
-                                                              data,
-                                                              )
-        except Exception as exp:
-            logger.error("[SnmpBooster] [code 1205] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
