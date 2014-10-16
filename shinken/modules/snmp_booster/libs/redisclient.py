@@ -82,7 +82,7 @@ class DBClient(object):
             return True
         return False
 
-    def upsert_service(self, host, service, data):
+    def update_service(self, host, service, data):
         """ This function updates/inserts a service
         It used by arbiter in hook_late_configuration
         to put the configuration in the database
@@ -90,13 +90,8 @@ class DBClient(object):
         * query_result: None
         * error: bool
         """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "service": service}
-        # Flatten dict serv
         key = ":".join((host, service))
         old_dict = self.db_conn.get(key)
-        import pdb;pdb.set_trace()
         data = merge_dicts(old_dict, data)
         # Save in redis
         try:
@@ -107,82 +102,28 @@ class DBClient(object):
                                  service,
                                  str(exp)))
             return (None, True)
-        import pdb;pdb.set_trace()
 
-        return (None, self.handle_error(mongo_res, mongo_filter))
-
-    def update_service(self, host, service, data):
-        """ This function update one service with datas collectd
-        from SNMP requests
-        Return
-        * query_result: None
-        * error: bool
-        """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "service": service}
-        # Save in mongo
-        try:
-            mongo_res = getattr(self.db_conn,
-                                self.db_name).services.update(mongo_filter,
-                                                              data,
-                                                              )
-        except Exception as exp:
-            logger.error("[SnmpBooster] [code 1205] [%s, %s] "
-                         "%s" % (host,
-                                 service,
-                                 str(exp)))
-            return (None, True)
-
-        return (None, self.handle_error(mongo_res, mongo_filter))
-
-    def update_service_instance(self, host, instance_name, instance):
-        """ This function update a instance from SNMP mapping requests
-        Return
-        * query_result: None
-        * error: bool
-        """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "instance_name": instance_name}
-        # Prepare data
-        data = {"$set": {"instance": instance}}
-        # Save in mongo
-        try:
-            mongo_res = getattr(self.db_conn,
-                                self.db_name).services.update(mongo_filter,
-                                                              data,
-                                                              )
-        except Exception as exp:
-            logger.error("[SnmpBooster] [code 1206] [%s, %s] "
-                         "%s" % (host,
-                                 instance_name,
-                                 str(exp)))
-            return (None, True)
-
-        return (None, self.handle_error(mongo_res, mongo_filter))
+        return (None, False)
+        #TODO : Handle error
+        #return (None, self.handle_error(mongo_res, mongo_filter))
 
     def get_service(self, host, service):
         """ This function gets one service from the database
         Return
         :query_result: dict
         """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "service": service}
+        key = ":".join((host, service))
         # Get service
         try:
-            service = getattr(self.db_conn,
-                              self.db_name).services.find_one(mongo_filter,
-                                                              {"_id": False})
+            data = self.db_conn.get(key)
         except Exception as exp:
             logger.error("[SnmpBooster] [code 1207] [%s, %s] "
                          "%s" % (host,
                                  service,
                                  str(exp)))
             return None
-
-        return service
+        #TODO : Test None?
+        return data
 
     def get_services(self, host, check_interval):
         """ This function Gets all services with the same host
@@ -190,13 +131,10 @@ class DBClient(object):
         Return
         :query_result: list of dicts
         """
-        # Prepare mongo Filter
-        mongo_filter = {"host": host,
-                        "check_interval": check_interval}
+        key_ci = ":".join((host, check_interval))
         # Get services
         try:
-            services = getattr(self.db_conn,
-                               self.db_name).services.find(mongo_filter)
+            servicelist = self.db_conn.get(key_ci)
 
         except Exception as exp:
             logger.error("[SnmpBooster] [code 1208] [%s] "
@@ -204,4 +142,22 @@ class DBClient(object):
                                  str(exp)))
             return None
 
-        return [s for s in services]
+        if servicelist is None:
+            #TODO : Bailout properly
+            return None
+
+        dict_list = []
+        for service in servicelist:
+            try:
+                key = ":".join((host, service))
+                data = self.db_conn.get(key)
+                if data is None:
+                    logger.error("[SnmpBooster] [code 1209] [%s] Unknown service %s", host, service)
+                    continue
+                dict_list.append(data)
+            except Exception as exp:
+                logger.error("[SnmpBooster] [code 1210] [%s] "
+                             "%s" % (host,
+                                     str(exp)))
+
+        return dict_list
