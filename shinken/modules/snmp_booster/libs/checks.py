@@ -164,14 +164,16 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             counter += 1
             time.sleep(0.1)
 
+        # Todo: What if there is the same iname for 2 serv => override one, not good
+        map_inst_serv = dict([(serv['instance_name'], serv['service']) for serv in mappings])
+
         # Write to database
         for instance_name, instance in result['data'].items():
             if instance is None:
                 # Don't save instances which are not mapped
                 continue
-            db_client.update_service_instance(arguments.get('host'),
-                                              instance_name,
-                                              instance)
+            service = map_inst_serv[instance_name]
+            db_client.update_service(arguments.get('host'), service, {"instance": instance})
         # refresh all services list
         # NOTE Is this refresh mandatory ????
         services = db_client.get_services(arguments.get('host'),

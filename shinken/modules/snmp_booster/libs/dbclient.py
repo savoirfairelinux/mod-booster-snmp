@@ -83,6 +83,9 @@ class DBClient(object):
             return True
         return False
 
+    def update_service_init(self, host, service, data):
+            self.update_service(host, service, data)
+
     def update_service(self, host, service, data):
         """ This function updates/inserts a service
         It used by arbiter in hook_late_configuration

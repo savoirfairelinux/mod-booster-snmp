@@ -22,6 +22,7 @@
 
 """ This module contains database/cache abstraction class """
 
+import ast
 
 from shinken.log import logger
 
@@ -82,6 +83,25 @@ class DBClient(object):
             return True
         return False
 
+    def update_service_init(self, host, service, data):
+        # We need to generate key for redis :
+         # Like host:3 => ['service', 'service2'] that link check interval to a service list
+        key_ci = ":".join((host, str(data["check_interval"])))
+        # Get services
+
+        try:
+            self.db_conn.sadd(key_ci, service)
+        except Exception as exp:
+            logger.error("[SnmpBooster] [code 1204] [%s, %s] "
+                         "%s" % (host,
+                                 service,
+                                 str(exp)))
+            return (None, True)
+
+
+        # Then update propely host:service keys
+        self.update_service(host, service, data)
+
     def update_service(self, host, service, data):
         """ This function updates/inserts a service
         It used by arbiter in hook_late_configuration
@@ -92,6 +112,8 @@ class DBClient(object):
         """
         key = ":".join((host, service))
         old_dict = self.db_conn.get(key)
+        if old_dict is not None:
+            ast.literal_eval(old_dict)
         data = merge_dicts(old_dict, data)
         # Save in redis
         try:
@@ -123,7 +145,7 @@ class DBClient(object):
                                  str(exp)))
             return None
         #TODO : Test None?
-        return data
+        return ast.literal_eval(data) if data is not None else None
 
     def get_services(self, host, check_interval):
         """ This function Gets all services with the same host
@@ -134,7 +156,7 @@ class DBClient(object):
         key_ci = ":".join((host, check_interval))
         # Get services
         try:
-            servicelist = self.db_conn.get(key_ci)
+            servicelist = self.db_conn.smembers(key_ci)
 
         except Exception as exp:
             logger.error("[SnmpBooster] [code 1208] [%s] "
@@ -154,7 +176,7 @@ class DBClient(object):
                 if data is None:
                     logger.error("[SnmpBooster] [code 1209] [%s] Unknown service %s", host, service)
                     continue
-                dict_list.append(data)
+                dict_list.append(ast.literal_eval(data))
             except Exception as exp:
                 logger.error("[SnmpBooster] [code 1210] [%s] "
                              "%s" % (host,

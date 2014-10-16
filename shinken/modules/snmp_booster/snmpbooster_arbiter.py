@@ -68,7 +68,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                 # if directory
                 elif os.path.isdir(self.datasource_file):
                     if not self.datasource_file.endswith("/"):
-                        self.datasource_file.join(self.datasource_file, "/")
+                        self.datasource_file += "/"
                     files = glob.glob(os.path.join(self.datasource_file,
                                                    'Default*.ini')
                                       )
@@ -113,7 +113,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                 raise Exception(error_message)
 
     def hook_late_configuration(self, arb):
-        """ Read config and fill memcached """
+        """ Read config and fill database """
         mac_resol = MacroResolver()
         mac_resol.init(arb.conf)
         for serv in arb.conf.services:
@@ -130,9 +130,12 @@ class SnmpBoosterArbiter(SnmpBooster):
                                          str(exp)))
                     continue
 
-                self.db_client.upsert_service(dict_serv['host'],
+                # We want to make a diff between arbiter insert and poller insert. Some backend may need it.
+                self.db_client.update_service_init(dict_serv['host'],
                                               dict_serv['service'],
                                               dict_serv)
+
+        logger.info("[SnmpBooster] [code 0908] Done parsing")
 
         # Disconnect from database
         self.db_client.disconnect()
