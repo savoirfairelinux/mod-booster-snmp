@@ -48,7 +48,8 @@ of SNMP Booster loaded in the Arbiter
 from shinken.basemodule import BaseModule
 from shinken.log import logger
 from shinken.util import to_int
-from libs.dbclient import DBClient
+#from libs.dbclient import DBClient
+from libs.redisclient import DBClient
 
 
 class SnmpBooster(BaseModule):
@@ -83,7 +84,7 @@ class SnmpBooster(BaseModule):
 
         # Prepare database connection
         if self.loaded_by in ['arbiter', 'poller']:
-            self.db_client = DBClient(self.db_host, self.db_port, self.db_name)
+            self.db_client = DBClient(self.db_host)
             # Connecting
             if not self.db_client.connect():
                 self.i_am_dying = True

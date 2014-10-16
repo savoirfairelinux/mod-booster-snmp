@@ -55,6 +55,35 @@ def flatten_dict(tree_dict):
     return flat_dict
 
 
+def merge_dicts(old_dict, new_dict):
+    """ Convert unlimited tree dictionnary to a flat dictionnary
+
+    >>> flatten_dict({'a': 1, 'b': {'c': {'d': 2, 'e': 4}}})
+    {'a': 1, 'b.c.d': 2, 'b.c.e': 4}
+    >>> flatten_dict("bad_input")
+
+    """
+    if not isinstance(new_dict, dict):
+        # TODO review
+        return None
+
+    if old_dict is None:
+        return new_dict
+
+    if not isinstance(old_dict, dict):
+        # TODO review
+        return None
+
+    for t_key, t_value in new_dict.items():
+        if isinstance(t_value, dict):
+            ret = merge_dicts(old_dict[t_key], t_value)
+            old_dict[t_key] = ret
+        else:
+            old_dict[t_key] = t_value
+
+    return old_dict
+
+
 def rpn_calculator(rpn_list):
     """ Reverse Polish notation calculator
 
