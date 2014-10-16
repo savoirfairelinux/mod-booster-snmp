@@ -245,40 +245,20 @@ class SnmpBoosterPoller(SnmpBooster):
                     raw_value = None
                     value = None
                 # Save to database
-                # NOTE this loop is TOO MONGODB SPECIFIC
+                new_data = {"ds": {} }
                 for ds_name in key.get('ds_names'):
-                    # Last value key
-                    value_last_key = ".".join(("ds",
-                                               ds_name,
-                                               key.get('oid_type') + "_value_last"))
-                    # New value
-                    value_key = ".".join(("ds",
-                                          ds_name,
-                                          key.get('oid_type') + "_value"))
-                    # New computed value
-                    value_computed_key = ".".join(("ds",
-                                                   ds_name,
-                                                   key.get('oid_type') + "_value_computed"))
-                    # Last computed value
-                    value_computed_last_key = ".".join(("ds",
-                                                        ds_name,
-                                                        key.get('oid_type') + "_value_computed_last"))
-                    # Error
-                    error_key = ".".join(("ds", ds_name, "error"))
-                    # New mongo data
-                    new_data = {"$set": {value_key: raw_value,
-                                         value_last_key: result.get('value_last'),
-                                         value_computed_key: value,
-                                         value_computed_last_key: result.get('value_last_computed'),
-                                         error_key: snmp_error,
-                                         "check_time": result.get('check_time'),
-                                         "check_time_last": result.get('check_time_last'),
-                                         }
-                                }
 
-                self.db_client.update_service(key.get('host'),
-                                              key.get('service'),
-                                              new_data)
+                    new_data["ds"][ds_name] = {}
+                    new_data["ds"][ds_name][key.get('oid_type') + "_value_last"] = result.get('value_last')
+                    new_data["ds"][ds_name][key.get('oid_type') + "_value"] = raw_value
+                    new_data["ds"][ds_name][key.get('oid_type') + "_value_computed"] = value
+                    new_data["ds"][ds_name][key.get('oid_type') + "_value_computed_last"] = result.get('value_last_computed')
+                    new_data["ds"][ds_name]["error"] = snmp_error
+
+                new_data["check_time"] = result.get('check_time'),
+                new_data["check_time_last"] = result.get('check_time_last'),
+
+                self.db_client.update_service(key.get('host'), key.get('service'), new_data)
             # Remove task from queue
             self.result_queue.task_done()
 
