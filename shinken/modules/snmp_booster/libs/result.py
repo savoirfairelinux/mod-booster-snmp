@@ -20,7 +20,7 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 
-""" This module contains a funtion to retreive output and compute trigger """
+""" This module contains a function to retrieve output and compute trigger """
 
 
 import time
