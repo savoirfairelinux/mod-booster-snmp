@@ -63,16 +63,19 @@ def merge_dicts(old_dict, new_dict):
     >>> flatten_dict("bad_input")
 
     """
-    if not isinstance(new_dict, dict):
-        # TODO review
-        return None
+    if new_dict is None and old_dict is None:
+        # TODO better errro message
+        raise Exception("Error bad argument")
 
-    if old_dict is None:
+    # Check if the new_dict is not None or has a bad type
+    # Only can be true at the first step
+    if new_dict is None or not isinstance(new_dict, dict):
+        # NOTE maybe we need to raise an error instead
+        return old_dict
+
+    # No old data found in Redis
+    if old_dict is None or not isinstance(old_dict, dict):
         return new_dict
-
-    if not isinstance(old_dict, dict):
-        # TODO review
-        return None
 
     for t_key, t_value in new_dict.items():
         if isinstance(t_value, dict):

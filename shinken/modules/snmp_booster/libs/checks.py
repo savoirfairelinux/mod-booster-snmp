@@ -181,7 +181,11 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         # MAPPING DONE
 
     # Prepare oids
-    fnc = partial(prepare_oids, group_size=serv.get('request_group_size', 64))
+    # TODO CHANGE all serv for current_service
+    serv = current_service
+
+    fnc = partial(prepare_oids,
+                  group_size=serv.get('request_group_size', 64))
     splitted_oids_list = reduce(fnc, services, [{}, ])
 
     # Prepare get task
@@ -191,9 +195,9 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
         get_task['data'] = {"authData": cmdgen.CommunityData(arguments.get('community')),
                             "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),
                                                                           arguments.get('port')),
-                                                                         timeout=serv['timeout'],
-                                                                         retries=0,
-                                                                         ),
+                                                                          timeout=serv['timeout'],
+                                                                          retries=0,
+                                                                          ),
                             "varNames": [str(oid[1:]) for oid in oids.keys()],
                             }
         # Add snmp request type

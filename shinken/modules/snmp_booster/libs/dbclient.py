@@ -56,7 +56,8 @@ class DBClient(object):
 
     def disconnect(self):
         """ This function kills the connection to the database """
-        self.db_conn.disconnect()
+        #self.db_conn.disconnect()
+        pass
 
     @staticmethod
     def handle_error(result, context=""):

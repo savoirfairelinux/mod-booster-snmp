@@ -56,7 +56,19 @@ class DBClient(object):
 
     def disconnect(self):
         """ This function kills the connection to the database """
-        self.db_conn.client_kill(self.db_host + ":" + str(self.db_port))
+        #self.db_conn.client_kill(self.db_host + ":" + str(self.db_port))
+        pass
+
+    @staticmethod
+    def build_key(part1, part2):
+        """ Build Redis key
+
+        >>> build_key("part1", "part2")
+        'part1:part2'
+        """
+        return ":".join((str(part1), str(part2)))
+
+        
 
     @staticmethod
     def handle_error(result, context=""):
@@ -86,7 +98,7 @@ class DBClient(object):
     def update_service_init(self, host, service, data):
         # We need to generate key for redis :
          # Like host:3 => ['service', 'service2'] that link check interval to a service list
-        key_ci = ":".join((host, str(data["check_interval"])))
+        key_ci = self.build_key(host, data["check_interval"])
         # Get services
 
         try:
@@ -110,11 +122,16 @@ class DBClient(object):
         * query_result: None
         * error: bool
         """
-        key = ":".join((host, service))
+        key = self.build_key(host, service)
         old_dict = self.db_conn.get(key)
         if old_dict is not None:
-            ast.literal_eval(old_dict)
+            old_dict = ast.literal_eval(old_dict)
+
         data = merge_dicts(old_dict, data)
+
+        if data is None:
+            return (None, True)
+
         # Save in redis
         try:
             self.db_conn.set(key, data)
@@ -134,7 +151,7 @@ class DBClient(object):
         Return
         :query_result: dict
         """
-        key = ":".join((host, service))
+        key = self.build_key(host, service)
         # Get service
         try:
             data = self.db_conn.get(key)
@@ -153,7 +170,7 @@ class DBClient(object):
         Return
         :query_result: list of dicts
         """
-        key_ci = ":".join((host, check_interval))
+        key_ci = self.build_key(host, check_interval)
         # Get services
         try:
             servicelist = self.db_conn.smembers(key_ci)
@@ -171,7 +188,7 @@ class DBClient(object):
         dict_list = []
         for service in servicelist:
             try:
-                key = ":".join((host, service))
+                key = self.build_key(host, service)
                 data = self.db_conn.get(key)
                 if data is None:
                     logger.error("[SnmpBooster] [code 1209] [%s] Unknown service %s", host, service)

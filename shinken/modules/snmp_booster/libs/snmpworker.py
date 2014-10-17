@@ -225,7 +225,7 @@ def callback_get(send_request_handle, error_indication, error_status,
                 # Set value
                 service_result['db_data']['ds'][ds_name][value_key] = tmp_result.get('value')
         # Set last check time
-        service_result['db_data']['last_check_time'] = service_result['db_data'].get('check_time')
+        service_result['db_data']['check_time_last'] = service_result['db_data'].get('check_time')
         # Set check time
         service_result['db_data']['check_time'] = time.time()
         # set as received
@@ -278,7 +278,7 @@ def callback_mapping_next(send_request_handle, error_indication,
                 result['data'][cleaned_instance_name] = instance
 
             # Check if mapping is finished
-            if all(resultp['data'].values()):
+            if all(result['data'].values()):
                 result['finished'] = True
                 return False
 

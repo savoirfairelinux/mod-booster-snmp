@@ -255,8 +255,8 @@ class SnmpBoosterPoller(SnmpBooster):
                     new_data["ds"][ds_name][key.get('oid_type') + "_value_computed_last"] = result.get('value_last_computed')
                     new_data["ds"][ds_name]["error"] = snmp_error
 
-                new_data["check_time"] = result.get('check_time'),
-                new_data["check_time_last"] = result.get('check_time_last'),
+                new_data["check_time"] = result.get('check_time')
+                new_data["check_time_last"] = result.get('check_time_last')
 
                 self.db_client.update_service(key.get('host'), key.get('service'), new_data)
             # Remove task from queue
