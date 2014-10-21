@@ -288,7 +288,7 @@ class SnmpBoosterPoller(SnmpBooster):
             if not self.snmpworker.is_alive():
                 # The snmpworker seems down ...
                 # We respawn one
-                self.snmpworker = SNMPWorker(self.task_queue)
+                self.snmpworker = SNMPWorker(self.task_queue, self.max_prepared_tasks)
                 # and start it
                 self.snmpworker.start()
 

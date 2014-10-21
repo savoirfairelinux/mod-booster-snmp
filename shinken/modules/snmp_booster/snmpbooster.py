@@ -84,7 +84,7 @@ class SnmpBooster(BaseModule):
 
         # Prepare database connection
         if self.loaded_by in ['arbiter', 'poller']:
-            self.db_client = DBClient(self.db_host)
+            self.db_client = DBClient(self.db_host, self.db_port, self.db_name)
             # Connecting
             if not self.db_client.connect():
                 self.i_am_dying = True

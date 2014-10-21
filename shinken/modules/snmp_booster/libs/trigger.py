@@ -125,9 +125,9 @@ def get_trigger_result(service):
                                     # Raw value found
                                     error_message = ("No computed data found "
                                                      "for DS: '%s'" % ds_name)
-                                logger.warning("[SnmpBooster] [code 0703] "
-                                               "[%s, %s] "
-                                               "%s" % (service['host'],
+                                    logger.warning("[SnmpBooster] [code 0703] "
+                                                   "[%s, %s] "
+                                                   "%s" % (service['host'],
                                                        service['service'],
                                                        error_message))
                                 return (error_message,
