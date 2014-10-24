@@ -36,6 +36,7 @@ class SnmpBoosterScheduler(SnmpBooster):
     def __init__(self, mod_conf):
         SnmpBooster.__init__(self, mod_conf)
         self.last_check_mapping = {}
+        self.offset_mapping = {}
 
     @staticmethod
     def get_frequence(chk):
@@ -86,7 +87,12 @@ class SnmpBoosterScheduler(SnmpBooster):
             # Elected
             # Saved the new timestamp
             if key not in self.last_check_mapping:
-                self.last_check_mapping[key] = (chk.t_to_go, chk.ref.id)
+                # Done to smooth check over the interval of freq.
+                # We remember the offset for a specific interval and move the elected (real) check to this time
+                if key not in self.offset_mapping:
+                    self.last_check_mapping[key] = 0
+                self.last_check_mapping[key] = (chk.t_to_go - chk.t_to_go % freq + self.offset_mapping[key], chk.ref.id)
+                self.offset_mapping[key] += (self.offset_mapping[key] + 1) % freq
             else:
                 self.last_check_mapping[key] = (self.last_check_mapping[key][0] + freq,
                                                 chk.ref.id)

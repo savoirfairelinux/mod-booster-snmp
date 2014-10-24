@@ -123,7 +123,7 @@ class SnmpBoosterPoller(SnmpBooster):
                                self.task_queue, self.result_queue)
                     logger.debug("CHECK SNMP %(host)s:%(service)s" % args)
                 else:
-                    # Make fake check (get datas from mongodb)
+                    # Make fake check (get datas from DB)
                     check_cache(chk, args, self.db_client)
                     logger.debug("CHECK cache %(host)s:%(service)s" % args)
 
