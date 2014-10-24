@@ -23,6 +23,7 @@
 """ This module contains database/cache abstraction class """
 
 import ast
+import re
 
 from shinken.log import logger
 
@@ -200,3 +201,32 @@ class DBClient(object):
                                      str(exp)))
 
         return dict_list
+
+#For Debug
+
+    def show_keys(self):
+        return self.db_conn.keys()
+
+    def get_hosts_from_service(self, service):
+        results = []
+        for key in self.db_conn.keys():
+            if re.search(service, key) is None:
+                # Look for service
+                continue
+            results.append(ast.literal_eval(self.db_conn.get(key)))
+
+        return results
+
+    def get_services_from_host(self, host):
+        results = []
+        for key in self.db_conn.keys():
+            if re.match(host, key)is None:
+                # Look for host
+                continue
+            if re.search(":[0-9]+$", key) is not None:
+                # we skip host:interval
+                continue
+            results.append(ast.literal_eval(self.db_conn.get(key)))
+
+        return results
+

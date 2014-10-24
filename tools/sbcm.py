@@ -4,12 +4,8 @@
 import argparse
 import sys
 import pprint
-
-try:
-    from pymongo import MongoClient
-except ImportError as exp:
-    logger.error("[SBCM] [code 0001] Import error. Pymongo seems missing.")
-    raise ImportError(exp)
+from shinken.log import logger
+import importlib
 
 
 printer = pprint.PrettyPrinter()
@@ -19,6 +15,8 @@ printer = pprint.PrettyPrinter()
 parser = argparse.ArgumentParser(description='SNMP Booster Cache Manager')
 parser.add_argument('-d', '--db-name', type=str, default='booster_snmp',
                     help='Database name. Default=booster_snmp')
+parser.add_argument('-b', '--backend', type=str, default='redis',
+                    help='Backend. Supported : redis, mongodb, memcache')
 # Search
 subparsers = parser.add_subparsers(help='sub-command help')
 search_parser = subparsers.add_parser('search', help='search help')
@@ -72,32 +70,73 @@ clearold_parser.add_argument('-H', '--hour', type=str,
 def search(host=None, service=None, show_ds=False, show_triggers=False):
     # Prepare filter
     mongo_filter = {}
-    if host is not None:
-        mongo_filter['host'] = host
-    if service is not None:
-        mongo_filter['service'] = service
+    if host is not None and service is not None:
+        results = [db_client.get_service(host, service)]
+    elif service is not None:
+        results = db_client.get_hosts_from_service(service)
     # Prepare columns
-    columns = {'_id': False}
-    if not show_ds: 
-        columns['ds'] = show_ds
+    elif host is not None:
+        results = db_client.get_services_from_host(host)
+    # Both none, show keys
+    else:
+        results = db_client.show_keys()
+        printer.pprint(results)
+        exit()
+
+    if not show_ds:
+        for r in results: del r['ds']
     if not show_triggers:
-        columns['triggers'] = show_triggers
-    # Launch request
-    results = getattr(db_client,
-                      args.db_name).services.find(mongo_filter, columns)
+        for r in results: del r['triggers']
     # print results
-    for result in results:
-        print "=" * 79
-        print "== %s" % result['host']
-        print "== %s" % result['service']
-        print "=" * 79
-        printer.pprint(result)
+    if results is None:
+        print "No results found in DB!"
+
+    else:
+        for result in results:
+            print "=" * 79
+            print "== %s" % result['host']
+            print "== %s" % result['service']
+            print "=" * 79
+            printer.pprint(result)
      
+
+def clear():
+    pass
+
+def delete():
+    pass
 
 args = parser.parse_args()
 #print(args.accumulate(args.integers))
+
 print(args)
 
-db_client = MongoClient("localhost", 27017)
+try:
+    dbmodule = importlib.import_module("shinken.modules.snmp_booster.libs.%sclient" % args.backend)
+except ImportError as exp:
+    logger.error("[SBCM] [code 0001] Import error. %s seems missing." % args.backend)
+    raise ImportError(exp)
+
+
+
+db_client = dbmodule.DBClient("localhost")
+if not db_client.connect():
+    logger.critical("Impossible to connect to %s DB" % args.backend)
 if args.command == 'search':
     search(args.host_name, args.service_name, args.show_datasource, args.show_triggers)
+
+import pdb;pdb.set_trace()
+
+if args.command == "clear-cache":
+    clear(args.host_name, args.service_name)
+
+if args.command == "clear-old":
+    pass
+
+if args.command == "delete-host":
+    delete()
+
+if args.command == "delete-service":
+    delete()
+
+import pdb;pdb.set_trace()
