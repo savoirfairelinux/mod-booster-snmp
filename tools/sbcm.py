@@ -12,7 +12,6 @@ except ImportError as exp:
     raise ImportError(exp)
 
 
-db_client = MongoClient("localhost", 27017)
 printer = pprint.PrettyPrinter()
 
 
@@ -99,5 +98,6 @@ args = parser.parse_args()
 #print(args.accumulate(args.integers))
 print(args)
 
+db_client = MongoClient("localhost", 27017)
 if args.command == 'search':
     search(args.host_name, args.service_name, args.show_datasource, args.show_triggers)
