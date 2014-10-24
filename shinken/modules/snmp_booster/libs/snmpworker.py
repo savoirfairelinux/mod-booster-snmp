@@ -114,8 +114,9 @@ class SNMPWorker(Thread):
             if task_prepared > 0:
                 # Launch SNMP requests
                 self.cmdgen.snmpEngine.transportDispatcher.runDispatcher()
-            # Sleep
-            time.sleep(0.1)
+            else:
+                # Sleep
+                time.sleep(0.1)
 
         logger.info("[SnmpBooster] [code 0604] is stopped")
 
