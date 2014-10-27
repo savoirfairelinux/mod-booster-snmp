@@ -51,7 +51,7 @@ clear_parser = subparsers.add_parser('clear', help='clear help')
 clear_subparsers = clear_parser.add_subparsers(help='clear sub-command help')
 # Clear mapping
 clearservice_parser = clear_subparsers.add_parser('mapping', help='Clear service(s) mapping')
-clearservice_parser.set_defaults(command='clear-cache')
+clearservice_parser.set_defaults(command='clear-mapping')
 clearservice_parser.add_argument('-H', '--host-name', type=str,
                     help='Host name')
 clearservice_parser.add_argument('-S', '--service-name', type=str,
