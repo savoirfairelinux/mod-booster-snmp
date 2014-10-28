@@ -58,7 +58,7 @@ class SnmpBooster(BaseModule):
     """
     def __init__(self, mod_conf):
         BaseModule.__init__(self, mod_conf)
-        self.version = "1.99.2"
+        self.version = "1.99.7"
         self.datasource_file = getattr(mod_conf, 'datasource', None)
         self.db_host = getattr(mod_conf, 'db_host', "127.0.0.1")
         self.db_port = to_int(getattr(mod_conf, 'db_port', 27017))

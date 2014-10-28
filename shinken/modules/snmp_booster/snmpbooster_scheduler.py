@@ -72,7 +72,8 @@ class SnmpBoosterScheduler(SnmpBooster):
         # Elect a check to be a real snmp check
         for key, chk in check_by_host_inter:
             # get frequency
-            freq = key[1] * chk.ref.interval_length
+            _, serv_interval = key
+            freq = serv_interval * chk.ref.interval_length
             # Check if the key if already defined on last_check_mapping
             # and if the next check is scheduled after the saved
             # timestamps for the key (host, frequency)
@@ -89,10 +90,10 @@ class SnmpBoosterScheduler(SnmpBooster):
             if key not in self.last_check_mapping:
                 # Done to smooth check over the interval of freq.
                 # We remember the offset for a specific interval and move the elected (real) check to this time
-                if key not in self.offset_mapping:
-                    self.last_check_mapping[key] = 0
-                self.last_check_mapping[key] = (chk.t_to_go - chk.t_to_go % freq + self.offset_mapping[key], chk.ref.id)
-                self.offset_mapping[key] += (self.offset_mapping[key] + 1) % freq
+                if serv_interval not in self.offset_mapping:
+                    self.offset_mapping[serv_interval] = 0
+                self.last_check_mapping[key] = (chk.t_to_go - chk.t_to_go % freq + self.offset_mapping[serv_interval], chk.ref.id)
+                self.offset_mapping[serv_interval] = (self.offset_mapping[serv_interval] + 1) % freq
             else:
                 self.last_check_mapping[key] = (self.last_check_mapping[key][0] + freq,
                                                 chk.ref.id)
