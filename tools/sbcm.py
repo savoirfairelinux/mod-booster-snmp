@@ -68,8 +68,6 @@ clearold_parser.add_argument('-H', '--hour', type=str,
 
 
 def search(host=None, service=None, show_ds=False, show_triggers=False):
-    # Prepare filter
-    mongo_filter = {}
     if host is not None and service is not None:
         results = [db_client.get_service(host, service)]
     elif service is not None:
@@ -83,15 +81,16 @@ def search(host=None, service=None, show_ds=False, show_triggers=False):
         printer.pprint(results)
         exit()
 
-    if not show_ds:
-        for r in results: del r['ds']
-    if not show_triggers:
-        for r in results: del r['triggers']
-    # print results
-    if results is None:
+    if results == [None]:
         print "No results found in DB!"
 
     else:
+        if not show_ds:
+            for r in results: del r['ds']
+        if not show_triggers:
+            for r in results: del r['triggers']
+
+
         for result in results:
             print "=" * 79
             print "== %s" % result['host']
@@ -100,16 +99,40 @@ def search(host=None, service=None, show_ds=False, show_triggers=False):
             printer.pprint(result)
      
 
-def clear():
-    pass
+def clear(host=None, service=None):
+    if host is not None and service is not None:
+        results = [db_client.get_service(host, service)]
 
-def delete():
-    pass
+    elif service is not None:
+        results = db_client.get_hosts_from_service(service)
+    # Prepare columns
+    elif host is not None:
+        results = db_client.get_services_from_host(host)
+    # Both none, show keys
+    else:
+        results = db_client.get_all_services()
+
+    for result in results:
+        if 'instance_name' in result and 'instance' in result:
+            del result['instance']
+            db_client.update_service(result['host'], result['service'], result, force=True)
+            print "Instance cleared for '%s' and service '%s'" % (result['host'], result['service'])
+        else:
+            print "Nothing to do for host '%s' and service '%s'" % (result['host'], result['service'])
+
+
+def delete(host=None, service=None):
+    if service is not None:
+        nb_del = db_client.delete_services([(host, service)])
+    else:
+        nb_del = db_client.delete_host(host)
+
+    print "%d key(s) deleted in database" % nb_del
 
 args = parser.parse_args()
 #print(args.accumulate(args.integers))
 
-print(args)
+#print(args)
 
 try:
     dbmodule = importlib.import_module("shinken.modules.snmp_booster.libs.%sclient" % args.backend)
@@ -122,21 +145,31 @@ except ImportError as exp:
 db_client = dbmodule.DBClient("localhost")
 if not db_client.connect():
     logger.critical("Impossible to connect to %s DB" % args.backend)
+
 if args.command == 'search':
     search(args.host_name, args.service_name, args.show_datasource, args.show_triggers)
 
-import pdb;pdb.set_trace()
+#import pdb;pdb.set_trace()
 
-if args.command == "clear-cache":
+elif args.command == "clear-cache":
+    # Drop database
+    db_client.clear_cache()
+
+elif args.command == "clear-mapping":
+    # Remove 'instance' if 'instance_name' for service(s)
     clear(args.host_name, args.service_name)
 
-if args.command == "clear-old":
+elif args.command == "clear-old":
+    # Remove all keys not in members
+    #db_client.clear_old()
     pass
 
-if args.command == "delete-host":
-    delete()
+elif args.command.startswith("delete"):
+    # Remove host:* key
+    if not 'service_name' in args:
+        args.service_name = None
+    delete(args.host_name, args.service_name)
 
-if args.command == "delete-service":
-    delete()
+else:
+    print "Unknown command %s" % args.commmand
 
-import pdb;pdb.set_trace()

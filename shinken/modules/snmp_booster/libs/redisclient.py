@@ -115,7 +115,7 @@ class DBClient(object):
         # Then update propely host:service keys
         self.update_service(host, service, data)
 
-    def update_service(self, host, service, data):
+    def update_service(self, host, service, data, force=False):
         """ This function updates/inserts a service
         It used by arbiter in hook_late_configuration
         to put the configuration in the database
@@ -123,12 +123,14 @@ class DBClient(object):
         * query_result: None
         * error: bool
         """
-        key = self.build_key(host, service)
-        old_dict = self.db_conn.get(key)
-        if old_dict is not None:
-            old_dict = ast.literal_eval(old_dict)
 
-        data = merge_dicts(old_dict, data)
+        key = self.build_key(host, service)
+        if not force:
+            old_dict = self.db_conn.get(key)
+            if old_dict is not None:
+                old_dict = ast.literal_eval(old_dict)
+
+            data = merge_dicts(old_dict, data)
 
         if data is None:
             return (None, True)
@@ -210,7 +212,7 @@ class DBClient(object):
     def get_hosts_from_service(self, service):
         results = []
         for key in self.db_conn.keys():
-            if re.search(service, key) is None:
+            if re.search(":.*"+service, key) is None:
                 # Look for service
                 continue
             results.append(ast.literal_eval(self.db_conn.get(key)))
@@ -220,7 +222,7 @@ class DBClient(object):
     def get_services_from_host(self, host):
         results = []
         for key in self.db_conn.keys():
-            if re.match(host, key)is None:
+            if re.search(host+".*:", key)is None:
                 # Look for host
                 continue
             if re.search(":[0-9]+$", key) is not None:
@@ -230,3 +232,42 @@ class DBClient(object):
 
         return results
 
+    def clear_cache(self):
+        self.db_conn.flushall()
+
+    def get_all_services(self):
+        results = []
+        for key in self.db_conn.keys():
+            if re.search(":[0-9]*$", key) is None:
+                host, service = key.split(":", 1)
+                results.append(self.get_service(host, service))
+
+        return results
+
+    def get_all_interval_keys(self):
+        results = []
+        for key in self.db_conn.keys():
+            if re.search(":[0-9]*$", key) is not None:
+                results.append(key)
+
+        return results
+
+
+    def delete_services(self, key_list):
+        nb_del = self.db_conn.delete(*[self.build_key(host, service) for host, service in key_list])
+        if nb_del > 0:
+            interval_key = self.get_all_interval_keys()
+            for host, service in key_list:
+                for key in [key for key in interval_key if key.startswith(host)]:
+                    self.db_conn.srem(key, service)
+        return nb_del
+
+
+
+    def delete_host(self, host):
+        to_del = []
+        for key in self.db_conn.keys():
+            if re.search(host+":", key) is not None:
+                to_del.append(key)
+        if len(to_del) > 0:
+            return self.db_conn.delete(*to_del)
