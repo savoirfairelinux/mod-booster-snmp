@@ -297,7 +297,7 @@ def parse_args(cmd_args):
         elif option_name in ("-P", "--port"):
             args['port'] = value
         elif option_name in ("-s", "--timeout"):
-            args['timeout'] = value
+            args['timeout'] = int(value)
         # Datasource options
         elif option_name in ("-t", "--dstemplate"):
             args['dstemplate'] = value

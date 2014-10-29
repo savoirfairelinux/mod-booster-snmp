@@ -1,2 +1,3 @@
-#etc/snmp_booster.cfg /etc/shinken/shinken-specific/
-shinken/modules/snmp_booster /usr/lib/python2.7/dist-packages/shinken/modules
+etc/modules/booster_snmp.cfg etc/shinken/shinken-specific/
+shinken/modules/snmp_booster usr/lib/python2.7/dist-packages/shinken/modules
+tools/sbcm.py usr/sbin

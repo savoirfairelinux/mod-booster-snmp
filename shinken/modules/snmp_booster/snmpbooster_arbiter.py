@@ -131,9 +131,16 @@ class SnmpBoosterArbiter(SnmpBooster):
                     continue
 
                 # We want to make a diff between arbiter insert and poller insert. Some backend may need it.
-                self.db_client.update_service_init(dict_serv['host'],
-                                              dict_serv['service'],
-                                              dict_serv)
+                try:
+                    self.db_client.update_service_init(dict_serv['host'],
+                                                       dict_serv['service'],
+                                                       dict_serv)
+                except Exception as exp:
+                    logger.error("[SnmpBooster] [code 0909] [%s,%s] "
+                                 "%s" % (dict_serv['host'],
+                                         dict_serv['service'],
+                                         str(exp)))
+                    continue
 
         logger.info("[SnmpBooster] [code 0908] Done parsing")
 
