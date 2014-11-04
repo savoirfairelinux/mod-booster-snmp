@@ -14,6 +14,7 @@ Contents:
    snmpbooster_how_it_works
    setup_snmp_booster_module
    snmpbooster_troubleshooting
+   snmpbooster_sbcm
    snmpbooster_design_specification
    snmpbooster_dictionary
    snmpbooster_dev
