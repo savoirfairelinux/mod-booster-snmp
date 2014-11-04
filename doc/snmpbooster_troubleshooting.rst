@@ -465,3 +465,59 @@ Code 1208
                 only occur on the Poller
     File        `libs/dbclient.py`
     =========== ===========================================================================
+
+Code 1301
+    =========== ===========================================================================
+    Type        ERROR
+    Description **Python Redis** module can not be loaded. Please check your installation
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1302
+    =========== ===========================================================================
+    Type        ERROR
+    Description Can not connect to the Redis server. Please check your configuration
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1303
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error writing service in host:interval list
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1304
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error inserting service data in Redis service
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1305
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting ONE service data in the Redis server
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1306
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting services list from host:interval key
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1307
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting ONE service in Redis. This service seems missing
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
+
+Code 1308
+    =========== ===========================================================================
+    Type        ERROR
+    Description We got an error getting ONE service in Redis 
+    File        `libs/redisclient.py`
+    =========== ===========================================================================
