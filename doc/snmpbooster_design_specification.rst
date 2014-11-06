@@ -20,7 +20,7 @@ Design specification summary
   * [Done] Be compatible with distributed data acquisition
   * [Done] Collect data for a host/check_interval tuple via SNMP in a single pass
   * [Done] Use all builtin Shinken scheduler logic for retries, forced checks, timeouts, dependencies, parents
-  * [Done] Store collected data for the duration of the check_interval in a MongoDB
+  * [Done] Store collected data for the duration of the check_interval in a Redis
   * [Done] On a restart, after the first collection, be able to pick up where the last check left and calculate derived values
   * [Done] Forced check are not allowed within 30 seconds of last SNMP query to the same host/check_interval, all other requests get data from the cache.
   * [Done] Only a single request to the host/check_interval via SNMP is allowed at a time, all other requests get data from the cache.

@@ -32,24 +32,24 @@ Shinken Integration
 
 .. image:: /_static/images/snmpbooster_data_model.png
 
-- 1 - The SnmpBooster Arbiter module reads the Shinken SnmpBooster configuration file(s). It reads the check commands and based on the values in the check commands that use the snmp_poller module it will creates a shared configuration cache using Mongodb. This permits to tie together Shinken Hosts and Services with the SNMP specific configuration. The Scheduler daemon schedules Host and Service checks as it normally does. 
+- 1 - The SnmpBooster Arbiter module reads the Shinken SnmpBooster configuration file(s). It reads the check commands and based on the values in the check commands that use the snmp_poller module it will creates a shared configuration cache using Redis. This permits to tie together Shinken Hosts and Services with the SNMP specific configuration. The Scheduler daemon schedules Host and Service checks as it normally does. 
 
-- 2 - The SnmpBooster Arbiter module computes Shinken configuration with datasource files (.ini files) and prepare datas for MongoDB
+- 2 - The SnmpBooster Arbiter module computes Shinken configuration with datasource files (.ini files) and prepare datas for Redis
 
-- 3 - The SnmpBooster Arbiter module stores an entry in MongoDB for each service defined in Shinken configuration
+- 3 - The SnmpBooster Arbiter module stores an entry in Redis for each service defined in Shinken configuration
 
-- 4 - The SnmpBooster Scheduler module determines which services will launch a SNMP requests and which will be a MongoDB requests
+- 4 - The SnmpBooster Scheduler module determines which services will launch a SNMP requests and which will be a Redis requests
 
 - 5 - Scheduler give tasks to pollers
 
-- 6 - The SnmpBooster Poller module gets datas from MongoDB:
+- 6 - The SnmpBooster Poller module gets datas from Redis:
 
-      - It get the current service if it's a MongoDB request
+      - It get the current service if it's a Redis request
       - It get all services from the host of the current service if it's a SNMP request
 
 - 7 - The SnmpBooster Poller module makes SNMP requests
 
-- 8 - The SnmpBooster Poller module computes and stores collected datas from SNMP in MongoDB
+- 8 - The SnmpBooster Poller module computes and stores collected datas from SNMP in Redis
 
 Performance
 -----------
@@ -69,9 +69,9 @@ The generic SNMP configuration information is stored in the Shinken SnmpBooster 
 Limitations
 ===========
 
-You should have your pollers with SnmpBooster in the same datacenter, as they need to be on the same machine with good connectivity to the active MongoDB server.
+You should have your pollers with SnmpBooster in the same datacenter, as they need to be on the same machine with good connectivity to the active Redis server.
 
-SnmpBooster is not compatible with distributed pollers in multiple datacenters, sorry, the current design of SnmpBooster uses a single centralized MongoDB instance for storing the timeseries data. For distributed datacenters to be supported, each poller+scheduler+mongoDB must be realm restrained, which is not the case today.
+SnmpBooster is not compatible with distributed pollers in multiple datacenters, sorry, the current design of SnmpBooster uses a single centralized Redis instance for storing the timeseries data. For distributed datacenters to be supported, each poller+scheduler+Redis must be realm restrained, which is not the case today.
 
 
 Design specification

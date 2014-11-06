@@ -34,12 +34,12 @@ The SnmpBooster module requires:
   * Shinken 1.2+ < 2.0
   * `PySNMP 4.2.1+ (Python module and its dependencies)`_
   * `ConfigObj (Python module)`_
-  * `python-pymongo`_ <= 2.6.3
-  * MongoDB package for your operating system (ex. For Ubuntu: apt-get install mongodb)
+  * `python-redis`_ >= 2.7.2
+  * Redis package for your operating system (ex. For Ubuntu: apt-get install redis-server)
 
 .. _PySNMP 4.2.1+ (Python module and its dependencies): http://pysnmp.sourceforge.net/download.html
 .. _ConfigObj (Python module): http://www.voidspace.org.uk/python/configobj.html#downloading
-.. _python-pymongo: https://pypi.python.org/pypi/pymongo
+.. _python-redis: https://pypi.python.org/pypi/redis/2.10.3 
 
 The genDevConfig profile generator depends on:
 
@@ -110,7 +110,7 @@ One for the Arbiter:
         module_name          SnmpBoosterArbiter
         module_type          snmp_booster
         datasource           /etc/shinken/snmpbooster_datasource/   ; SET THE DIRECTORY FOR YOUR Defaults*.ini FILES provided by genDevConfig
-        db_host              192.168.1.2   ; SET THE IP ADDRESS OF YOUR mongodb SERVER
+        db_host              192.168.1.2   ; SET THE IP ADDRESS OF YOUR redis SERVER
         loaded_by            arbiter
     }
 
@@ -137,13 +137,13 @@ One for the Poller:
     }
 
 
-If you do not know the IP adress on which your MongoDB is listening, check under /etc/mongodb.conf. Or do a:
+If you do not know the IP adress on which your Redis is listening, check under /etc/redis/redis.con. Or do a:
 
 ::
 
-  netstat -a | grep mongodb
+  netstat -a | grep redis
 
-If you are running a test on the local machine you can leave mongodb on 127.0.0.1 (localhost), but if your poller, scheduler or arbiter is on a different machine, set the mongodb to listen on a real IP address.
+If you are running a test on the local machine you can leave redis on 127.0.0.1 (localhost), but if your poller, scheduler or arbiter is on a different machine, set the redis to listen on a real IP address.
 
 
 Parameters
