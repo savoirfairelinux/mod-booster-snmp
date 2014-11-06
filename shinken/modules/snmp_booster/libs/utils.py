@@ -264,7 +264,7 @@ def parse_args(cmd_args):
     # Handle options
     try:
         options, _ = getopt.getopt(cmd_args,
-                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:bM:R:r',
+                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:bM:R:g:r',
                                    ['host-name=', 'host-address=', 'service=',
                                     'community=', 'snmp-version=', 'port=',
                                     'timeout=',
