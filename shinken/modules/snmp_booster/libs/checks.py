@@ -131,6 +131,10 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             result['finished'] = False
 
             mapping_task = {}
+            # Add address
+            mapping_task['host'] = snmp_info.address
+            # Get concurrency
+            mapping_task['no_concurrency'] = serv.get('no_concurrency', False)
             mapping_task['data'] = {"authData": cmdgen.CommunityData(snmp_info.community),
                                     "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address,
                                                                                   snmp_info.port),
@@ -140,6 +144,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                                     "varNames": (str(snmp_info.mapping[1:]), ),
                                     }
             if snmp_info.use_getbulk:
+                # Add snmp request type
                 mapping_task['type'] = 'bulk'
                 mapping_task['data']["nonRepeaters"] = 0
                 mapping_task['data']["maxRepetitions"] = serv.get('max_rep_map',
@@ -149,6 +154,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                                                    check.result,
                                                    result))
             else:
+                # Add snmp request type
                 mapping_task['type'] = 'next'
                 mapping_task['data']['cbInfo'] = (callback_mapping_next,
                                                   (serv['mapping'],
@@ -202,6 +208,8 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                             }
         # Add snmp request type
         get_task['type'] = 'get'
+        # Get concurrency
+        get_task['no_concurrency'] = arguments.get('no_concurrency', False)
         # Add address
         get_task['host'] = arguments.get('address')
         # Put all oid in the same list
@@ -223,13 +231,6 @@ def prepare_oids(ret, service, group_size=64):
     """ This function, is in a reduce function,
     groups oids to launch grouped SNMP requests
     """
-    # Split requets in group of 'group_size'
-    if len(ret[-1]) < group_size:
-        tmp_dict = ret[-1]
-    else:
-        tmp_dict = {}
-        ret.append(tmp_dict)
-
     # For each ds_name
     for ds_name, ds_data in service['ds'].items():
         # For each ds_oid, min and max
@@ -240,6 +241,12 @@ def prepare_oids(ret, service, group_size=64):
                     # Pass oid when it needs instance and
                     # the mapping is not done
                     continue
+                # Split requests in group of 'group_size'
+                if len(ret[-1]) < group_size:
+                    tmp_dict = ret[-1]
+                else:
+                    tmp_dict = {}
+                    ret.append(tmp_dict)
                 # Construct oid
                 oid = ds_data[oid_type] % service
                 if oid in tmp_dict:

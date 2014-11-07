@@ -137,7 +137,7 @@ class SNMPWorker(Thread):
                 # Add task dispatcher
                 self.append_task_to_dispatcher(snmp_task)
 
-            if task_prepared > 0:
+            if self.task_prepared > 0:
                 # Launch SNMP requests
                 self.cmdgen.snmpEngine.transportDispatcher.runDispatcher()
             else:

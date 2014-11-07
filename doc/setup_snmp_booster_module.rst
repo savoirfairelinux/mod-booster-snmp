@@ -234,14 +234,18 @@ Parameters for check_snmp_booster command
 -T, --triggergroup
   name of the trigger group which contains several triggers; Example: `interface-hc`
 
--b, --use_getbulk
+-b, --use-getbulk
   use snmp getbulk requests to do the mapping; Default: `False`
 
 -M, --max-rep-map
   max_repetition parameters for snmp getbulk requests; Default: `64`
 
--g, --request_group_size
+-g, --request-group-size
   max number of asked oids in one SNMP request; Default: `64`
+
+-c, --no-concurrency
+  Disable concurrent SNMP requests on the same host; Default: `False`
+
 
 
 Template definitions
