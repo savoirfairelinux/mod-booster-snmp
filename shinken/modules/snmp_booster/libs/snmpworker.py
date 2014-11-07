@@ -49,6 +49,25 @@ class SNMPWorker(Thread):
         self.mapping_queue = mapping_queue
         self.max_prepared_tasks = max_prepared_tasks
         self.must_run = False
+        self.task_prepared = 0
+
+    def append_task_to_dispatcher(self, snmp_task):
+        if snmp_task['type'] in ['bulk', 'next', 'get']:
+            # Append snmp requests
+            snmp_command_name = ("async" +
+                                 snmp_task['type'].capitalize() +
+                                 "Cmd")
+            getattr(self.cmdgen, snmp_command_name)(**snmp_task['data'])
+            # Mark task as done
+            self.mapping_queue.task_done()
+            self.task_prepared += 1
+        else:
+            # If the request is not handled
+            error_message = ("Bad SNMP requets type: '%s'. Must be "
+                             "get, next or bulk." % snmp_task['type'])
+            logger.error("[SnmpBooster] [code 0603] [%s] "
+                         "%s" % (snmp_task['host'],
+                                 error_message))
 
     def run(self):
         """ Process SNMP tasks
@@ -81,35 +100,42 @@ class SNMPWorker(Thread):
         """
         self.must_run = True
         logger.info("[SnmpBooster] [code 0602] is starting")
+        slow_host_waiting = []
         while self.must_run:
             # Prevent memory leak
             del(self.cmdgen)
             self.cmdgen = cmdgen.AsynCommandGenerator()
             # End prevent memory leak
-            task_prepared = 0
-            # Process all tasks
-            while (not self.mapping_queue.empty()) and task_prepared <= self.max_prepared_tasks:
-                task_prepared += 1
+            self.task_prepared = 0
+            # slow host
+            slow_host_prepared = []
+            # Process slow hosts tasks
+            for index, snmp_task in enumerate(slow_host_waiting):
+                # Check if we have our max prepared tasks
+                if self.task_prepared > self.max_prepared_tasks:
+                    break
+                # Handle slow hosts
+                if snmp_task['no_concurrency']:
+                    if snmp_task['host'] in slow_host_prepared:
+                        continue
+                    else:
+                        slow_host_prepared.append(snmp_task['host'])
+                # Add task dispatcher
+                slow_host_waiting.pop(index)
+                self.append_task_to_dispatcher(snmp_task)
+            # Process normal tasks
+            while (not self.mapping_queue.empty()) and self.task_prepared <= self.max_prepared_tasks:
+                # Get task
                 snmp_task = self.mapping_queue.get()
-                if snmp_task['type'] in ['bulk', 'next', 'get']:
-                    # Append snmp requests
-                    snmp_command_name = ("async" +
-                                         snmp_task['type'].capitalize() +
-                                         "Cmd")
-                    getattr(self.cmdgen, snmp_command_name)(**snmp_task['data'])
-                else:
-                    # If the request is not handled
-                    error_message = ("Bad SNMP requets type: '%s'. Must be "
-                                     "get, next or bulk." % snmp_task['type'])
-                    logger.error("[SnmpBooster] [code 0603] [%s] "
-                                 "%s" % (snmp_task['host'],
-                                         error_message))
-                    continue
-                # Mark task as done
-                self.mapping_queue.task_done()
-                # Prevent memory leak
-                # del(snmp_task)
-                # End prevent memory leak
+                # Handle slow hosts
+                if snmp_task['no_concurrency']:
+                    if snmp_task['host'] in slow_host_prepared:
+                        slow_host_waiting.append(snmp_task)
+                        continue
+                    else:
+                        slow_host_prepared.append(snmp_task['host'])
+                # Add task dispatcher
+                self.append_task_to_dispatcher(snmp_task)
 
             if task_prepared > 0:
                 # Launch SNMP requests

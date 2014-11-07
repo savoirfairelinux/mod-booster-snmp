@@ -257,6 +257,7 @@ def parse_args(cmd_args):
             "max_rep_map": 64,
             # Size of requests groups
             "request_group_size": 64,
+            "no_concurrency": False,
             # Hidden option
             "real_check": False,
             }
@@ -264,7 +265,7 @@ def parse_args(cmd_args):
     # Handle options
     try:
         options, _ = getopt.getopt(cmd_args,
-                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:bM:R:g:r',
+                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:r',
                                    ['host-name=', 'host-address=', 'service=',
                                     'community=', 'snmp-version=', 'port=',
                                     'timeout=',
@@ -272,8 +273,8 @@ def parse_args(cmd_args):
                                     'instance-name=',
                                     'mapping=', 'mapping-name=',
                                     'triggergroup=',
-                                    'use-getbulk', 'max-rep-map=',
-                                    'request-group-size',
+                                    'use-getbulk=', 'max-rep-map=',
+                                    'request-group-size=', 'no-concurrency=',
                                     'real-check',
                                     ]
                                    )
@@ -313,7 +314,12 @@ def parse_args(cmd_args):
             args['triggergroup'] = value
         # SNMP Bulk options
         elif option_name in ("-b", "--use-getbulk"):
-            args['use_getbulk'] = True
+            try:
+                args['use_getbulk'] = bool(int(value))
+            except ValueError:
+                args['use_getbulk'] = False
+                logger.warning('[SnmpBooster] [code 0804] Bad '
+                               'use_getbulk: setting to False (0)')
         elif option_name in ("-M", "--max-rep-map"):
             try:
                 args['max_rep_map'] = int(value)
@@ -328,7 +334,15 @@ def parse_args(cmd_args):
             except ValueError:
                 args['request_group_size'] = 64
                 logger.warning('[SnmpBooster] [code 0802] Bad '
-                               'request_group_size: setting to 64)')
+                               'request_group_size: setting to 64')
+        # No concurency
+        elif option_name in ("-c", "--no-concurrency"):
+            try:
+                args['no_concurrency'] = bool(int(value))
+            except ValueError:
+                args['no_concurrency'] = False
+                logger.warning('[SnmpBooster] [code 0803] Bad '
+                               'request_group_size: setting to False (0)')
         # Hidden option
         elif option_name in ("-r", "--real-check"):
             args['real_check'] = True
