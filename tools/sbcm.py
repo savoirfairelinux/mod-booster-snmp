@@ -154,32 +154,31 @@ except ImportError as exp:
 # Check database connection
 db_client = dbmodule.DBClient(args.redis_address, args.redis_port)
 db_client.connect()
-try:
-    db_client.db_conn.client_list()
-except Exception as exp:
-    print("Impossible to connect to %s DB" % args.backend)
-    sys.exit(2)
 
-# Search
-if args.command == 'search':
-    search(args.host_name, args.service_name,
-           args.show_datasource, args.show_triggers)
-# Drop database
-elif args.command == "clear-cache":
-    db_client.clear_cache()
-# Remove 'instance' if 'instance_name' for service(s)
-elif args.command == "clear-mapping":
-    clear(args.host_name, args.service_name)
-# Remove all keys not in host:interval set (members)
-elif args.command == "clear-old":
-    # TODO
-    # db_client.clear_old()
-    pass
-# Delete host/service
-elif args.command.startswith("delete"):
-    # Remove host:* key
-    if 'service_name' not in args:
-        args.service_name = None
-    delete(args.host_name, args.service_name)
-else:
-    print "Unknown command %s" % args.commmand
+try:
+    # Search
+    if args.command == 'search':
+        search(args.host_name, args.service_name,
+               args.show_datasource, args.show_triggers)
+    # Drop database
+    elif args.command == "clear-cache":
+        db_client.clear_cache()
+    # Remove 'instance' if 'instance_name' for service(s)
+    elif args.command == "clear-mapping":
+        clear(args.host_name, args.service_name)
+    # Remove all keys not in host:interval set (members)
+    elif args.command == "clear-old":
+        # TODO
+        # db_client.clear_old()
+        pass
+    # Delete host/service
+    elif args.command.startswith("delete"):
+        # Remove host:* key
+        if 'service_name' not in args:
+            args.service_name = None
+        delete(args.host_name, args.service_name)
+    else:
+        print "Unknown command %s" % args.commmand
+except Exception as exp:
+    print(exp)
+    sys.exit(2)
