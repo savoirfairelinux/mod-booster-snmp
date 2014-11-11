@@ -181,13 +181,13 @@ To edit the file
 
   define command {
     command_name    check_snmp_booster
-    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b $_HOSTUSEBULK$ -c $_HOSTNOCONCURRENCY$
     module_type     snmp_booster
   }
   
   define command {
     command_name    check_snmp_booster_bulk
-    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b 1
     module_type     snmp_booster
   }
   
@@ -235,7 +235,7 @@ Parameters for check_snmp_booster command
   name of the trigger group which contains several triggers; Example: `interface-hc`
 
 -b, --use-getbulk
-  use snmp getbulk requests to do the mapping; Default: `False`
+  use snmp getbulk requests to do the mapping; Default: `0`
 
 -M, --max-rep-map
   max_repetition parameters for snmp getbulk requests; Default: `64`
@@ -244,7 +244,7 @@ Parameters for check_snmp_booster command
   max number of asked oids in one SNMP request; Default: `64`
 
 -c, --no-concurrency
-  Disable concurrent SNMP requests on the same host; Default: `False`
+  Disable concurrent SNMP requests on the same host; Default: `0`
 
 
 
@@ -263,8 +263,10 @@ Template definitions
     retry_interval          1
     use                     generic-host
     register                0
-    _SNMPCOMMUNITYREAD      $SNMPCOMMUNITYREAD$
-    _SNMPCOMMUNITYVERSION   $SNMPCOMMUNITYVERSION$
+    _snmpcommunityread      $SNMPCOMMUNITYREAD$
+    _snmpcommunityversion   $SNMPCOMMUNITYVERSION$
+    _usebulk                0
+    _noconcurrency          0
   }
   
   
@@ -281,38 +283,37 @@ Template definitions
     register                0
   }
 
-  define service {
-    name                    default-snmpbulk-template
-    check_command           check_snmp_booster_bulk
-    _inst                   None
-    _triggergroup           None
-    _mapping                None
-    max_check_attempts      3
-    check_interval          1
-    retry_interval          1
-    register                0
-  }
-
-
 
 Step 2
 ++++++
 
 Define some hosts and services. You would typically use genDevConfig or another configuration generator to create these for you.
 
+Mandatory host arguments related to SNMP polling:
+
+::
+
+   _snmpcommunityread    public                ; which could be set in your resource.cfg file
+   _snmpversion          public                ; which could be set in your resource.cfg file
+   _usebulk              0                     ; use bulk request to do mapping
+   _noconcurrency        0                     ; SNMPBooster can make multiple requests on the same host at the same time
+ 
+
 Mandatory service arguments related to SNMP polling:
 
 ::
 
-   _dstemplate		Cisco-Generic-Router  ; Name of a DSTEMPLATE defined in the SnmpBooster config.ini file
-   snmpcommunityread    which is set in your resource.cfg file
+   _dstemplate		     Cisco-Generic-Router  ; Name of a DSTEMPLATE defined in the SnmpBooster config.ini file
+  
 
 Optional service arguments related to SNMP polling with default values: 
 
 ::
 
     _inst                   None   ; Could be numeric: 0, 0.0.1, None
+    _instname               None   ; Instance name use to do mapping
     _triggergroup           None   ; Name of the triggergroup defined in the SnmpBooster config.ini file to use for setting warning and critical thresholds
+    _mapping                None   ; Mapping name defined in [MAP] section in the SnmpBooster ini files
 
 
 Here an example how to configure a service to use instance mapping
