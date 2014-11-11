@@ -226,6 +226,14 @@ class SnmpBoosterPoller(SnmpBooster):
                         continue
                     # Compute value before saving
                     if key.get('oid_type') == 'ds_oid':
+                        # add max value
+                        result['ds_max'] = None
+                        if results.get(result['ds_max_oid']) is not None:
+                            result['ds_max'] = results.get(result['ds_max_oid']).get('value')
+                        # add min value
+                        result['ds_min'] = None
+                        if results.get(result['ds_min_oid']) is not None:
+                            result['ds_min'] = results.get(result['ds_min_oid']).get('value')
                         try:
                             value = compute_value(result)
                         except Exception as exp:

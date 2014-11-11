@@ -185,8 +185,11 @@ def compute_value(result):
 
     # Make calculation
     if result['calc'] is not None:
-        value = calculation(value, result['calc'])
-
+        # Replace %(ds_max)s and %(ds_min)s
+        # example: ds_calc = value, 60, div, %(ds_max)s, 1000, div, div,100 ,mul
+        calculation_element_list = [elt % result for elt in result['calc']]
+        # Make calculation
+        value = calculation(value, calculation_element_list)
     return value
 
 

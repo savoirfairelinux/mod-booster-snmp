@@ -254,6 +254,14 @@ def prepare_oids(ret, service, group_size=64):
                     # We only add the ds_name
                     tmp_dict[oid]['key']['ds_names'].append(ds_name)
                 else:
+                    # Check if we have a ds_max and get the oid
+                    ds_max_oid = None
+                    if ds_data.get('ds_max_oid'):
+                        ds_max_oid = ds_data.get('ds_max_oid') % service
+                    # Check if we have a ds_min and get the oid
+                    ds_min_oid = None
+                    if ds_data.get('ds_min_oid'):
+                        ds_min_oid = ds_data.get('ds_min_oid') % service
                     # This is a new oid, we add it to the result list
                     # The key is use to retreive the service in database
                     tmp_dict[oid] = {'key': {'host': service['host'],
@@ -278,5 +286,9 @@ def prepare_oids(ret, service, group_size=64):
                                      # We put the calculation here (to make
                                      # calculation before database saving)
                                      'calc': ds_data['ds_calc'],
+                                     # Get max oid
+                                     'ds_max_oid': ds_max_oid,
+                                     # Get min oid
+                                     'ds_min_oid': ds_min_oid,
                                      }
     return ret
