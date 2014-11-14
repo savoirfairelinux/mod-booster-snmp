@@ -1,3 +1,9 @@
+shinken-module-snmpbooster (1.99.12-1) unstable; urgency=medium
+
+  * Beta 12 of the new SNMPBooster
+
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Fri, 14 Nov 2014 11:05:56 -0500
+
 shinken-module-snmpbooster (1.99.11-1) unstable; urgency=medium
 
   * Beta 11 of the new SNMPBooster
