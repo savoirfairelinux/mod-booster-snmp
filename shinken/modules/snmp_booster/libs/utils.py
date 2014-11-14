@@ -127,7 +127,11 @@ def derive(value, value_last, check_time, check_time_last, limit=4294967295):
     """ Get a derive
 
     >>> derive(20, 10, 1412776670, 1412776660)
-    1
+    1.0
+    >>> derive(15, 4294967290, 1412776670, 1412776660)
+    2.0
+    >>> derive(20, 2**64 - 11, 1412776670, 1412776660, 2**64 - 1)
+    3.0
     """
     t_delta = check_time - check_time_last
     if t_delta == 0:
@@ -138,7 +142,7 @@ def derive(value, value_last, check_time, check_time_last, limit=4294967295):
         d_delta = limit - value_last + value
     else:
         d_delta = value - value_last
-    value = d_delta / t_delta
+    value = d_delta / float(t_delta)
 
     return value
 
