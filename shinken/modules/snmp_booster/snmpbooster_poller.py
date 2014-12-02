@@ -94,15 +94,12 @@ class SnmpBoosterPoller(SnmpBooster):
                         args = parse_args(clean_command[1:])
                     except Exception as exp:
                         # if we get a parsing error
-                        error_message = ("Command line { %s } parsing error: "
+                        error_message = ("[SnmpBooster] [code 1001]"
+                                         "Command line { %s } parsing error: "
                                          "%s" % (chk.command.encode('utf8',
                                                                     'ignore'),
                                                  str(exp)))
-                        logger.error("[SnmpBooster] [code 1001] "
-                                     "Command line { %s } parsing error: "
-                                     "%s" % (chk.command.encode('utf8',
-                                                                'ignore'),
-                                             str(exp)))
+                        logger.error(error_message)
                         # Check is now marked as done
                         chk.status = 'done'
                         # Get exit code
@@ -121,11 +118,11 @@ class SnmpBoosterPoller(SnmpBooster):
                     # Make a SNMP check
                     check_snmp(chk, args, self.db_client,
                                self.task_queue, self.result_queue)
-                    logger.debug("CHECK SNMP %(host)s:%(service)s" % args)
+                    #logger.debug("CHECK SNMP %(host)s:%(service)s" % args)
                 else:
                     # Make fake check (get datas from DB)
                     check_cache(chk, args, self.db_client)
-                    logger.debug("CHECK cache %(host)s:%(service)s" % args)
+                    #logger.debug("CHECK cache %(host)s:%(service)s" % args)
 
     # Check the status of checks
     # if done, return message finished :)
