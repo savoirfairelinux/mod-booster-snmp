@@ -125,8 +125,8 @@ class SnmpBoosterArbiter(SnmpBooster):
                                                self.datasource)
                 except Exception as exp:
                     logger.error("[SnmpBooster] [code 0907] [%s,%s] "
-                                 "%s" % (serv.get_name(),
-                                         serv.host.get_name(),
+                                 "%s" % (serv.host.get_name(),
+                                         serv.get_name(),
                                          str(exp)))
                     continue
 
