@@ -61,7 +61,7 @@ class SnmpBooster(BaseModule):
         self.version = "1.99.7"
         self.datasource_file = getattr(mod_conf, 'datasource', None)
         self.db_host = getattr(mod_conf, 'db_host', "127.0.0.1")
-        self.db_port = to_int(getattr(mod_conf, 'db_port', 27017))
+        self.db_port = to_int(getattr(mod_conf, 'db_port', 6379))
         self.db_name = getattr(mod_conf, 'db_name', 'booster_snmp')
         self.loaded_by = getattr(mod_conf, 'loaded_by', None)
         self.datasource = None

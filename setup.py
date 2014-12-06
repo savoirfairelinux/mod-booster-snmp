@@ -14,7 +14,7 @@ setup(
     author_email='thibault.cohen@savoirfairelinux.com',
     url='https://github.com/savoirfairelinux/mod-booster-snmp',
     license='GPLv3',
-    install_requires=["python-pymongo",
+    install_requires=["python-redis",
                       "pysnmp",
                       "pyasn1",
                       "configobj",
