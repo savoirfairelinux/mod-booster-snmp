@@ -460,6 +460,11 @@ def dict_serialize(serv, mac_resol, datasource):
     elif not isinstance(ds_list, list):
         raise Exception("Bad format: DS %s in datasource files" % str(ds_list))
 
+    # Get default values from DATASOURCE root
+    default_ds_type = datasource.get('DATASOURCE').get("ds_type", "TEXT")
+    default_ds_min_oid_value = datasource.get('DATASOURCE').get("ds_min_oid_value", None)
+
+
     for ds_name in ds_list:
         ds_data = datasource.get('DATASOURCE').get(ds_name)
         if ds_data is None:
@@ -469,7 +474,8 @@ def dict_serialize(serv, mac_resol, datasource):
         # If no ds name set, we use the ds key as name
         # ie: `dot3StatsExcessiveCollisions`
         ds_data.setdefault("ds_name", ds_name)
-        ds_data.setdefault("ds_type", "TEXT")
+        ds_data.setdefault("ds_type", default_ds_type)
+        ds_data.setdefault("ds_min_oid_vallue", default_ds_min_oid_value)
         for name in ["ds_unit", ]:
             ds_data.setdefault(name, "")
         # Set default ds datas
