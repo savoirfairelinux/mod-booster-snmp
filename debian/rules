@@ -1,22 +1,3 @@
 #!/usr/bin/make -f
-
 %:
-	dh $@ --with python2 --install-layout=deb,quilt
-
-override_dh_clean:
-	rm -rf ./build
-	rm -rf ./Shinken.egg-info
-	dh_clean
-
-override_dh_install:
-	# INSTALL
-	dh_install
-	#rm debian/shinken-module-snmpbooster/usr/lib/python2.7/dist-packages/shinken/__init__.py
-	#rm debian/shinken-module-snmpbooster/usr/lib/python2.7/dist-packages/shinken/modules/__init__.py
-
-override_dh_installdocs:
-	make --directory=doc-compile html
-	dh_installdocs
-	# embedded-javascript-library (replaced by symlinks with dh_link)
-	rm $(CURDIR)/debian/shinken-module-snmpbooster-doc/usr/share/doc/shinken-module-snmpbooster-doc/html/_static/jquery.js
-	rm $(CURDIR)/debian/shinken-module-snmpbooster-doc/usr/share/doc/shinken-module-snmpbooster-doc/html/_static/underscore.js
+	dh $@ --with python2

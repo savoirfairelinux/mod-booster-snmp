@@ -1,3 +1,9 @@
+shinken-mod-snmpbooster (1.99.12-2) unstable; urgency=medium
+
+  * Change name
+
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Thu, 05 Mar 2015 16:06:15 -0500
+
 shinken-module-snmpbooster (1.99.12-1) unstable; urgency=medium
 
   * Beta 12 of the new SNMPBooster

@@ -1,2 +1,2 @@
 version=3
-http://www.shinken-monitoring.org/pub/ shinken-(\d[\d\.]+).tar.gz
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/<project>-\.tar\.gz/ https://github.com/savoirfairelinux/mod-booster-snmp/tags .*/v?(\d\S*)\.tar\.gz
