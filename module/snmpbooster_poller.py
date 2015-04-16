@@ -34,6 +34,7 @@ import sys
 
 from shinken.log import logger
 from shinken.util import to_int
+from pyasn1.type.univ import OctetString
 
 from snmpbooster import SnmpBooster
 from libs.utils import parse_args, compute_value
@@ -208,11 +209,14 @@ class SnmpBoosterPoller(SnmpBooster):
                     # We don't got a SNMP error
                     # Clean raw_value:
                     if result.get('type') in ['DERIVE', 'GAUGE', 'COUNTER']:
-                        raw_value = float(result.get('value'))
+                        if isinstance(result.get('value'), OctetString):
+                            result['value'] = raw_value = float(str(result.get('value')))
+                        else:
+                            result['value'] = raw_value = float(result.get('value'))
                     elif result.get('type') in ['DERIVE64', 'COUNTER64']:
-                        raw_value = float(result.get('value'))
+                        result['value'] = raw_value = float(result.get('value'))
                     elif result.get('type') in ['TEXT', 'STRING']:
-                        raw_value = str(result.get('value'))
+                        result['value'] = raw_value = str(result.get('value'))
                     else:
                         logger.error("[SnmpBooster] [code 1004] [%s, %s] "
                                      "Value type is not in 'TEXT', 'STRING', "
