@@ -1,3 +1,9 @@
+shinken-mod-snmpbooster (1.99.13-1) unstable; urgency=medium
+
+  * Beta 13 of the new SNMPBooster
+
+ -- Sebastien Coavoux <sebastien.coavoux@savoirfairelinux.com>  Fri, 17 Apr 2015 09:22:30 -0500
+
 shinken-mod-snmpbooster (1.99.12-2) unstable; urgency=medium
 
   * Change name

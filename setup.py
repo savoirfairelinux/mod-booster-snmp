@@ -8,13 +8,13 @@ except ImportError:
 
 setup(
     name='mod-snmpbooster',
-    version="1.99.7",
+    version="1.99.13",
     description='SNMP booster module for Shinken',
     author='Thibault Cohen',
     author_email='thibault.cohen@savoirfairelinux.com',
     url='https://github.com/savoirfairelinux/mod-booster-snmp',
     license='GPLv3',
-    install_requires=["python-redis",
+    install_requires=["redis",
                       "pysnmp",
                       "pyasn1",
                       "configobj",
