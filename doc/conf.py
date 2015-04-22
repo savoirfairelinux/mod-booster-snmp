@@ -17,7 +17,7 @@ from sphinx.ext import autodoc
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../shinken'))
+sys.path.insert(0, os.path.abspath('../'))
 #sys.path.insert(0, os.path.abspath('../shinken/modules/snmpbooster'))
 #sys.path.insert(0, os.path.abspath('../shinken/modules/snmpbooster/libs'))
 
@@ -41,12 +41,24 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = [
+                'shinken',
                 'shinken.log',
-                'pysnmp'
-                'pysnmp.entity'
-                'pysnmp.entity.rfc3413'
-                'pysnmp.entity.rfc3413.oneliner'
-                'pysnmp.entity.rfc3413.oneliner.cmdgen'
+                'shinken.basemodule',
+                'shinken.macroresolver',
+                'shinken.util',
+                'pysnmp',
+                'pysnmp.entity',
+                'pysnmp.entity.rfc3413',
+                'pysnmp.entity.rfc3413.oneliner',
+                'pysnmp.entity.rfc3413.oneliner.cmdgen',
+                'pysnmp.smi',
+                'pysnmp.smi.exval',
+                'pyasn1',
+                'pyasn1.type',
+                'pyasn1.type.univ',
+                'pymongo',
+                'redis',
+                'configobj',
                 ]
 
 for mod_name in MOCK_MODULES:

@@ -2,5 +2,6 @@
 %:
 	dh $@ --with python2
 
-#override_dh_python2:
-#	dh_python2 /usr/share/pyshared/shinken/modules
+override_dh_installdocs:
+	make --directory=doc-compile html
+	dh_installdocs

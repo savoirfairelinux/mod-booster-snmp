@@ -2,6 +2,8 @@ centos_6:
   spec: debian/shinken-mod-snmpbooster.spec
 centos_7:
   spec: debian/shinken-mod-snmpbooster.spec
+debian_7:
+  debian: debian
 debian_8:
   debian: debian
 ubuntu_14.04:

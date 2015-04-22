@@ -4,7 +4,7 @@
 SNMP Booster Developer Reference
 ================================
 
-.. automodule:: modules.snmp_booster
+.. automodule:: module
    :members:
    :undoc-members:
 
@@ -12,7 +12,7 @@ SNMP Booster Developer Reference
 SNMP Booster root class
 =======================
 
-.. automodule:: modules.snmp_booster.snmpbooster
+.. automodule:: module.snmpbooster
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,19 +20,19 @@ SNMP Booster root class
 SNMP Booster classes
 ====================
 
-.. automodule:: modules.snmp_booster.snmpbooster_arbiter
+.. automodule:: module.snmpbooster_arbiter
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: modules.snmp_booster.snmpbooster_scheduler
+.. automodule:: module.snmpbooster_scheduler
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: modules.snmp_booster.snmpbooster_poller
+.. automodule:: module.snmpbooster_poller
    :members:
    :undoc-members:
    :show-inheritance:
@@ -41,43 +41,43 @@ SNMP Booster classes
 SNMP Booster libs
 =================
 
-.. automodule:: modules.snmp_booster.libs
+.. automodule:: module.libs
      :members:
      :undoc-members:
      :show-inheritance:
 
 
-.. automodule:: modules.snmp_booster.libs.checks
+.. automodule:: module.libs.checks
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.dbclient
+.. automodule:: module.libs.dbclient
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.output
+.. automodule:: module.libs.output
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.result
+.. automodule:: module.libs.result
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.snmpworker
+.. automodule:: module.libs.snmpworker
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.trigger
+.. automodule:: module.libs.trigger
      :members:
      :undoc-members:
      :show-inheritance:
 
-.. automodule:: modules.snmp_booster.libs.utils
+.. automodule:: module.libs.utils
      :members:
      :undoc-members:
      :show-inheritance:
