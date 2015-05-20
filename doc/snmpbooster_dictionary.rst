@@ -85,6 +85,11 @@ This example definition will be used to explain each section.
           triggers = trigger1, trigger2
           
 
+.. note::
+
+    You cannot use operator characters in a variable name : "-+*/". You will get error in poller log after because it not able to get a variable name.
+
+
 SnmpBooster.ini configuring SNMP Datasources
 ============================================
 
