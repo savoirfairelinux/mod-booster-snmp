@@ -5,6 +5,7 @@ import argparse
 import sys
 import pprint
 import importlib
+import time
 
 from shinken.log import logger
 
@@ -68,8 +69,8 @@ clearcache_parser.set_defaults(command='clear-cache')
 # Clear old service in cache
 clearold_parser = clear_subparsers.add_parser('old', help='clear old help')
 clearold_parser.set_defaults(command='clear-old')
-clearold_parser.add_argument('-H', '--hour', type=str,
-                             help='No data since ... hours')
+clearold_parser.add_argument('-H', '--hour', type=int, default=2160,
+                             help='No data since ... hours. Default to 2160 (90 days)')
 
 
 def search(host=None, service=None, show_ds=False, show_triggers=False):
@@ -132,6 +133,26 @@ def clear(host=None, service=None):
             print "Nothing to do for host '%s' and service '%s'" % (result['host'], result['service'])
 
 
+def clear_old(max_age=None):
+    if not max_age:
+        max_age = 777600090  # 90 * 3600 * 24, 90 days
+    else:
+        max_age *= 3600  # convert in seconds
+
+    now = time.time()
+    to_del = []
+    for svc in db_client.get_all_services():
+        last_up = svc.get("check_time", None)
+        if last_up is not None and now - last_up > max_age:
+            to_del.append((svc["host"], svc["service"]))
+    if len(to_del) == 0:
+        nb_del = 0
+    else:
+        nb_del = db_client.delete_services(to_del)
+
+    print "%d old key(s) deleted in database" % nb_del
+
+
 def delete(host=None, service=None):
     """ Delete service """
     if service is not None:
@@ -168,9 +189,7 @@ try:
         clear(args.host_name, args.service_name)
     # Remove all keys not in host:interval set (members)
     elif args.command == "clear-old":
-        # TODO
-        # db_client.clear_old()
-        pass
+        clear_old(args.hour)
     # Delete host/service
     elif args.command.startswith("delete"):
         # Remove host:* key
