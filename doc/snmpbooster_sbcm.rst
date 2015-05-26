@@ -132,3 +132,36 @@ Clear instance mapping
     -S SERVICE_NAME, --service-name SERVICE_NAME
                           Service name
 
+
+
+Examples
+========
+
+::
+
+  sbcm search -H localhost -S chassis
+
+  ===============================================================================
+  ==   localhost
+  ==   chassis
+  ===============================================================================
+  {'address': u'127.0.0.1',
+   'check_interval': 1,
+   'check_time': 1414178753.780658,
+   'check_time_last': 1414178693.682516,
+   'community': 'public',
+   'dstemplate': 'Nortel-ERS8600',
+   'host': u'localhost',
+   'instance_name': '',
+   'mapping': None,
+   'mapping_name': None,
+   'max_rep_map': 64,
+   'port': 161,
+   'real_check': False,
+   'request_group_size': 64,
+   'service': u'chassis',
+   'timeout': 5,
+   'triggergroup': 'chassis_ERS8600',
+   'use_getbulk': False,
+   'version': '2c'}
+

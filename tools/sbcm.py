@@ -71,6 +71,8 @@ clearold_parser = clear_subparsers.add_parser('old', help='clear old help')
 clearold_parser.set_defaults(command='clear-old')
 clearold_parser.add_argument('-H', '--hour', type=int, default=2160,
                              help='No data since ... hours. Default to 2160 (90 days)')
+clearold_parser.add_argument('-P', '--pending', default=False, action='store_true',
+                             help='Clear also pending check (check_time None in database)')
 
 
 def search(host=None, service=None, show_ds=False, show_triggers=False):
@@ -133,7 +135,7 @@ def clear(host=None, service=None):
             print "Nothing to do for host '%s' and service '%s'" % (result['host'], result['service'])
 
 
-def clear_old(max_age=None):
+def clear_old(max_age=None, pending=False):
     if not max_age:
         max_age = 777600090  # 90 * 3600 * 24, 90 days
     else:
@@ -143,7 +145,7 @@ def clear_old(max_age=None):
     to_del = []
     for svc in db_client.get_all_services():
         last_up = svc.get("check_time", None)
-        if last_up is not None and now - last_up > max_age:
+        if last_up is not None and now - last_up > max_age or last_up is None and pending:
             to_del.append((svc["host"], svc["service"]))
     if len(to_del) == 0:
         nb_del = 0
@@ -189,7 +191,7 @@ try:
         clear(args.host_name, args.service_name)
     # Remove all keys not in host:interval set (members)
     elif args.command == "clear-old":
-        clear_old(args.hour)
+        clear_old(args.hour, args.pending)
     # Delete host/service
     elif args.command.startswith("delete"):
         # Remove host:* key
