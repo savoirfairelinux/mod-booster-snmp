@@ -11,6 +11,7 @@ Source0:	%{name}_%{version}.orig.tar.gz
 BuildArch:  noarch
 
 Requires:	shinken-common >= 2.0
+BuildRequires:  python-setuptools
 
 %description
 Flexible monitoring tool - SNMP module for Poller
@@ -28,10 +29,12 @@ without any SNMP plugin.
 %install
 rm -rf %{buildroot}/*
 
-install -d %{buildroot}/usr/share/pyshared/shinken/modules/snmp_booster
-cp -r module/* %{buildroot}/usr/share/pyshared/shinken/modules/snmp_booster 
-cp -r tools %{buildroot}/usr/share/pyshared/shinken/modules/snmp_booster
+rm module/tools/dump_redis.py
+install -d %{buildroot}/usr/share/pyshared/shinken/modules/
 
+%{__python} setup.py install -O1 --skip-build --root %{buildroot} --install-lib=%{python_sitelib}
+
+ln -s %{python_sitelib}/mod-snmpbooster  %{buildroot}/usr/share/pyshared/shinken/modules/snmp_booster
 
 install -d %{buildroot}/usr/share/doc/%{name}
 cp -r doc/* %{buildroot}/%{_docdir}/%{name}
@@ -42,8 +45,9 @@ install -pm0755 etc/modules/* %{buildroot}/etc/shinken/modules
 
 %files
 /usr/share/pyshared/shinken/modules/snmp_booster
+%{python_sitelib}/mod_snmpbooster-*.egg-info
 %config(noreplace) %{_sysconfdir}/shinken/modules/
-
+%{_bindir}/sbcm
 %doc %{_docdir}/%{name}/*
 
 

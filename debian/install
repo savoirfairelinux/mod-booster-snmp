@@ -1,3 +1,1 @@
 etc/modules/booster_snmp.cfg etc/shinken/shinken-specific/
-module usr/lib/python2.7/dist-packages/shinken/modules
-tools usr/lib/python2.7/dist-packages/shinken/modules/snmp_booster

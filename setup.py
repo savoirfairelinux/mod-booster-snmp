@@ -20,10 +20,14 @@ setup(
                       "configobj",
                       ],
     packages=find_packages(),
-    package_dir={'snmp_booster': 'shinken/modules/snmp_booster'},
+    package_dir={'snmp_booster': 'modules'},
     include_package_data=True,
 #    namespace_packages=['shinken.modules.snmp_booster'],
     test_suite='nose.collector',
-    entry_points="""module.tools.sbcm:main""",
+    entry_points={
+    'console_scripts': [
+        'sbcm = module.tools.sbcm:main',
+        ],
+    }
 )
 

@@ -5,3 +5,7 @@
 override_dh_installdocs:
 	make --directory=doc-compile html
 	dh_installdocs
+
+override_dh_install:
+	rm module/tools/dump_redis.py
+	dh_install
