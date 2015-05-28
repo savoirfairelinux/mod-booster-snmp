@@ -1,11 +1,15 @@
 #!/usr/bin/make -f
 %:
-	dh $@ --with python2
+	dh $@ --with python2 --install-layout=deb,quilt
 
 override_dh_installdocs:
 	make --directory=doc-compile html
 	dh_installdocs
 
-override_dh_install:
+
+override_dh_build:
 	rm module/tools/dump_redis.py
+	dh_build
+
+override_dh_install:
 	dh_install
