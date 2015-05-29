@@ -20,7 +20,7 @@ setup(
                       "configobj",
                       ],
     packages=find_packages(),
-    package_dir={'snmp_booster': 'modules'},
+    package_dir={'snmp_booster': 'module'},
     include_package_data=True,
 #    namespace_packages=['shinken.modules.snmp_booster'],
     test_suite='nose.collector',
