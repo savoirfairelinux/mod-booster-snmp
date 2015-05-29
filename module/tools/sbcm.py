@@ -183,7 +183,7 @@ def main():
                    args.show_datasource, args.show_triggers)
         # Drop database
         elif args.command == "clear-cache":
-            db_client.clear_cache(db_client)
+            db_client.clear_cache()
         # Remove 'instance' if 'instance_name' for service(s)
         elif args.command == "clear-mapping":
             clear(db_client, args.host_name, args.service_name)
