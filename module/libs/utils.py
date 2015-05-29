@@ -475,7 +475,7 @@ def dict_serialize(serv, mac_resol, datasource):
         # ie: `dot3StatsExcessiveCollisions`
         ds_data.setdefault("ds_name", ds_name)
         ds_data.setdefault("ds_type", default_ds_type)
-        ds_data.setdefault("ds_min_oid_vallue", default_ds_min_oid_value)
+        ds_data.setdefault("ds_min_oid_value", default_ds_min_oid_value)
         for name in ["ds_unit", ]:
             ds_data.setdefault(name, "")
         # Set default ds datas
