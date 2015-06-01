@@ -1,6 +1,6 @@
 Name:		shinken-mod-snmpbooster
 Version:	2.0~alpha
-Release:	1
+Release:	2
 Summary:	Shinken Module SNMP for Poller
 
 Group:		Network
@@ -52,6 +52,9 @@ install -pm0755 etc/modules/* %{buildroot}/etc/shinken/modules
 
 
 %changelog
+* Mon Jun 01 2015 Sebastien Coavoux <sebastien.coavoux@savoirfairelinux.com> 2.0~alpha-2
+- Fix Packaging
+
 * Wed May 27 2015 Sebastien Coavoux <sebastien.coavoux@savoirfairelinux.com> 2.0~alpha-1
 - New upstream version
 
