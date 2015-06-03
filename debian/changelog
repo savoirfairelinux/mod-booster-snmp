@@ -1,3 +1,9 @@
+shinken-mod-snmpbooster (2.0-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Wed, 03 Jun 2015 15:36:33 -0400
+
 shinken-mod-snmpbooster (2.0~alpha-2) unstable; urgency=medium
 
   * Fix Packaging
