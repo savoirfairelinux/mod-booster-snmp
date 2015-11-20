@@ -24,7 +24,7 @@
 Usefull functions used everywhere in snmp booster
 """
 
-
+import re
 import sys
 import getopt
 import shlex
@@ -387,6 +387,8 @@ def parse_args(cmd_args):
 
     return args
 
+REGEX_OID = re.compile('\.\d+(\.\d+)*')
+
 
 def dict_serialize(serv, mac_resol, datasource):
     """ Get serv, datasource
@@ -461,12 +463,19 @@ def dict_serialize(serv, mac_resol, datasource):
         raise Exception("Bad format: DS %s in datasource files" % str(ds_list))
 
     # Get default values from DATASOURCE root
-    default_ds_type = datasource.get('DATASOURCE').get("ds_type", "TEXT")
-    default_ds_min_oid_value = datasource.get('DATASOURCE').get("ds_min_oid_value", None)
 
+    the_datasource = datasource.get('DATASOURCE')
+
+    default_ds_type = the_datasource.get("ds_type", "TEXT")
+    default_ds_min_oid_value = the_datasource.get("ds_min_oid_value", None)
+
+    for key, value in the_datasource.items():
+        if isinstance(value, (str, unicode)):
+            if not REGEX_OID.match(value):
+                raise Exception("OID for %s isn't valid: %r" % (key, value))
 
     for ds_name in ds_list:
-        ds_data = datasource.get('DATASOURCE').get(ds_name)
+        ds_data = the_datasource.get(ds_name)
         if ds_data is None:
             raise Exception("ds %s is missing in datasource filess" % ds_name)
 
