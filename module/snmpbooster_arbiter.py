@@ -80,9 +80,9 @@ class SnmpBoosterArbiter(SnmpBooster):
                             ctemp = ConfigObj(current_file,
                                               interpolation='template')
                             self.datasource.merge(ctemp)
-                            logger.info("[SnmpBooster] [code 0903] Reading "
-                                        "input configuration file: "
-                                        "%s" % current_file)
+                        logger.info("[SnmpBooster] [code 0903] Reading "
+                                    "input configuration file: "
+                                    "%s" % current_file)
                 else:
                     # Normal error with scheduler and poller module
                     # The configuration will be read in the database
