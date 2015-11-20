@@ -354,7 +354,3 @@ class SnmpBoosterPoller(SnmpBooster):
 
             # TODO : better time management
             time.sleep(.1)
-
-            timeout -= time.time() - begin
-            if timeout < 0:
-                timeout = 1.0
