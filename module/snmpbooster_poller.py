@@ -29,8 +29,12 @@ of SNMP Booster loaded in the Poller
 import signal
 import time
 import shlex
+
+
 from Queue import Empty, Queue
 import sys
+
+from datetime import datetime, timedelta
 
 from shinken.log import logger
 from shinken.util import to_int
@@ -296,8 +300,15 @@ class SnmpBoosterPoller(SnmpBooster):
         self.snmpworker = SNMPWorker(self.task_queue, self.max_prepared_tasks)
         self.snmpworker.start()
 
+        dt_start = datetime.now()
+        dt_mid = dt_start.replace(hour=12, minute=0, second=0, microsecond=0)
+        if dt_mid < dt_start:
+            dt_mid = dt_mid + timedelta(days=1)
         while True:
-            begin = time.time()
+            now = datetime.now()
+            if now > dt_mid:
+                logger.info('worker leaving..')
+                break
             cmsg = None
             # Check snmp worker status
             if not self.snmpworker.is_alive():
