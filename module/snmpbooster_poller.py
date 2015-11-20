@@ -53,6 +53,7 @@ class SnmpBoosterPoller(SnmpBooster):
         self.checks_done = 0
         self.task_queue = Queue()
         self.result_queue = Queue()
+        self.last_checks_counted = 0
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -135,6 +136,11 @@ class SnmpBoosterPoller(SnmpBooster):
         """
         to_del = []
 
+        now = time.time()
+        prev_log = self.last_checks_counted
+        if now > prev_log + 5:
+            logger.info("%s checks ongoing.." % len(self.checks))
+            self.last_checks_counted = now
         # First look for checks in timeout
         for chk in self.checks:
             if not hasattr(chk, "result"):
