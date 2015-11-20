@@ -147,6 +147,12 @@ class SnmpBoosterPoller(SnmpBooster):
             self.last_checks_counted = now
         # First look for checks in timeout
         for chk in self.checks:
+            if now > chk.check_time + 3600:
+                logger.warning("check timeout: %s" % chk.command)
+                chk.get_outputs("check timedout", 8012)
+                chk.status = "done"
+                chk.exit_status = 3
+                chk.execution_time = now - chk.check_time
             if not hasattr(chk, "result"):
                 continue
             if chk.status == 'launched' and chk.result.get('state') != 'received':
