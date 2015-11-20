@@ -164,6 +164,8 @@ class SnmpBoosterPoller(SnmpBooster):
         for chk in self.checks:
             # First manage check in error, bad formed
             if chk.status == 'done':
+                if hasattr(chk, "result"):
+                    del chk.result
                 to_del.append(chk)
                 try:
                     self.returns_queue.put(chk)
@@ -193,7 +195,7 @@ class SnmpBoosterPoller(SnmpBooster):
 
                 # unlink our object from the original check
                 if hasattr(chk, 'result'):
-                    delattr(chk, 'result')
+                    del chk.result
 
                 # and set this check for deleting
                 # and try to send it
