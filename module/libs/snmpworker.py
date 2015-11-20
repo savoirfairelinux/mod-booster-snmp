@@ -70,6 +70,13 @@ class SNMPWorker(Thread):
                                  error_message))
 
     def run(self):
+        try:
+            self.real_run()
+        except Exception as err:
+            logger.error('SNMPWorker got error: %s' % err)
+
+
+    def real_run(self):
         """ Process SNMP tasks
         SNMP task is a dict:
         - For a bulk request ::
