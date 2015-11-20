@@ -128,6 +128,7 @@ class SnmpBoosterArbiter(SnmpBooster):
                         serv.host.get_name(), serv.get_name(), exp)
                     logger.error(msg)
                     serv.configuration_errors.append(msg)
+                    continue
 
                 # We want to make a diff between arbiter insert and poller insert. Some backend may need it.
                 try:
