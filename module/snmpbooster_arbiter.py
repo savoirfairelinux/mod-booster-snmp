@@ -124,11 +124,10 @@ class SnmpBoosterArbiter(SnmpBooster):
                                                mac_resol,
                                                self.datasource)
                 except Exception as exp:
-                    logger.error("[SnmpBooster] [code 0907] [%s,%s] "
-                                 "%s" % (serv.host.get_name(),
-                                         serv.get_name(),
-                                         str(exp)))
-                    continue
+                    msg = "[SnmpBooster] [code 0907] [%s,%s] %s" % (
+                        serv.host.get_name(), serv.get_name(), exp)
+                    logger.error(msg)
+                    serv.configuration_errors.append(msg)
 
                 # We want to make a diff between arbiter insert and poller insert. Some backend may need it.
                 try:
