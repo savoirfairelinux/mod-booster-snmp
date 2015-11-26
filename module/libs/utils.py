@@ -388,6 +388,7 @@ def parse_args(cmd_args):
     return args
 
 REGEX_OID = re.compile('\.\d+(\.\d+)*')
+REGEX_DS_ATTRIBUTE = re.compile('ds_*')
 
 
 def dict_serialize(serv, mac_resol, datasource):
@@ -471,7 +472,7 @@ def dict_serialize(serv, mac_resol, datasource):
 
     for key, value in the_datasource.items():
         if isinstance(value, (str, unicode)):
-            if not REGEX_OID.match(value):
+            if not REGEX_OID.match(value) and not REGEX_DS_ATTRIBUTE.match(key):
                 raise Exception("OID for %s isn't valid: %r" % (key, value))
 
     for ds_name in ds_list:
