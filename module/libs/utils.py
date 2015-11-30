@@ -475,7 +475,11 @@ def dict_serialize(serv, mac_resol, datasource):
             if not REGEX_OID.match(value) and not REGEX_DS_ATTRIBUTE.match(key):
                 raise Exception("OID for %s isn't valid: %r" % (key, value))
 
-    for ds_name in ds_list:
+        if isinstance(value,dict):
+            if '-' in key:
+                raise Exception("Ds_name  %s isn't valid (contain -)" % key)
+
+    for ds_name in ds_list: 
         ds_data = the_datasource.get(ds_name)
         if ds_data is None:
             raise Exception("ds %s is missing in datasource filess" % ds_name)
