@@ -75,7 +75,6 @@ class SNMPWorker(Thread):
         except Exception as err:
             logger.error('SNMPWorker got error: %s' % err)
 
-
     def real_run(self):
         """ Process SNMP tasks
         SNMP task is a dict:
@@ -110,7 +109,7 @@ class SNMPWorker(Thread):
         slow_host_waiting = []
         while self.must_run:
             # Prevent memory leak
-            del(self.cmdgen)
+            del self.cmdgen
             self.cmdgen = cmdgen.AsynCommandGenerator()
             # End prevent memory leak
             self.task_prepared = 0
