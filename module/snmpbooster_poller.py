@@ -349,7 +349,7 @@ class SnmpBoosterPoller(SnmpBooster):
                     logger.info("[SnmpBooster] [code 1007] FIX-ME-ID Parent "
                                 "requests termination.")
                     break
-            except Exception:
+            except Empty:
                 pass
 
             # TODO : better time management
