@@ -314,7 +314,7 @@ class SnmpBoosterPoller(SnmpBooster):
             dt_mid = dt_mid + timedelta(days=1)
         while True:
             now = datetime.now()
-            if now > dt_mid:
+            if 0 and now > dt_mid:
                 logger.info('worker leaving..')
                 break
             cmsg = None
