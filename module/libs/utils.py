@@ -30,6 +30,8 @@ import getopt
 import shlex
 import operator
 
+from collections import OrderedDict
+
 from shinken.log import logger
 
 
@@ -442,7 +444,7 @@ def dict_serialize(serv, mac_resol, datasource):
     if 'DSTEMPLATE' not in datasource:
         raise Exception("DSTEMPLATE section is missing in the "
                         "datasource files")
-    tmp_dict['ds'] = {}
+    tmp_dict['ds'] = OrderedDict()
 
     ds_list = datasource.get('DSTEMPLATE').get(tmp_dict['dstemplate'])
     if ds_list is None:
@@ -479,7 +481,7 @@ def dict_serialize(serv, mac_resol, datasource):
             if '-' in key:
                 raise Exception("Ds_name  %s isn't valid (contain -)" % key)
 
-    for ds_name in ds_list: 
+    for ds_name in ds_list:
         ds_data = the_datasource.get(ds_name)
         if ds_data is None:
             raise Exception("ds %s is missing in datasource filess" % ds_name)

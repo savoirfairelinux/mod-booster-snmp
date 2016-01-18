@@ -22,8 +22,10 @@
 
 """ This module contains database/cache abstraction class """
 
-import ast
+
 import re
+
+from collections import OrderedDict
 
 from shinken.log import logger
 
@@ -104,7 +106,7 @@ class DBClient(object):
         if not force:
             old_dict = self.db_conn.get(key)
             if old_dict is not None:
-                old_dict = ast.literal_eval(old_dict)
+                old_dict = eval(old_dict)
             # Merge old data and new data
             data = merge_dicts(old_dict, data)
 
@@ -140,7 +142,7 @@ class DBClient(object):
                                  service,
                                  str(exp)))
             return None
-        return ast.literal_eval(data) if data is not None else None
+        return eval(data) if data is not None else None
 
     def get_services(self, host, check_interval):
         """ This function Gets all services with the same host
@@ -174,7 +176,7 @@ class DBClient(object):
                     logger.error("[SnmpBooster] [code 1307] [%s] "
                                  "Unknown service %s", host, service)
                     continue
-                dict_list.append(ast.literal_eval(data))
+                dict_list.append(eval(data))
             except Exception as exp:
                 logger.error("[SnmpBooster] [code 1308] [%s] "
                              "%s" % (host,
@@ -192,7 +194,7 @@ class DBClient(object):
             if re.search(":.*"+service, key) is None:
                 # Look for service
                 continue
-            results.append(ast.literal_eval(self.db_conn.get(key)))
+            results.append(eval(self.db_conn.get(key)))
 
         return results
 
@@ -206,7 +208,7 @@ class DBClient(object):
             if re.search(":[0-9]+$", key) is not None:
                 # we skip host:interval
                 continue
-            results.append(ast.literal_eval(self.db_conn.get(key)))
+            results.append(eval(self.db_conn.get(key)))
 
         return results
 
