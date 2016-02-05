@@ -274,7 +274,7 @@ def parse_args(cmd_args):
     # Handle options
     try:
         options, _ = getopt.getopt(cmd_args,
-                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:r:d:v',
+                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:d:v:r',
                                    ['host-name=', 'host-address=', 'service=',
                                     'community=', 'snmp-version=', 'port=',
                                     'timeout=',
@@ -284,7 +284,7 @@ def parse_args(cmd_args):
                                     'triggergroup=',
                                     'use-getbulk=', 'max-rep-map=',
                                     'request-group-size=', 'no-concurrency=',
-                                    'real-check', 'maximise-datasources', 'maximise-datasources-value'
+                                    'maximise-datasources=', 'maximise-datasources-value=','real-check',
                                     ]
                                    )
     except getopt.GetoptError as err:
@@ -358,11 +358,10 @@ def parse_args(cmd_args):
 
         elif option_name in ("-v", "--maximise-datasources-value"):
             args['maximise-datasources-value'] = value.split(',')
-
         # Hidden option
-        elif option_name in ("-r", "--real-check"):
+	elif option_name in ("-r", "--real-check"):
             args['real_check'] = True
-
+       
     # If a valut is set to "None" we convert it to None
     nullable_args = ['mapping',
                      'mapping_name',
@@ -448,7 +447,7 @@ def dict_serialize(serv, mac_resol, datasource):
     #create a dict of maximise-datasources:maximise-datasources-value
     dict_max={}
     if command_args['maximise-datasources'] and command_args ['maximise-datasources-value']:
-        dict_max = dict(zip(command_args['maximise-datasources'], command_args['maximise-datasources-value']))
+        dict_max = dict(zip(command_args['maximise-datasources'], command_args ['maximise-datasources-value']))
 
     # Get mapping table
     if 'MAP' not in datasource:
