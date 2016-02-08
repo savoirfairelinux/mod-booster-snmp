@@ -360,9 +360,9 @@ def parse_args(cmd_args):
             args['maximise-datasources-value'] = value.split(',')
         # Hidden option
         elif option_name in ("-r", "--real-check"):
-                args['real_check'] = True
+            args['real_check'] = True
        
-    # If a valut is set to "None" we convert it to None
+    # If a value is set to "None" we convert it to None
     nullable_args = ['mapping',
                      'mapping_name',
                      'instance',
