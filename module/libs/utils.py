@@ -284,7 +284,7 @@ def parse_args(cmd_args):
                                     'triggergroup=',
                                     'use-getbulk=', 'max-rep-map=',
                                     'request-group-size=', 'no-concurrency=',
-                                    'maximise-datasources=', 'maximise-datasources-value=','real-check',
+                                    'maximise-datasources=', 'maximise-datasources-value=', 'real-check',
                                     ]
                                    )
     except getopt.GetoptError as err:
@@ -359,8 +359,8 @@ def parse_args(cmd_args):
         elif option_name in ("-v", "--maximise-datasources-value"):
             args['maximise-datasources-value'] = value.split(',')
         # Hidden option
-	elif option_name in ("-r", "--real-check"):
-            args['real_check'] = True
+        elif option_name in ("-r", "--real-check"):
+                args['real_check'] = True
        
     # If a valut is set to "None" we convert it to None
     nullable_args = ['mapping',
@@ -445,7 +445,7 @@ def dict_serialize(serv, mac_resol, datasource):
     tmp_dict['check_interval'] = serv.check_interval
 
     #create a dict of maximise-datasources:maximise-datasources-value
-    dict_max={}
+    dict_max = {}
     if command_args['maximise-datasources'] and command_args ['maximise-datasources-value']:
         dict_max = dict(zip(command_args['maximise-datasources'], command_args ['maximise-datasources-value']))
 

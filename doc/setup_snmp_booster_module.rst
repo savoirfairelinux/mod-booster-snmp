@@ -181,13 +181,13 @@ To edit the file
 
   define command {
     command_name    check_snmp_booster
-    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b $_HOSTUSEBULK$ -c $_HOSTNOCONCURRENCY$
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b $_HOSTUSEBULK$ -c $_HOSTNOCONCURRENCY$ -d $_SERVICEMAXIMISEDATASOURCE$ -v $_SERVICEMAXIMISEDATASOURCEVALUE$
     module_type     snmp_booster
   }
   
   define command {
     command_name    check_snmp_booster_bulk
-    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b 1
+    command_line    check_snmp_booster -H $HOSTNAME$ -A $HOSTADDRESS$ -S '$SERVICEDESC$' -C $_HOSTSNMPCOMMUNITYREAD$ -V $_HOSTSNMPCOMMUNITYVERSION$ -t $_SERVICEDSTEMPLATE$ -i $_SERVICEINST$ -n '$_SERVICEINSTNAME$' -T $_SERVICETRIGGERGROUP$ -N $_SERVICEMAPPING$ -b 1 -d $_SERVICEMAXIMISEDATASOURCE$ -v $_SERVICEMAXIMISEDATASOURCEVALUE$
     module_type     snmp_booster
   }
   
@@ -246,6 +246,11 @@ Parameters for check_snmp_booster command
 -c, --no-concurrency
   Disable concurrent SNMP requests on the same host; Default: `0`
 
+-d, --maximise-datasources
+  List of datasources you want to set a maximal value for. Each datasources are separated  by a comma; Example: `confAvailable,confBusy`
+
+-v, --maximise-datasources-value
+  List of maximal values for datasources defined with -d options. Each values are separated by a comma and are associated with the datasource in the same position; Example: `2,8`
 
 
 Template definitions
@@ -277,6 +282,8 @@ Template definitions
     _inst                   None
     _triggergroup           None
     _mapping                None
+    _maximisedatasource     ''
+    _maximisedatasourcevalue ''
     max_check_attempts      3
     check_interval          1
     retry_interval          1
