@@ -46,6 +46,8 @@ from libs.result import set_output_and_status
 from libs.checks import check_snmp, check_cache
 from libs.snmpworker import SNMPWorker
 
+from memdbg import debug_log_common_objects
+
 
 class SnmpBoosterPoller(SnmpBooster):
     """ SNMP Poller module class
@@ -312,8 +314,10 @@ class SnmpBoosterPoller(SnmpBooster):
         dt_mid = dt_start.replace(hour=12, minute=0, second=0, microsecond=0)
         if dt_mid < dt_start:
             dt_mid = dt_mid + timedelta(days=1)
+
         while True:
             now = datetime.now()
+            t_now = time.time()
             if now > dt_mid:
                 logger.info('worker leaving..')
                 break
@@ -332,6 +336,12 @@ class SnmpBoosterPoller(SnmpBooster):
             if not self.i_am_dying:
                 # Get new checks to do
                 self.get_new_checks()
+            prev_log = self.last_checks_counted
+            if t_now > prev_log + getattr(self, 'refresh_log_delay', 300):
+                logger.info("%s checks ongoing.." % len(self.checks))
+                self.last_checks_counted = t_now
+                debug_log_common_objects('snmpbooster')
+
             # Launch checks
             self.launch_new_checks()
             # Save collected datas from checks in mongodb
