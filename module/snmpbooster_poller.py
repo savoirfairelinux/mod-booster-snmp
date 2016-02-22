@@ -29,8 +29,12 @@ of SNMP Booster loaded in the Poller
 import signal
 import time
 import shlex
+
+
 from Queue import Empty, Queue
 import sys
+
+from datetime import datetime, timedelta
 
 from shinken.log import logger
 from shinken.util import to_int
@@ -53,6 +57,7 @@ class SnmpBoosterPoller(SnmpBooster):
         self.checks_done = 0
         self.task_queue = Queue()
         self.result_queue = Queue()
+        self.last_checks_counted = 0
 
     def get_new_checks(self):
         """ Get new checks if less than nb_checks_max
@@ -135,8 +140,19 @@ class SnmpBoosterPoller(SnmpBooster):
         """
         to_del = []
 
+        now = time.time()
+        prev_log = self.last_checks_counted
+        if now > prev_log + 5:
+            logger.info("%s checks ongoing.." % len(self.checks))
+            self.last_checks_counted = now
         # First look for checks in timeout
         for chk in self.checks:
+            if now > chk.check_time + 3600:
+                logger.warning("check timeout: %s" % chk.command)
+                chk.get_outputs("check timedout", 8012)
+                chk.status = "done"
+                chk.exit_status = 3
+                chk.execution_time = now - chk.check_time
             if not hasattr(chk, "result"):
                 continue
             if chk.status == 'launched' and chk.result.get('state') != 'received':
@@ -148,6 +164,8 @@ class SnmpBoosterPoller(SnmpBooster):
         for chk in self.checks:
             # First manage check in error, bad formed
             if chk.status == 'done':
+                if hasattr(chk, "result"):
+                    del chk.result
                 to_del.append(chk)
                 try:
                     self.returns_queue.put(chk)
@@ -177,7 +195,7 @@ class SnmpBoosterPoller(SnmpBooster):
 
                 # unlink our object from the original check
                 if hasattr(chk, 'result'):
-                    delattr(chk, 'result')
+                    del chk.result
 
                 # and set this check for deleting
                 # and try to send it
@@ -290,13 +308,21 @@ class SnmpBoosterPoller(SnmpBooster):
         self.snmpworker = SNMPWorker(self.task_queue, self.max_prepared_tasks)
         self.snmpworker.start()
 
+        dt_start = datetime.now()
+        dt_mid = dt_start.replace(hour=12, minute=0, second=0, microsecond=0)
+        if dt_mid < dt_start:
+            dt_mid = dt_mid + timedelta(days=1)
         while True:
-            begin = time.time()
+            now = datetime.now()
+            if 0 and now > dt_mid:
+                logger.info('worker leaving..')
+                break
             cmsg = None
             # Check snmp worker status
             if not self.snmpworker.is_alive():
                 # The snmpworker seems down ...
                 # We respawn one
+                self.snmpworker.join()
                 self.snmpworker = SNMPWorker(self.task_queue, self.max_prepared_tasks)
                 # and start it
                 self.snmpworker.start()
@@ -323,12 +349,8 @@ class SnmpBoosterPoller(SnmpBooster):
                     logger.info("[SnmpBooster] [code 1007] FIX-ME-ID Parent "
                                 "requests termination.")
                     break
-            except Exception:
+            except Empty:
                 pass
 
             # TODO : better time management
             time.sleep(.1)
-
-            timeout -= time.time() - begin
-            if timeout < 0:
-                timeout = 1.0

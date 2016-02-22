@@ -80,9 +80,9 @@ class SnmpBoosterArbiter(SnmpBooster):
                             ctemp = ConfigObj(current_file,
                                               interpolation='template')
                             self.datasource.merge(ctemp)
-                            logger.info("[SnmpBooster] [code 0903] Reading "
-                                        "input configuration file: "
-                                        "%s" % current_file)
+                        logger.info("[SnmpBooster] [code 0903] Reading "
+                                    "input configuration file: "
+                                    "%s" % current_file)
                 else:
                     # Normal error with scheduler and poller module
                     # The configuration will be read in the database
@@ -124,10 +124,10 @@ class SnmpBoosterArbiter(SnmpBooster):
                                                mac_resol,
                                                self.datasource)
                 except Exception as exp:
-                    logger.error("[SnmpBooster] [code 0907] [%s,%s] "
-                                 "%s" % (serv.host.get_name(),
-                                         serv.get_name(),
-                                         str(exp)))
+                    msg = "[SnmpBooster] [code 0907] [%s,%s] %s" % (
+                        serv.host.get_name(), serv.get_name(), exp)
+                    logger.error(msg)
+                    serv.configuration_errors.append(msg)
                     continue
 
                 # We want to make a diff between arbiter insert and poller insert. Some backend may need it.

@@ -24,12 +24,12 @@
 Usefull functions used everywhere in snmp booster
 """
 
-
+import re
 import sys
 import getopt
 import shlex
 import operator
-
+from collections import OrderedDict
 from shinken.log import logger
 
 
@@ -204,10 +204,10 @@ def format_text_value(result):
 
 def format_derive64_value(result):
     """ Format value for derive64 type """
-    return format_derive_value(result, limit=2**64 - 1)
+    return format_derive_value(result, limit=2 ** 64 - 1)
 
 
-def format_derive_value(result, limit=2**32 - 1):
+def format_derive_value(result, limit=2 ** 32 - 1):
     """ Format value for derive type """
 
     if result['value_last'] is None:
@@ -229,10 +229,10 @@ def format_gauge_value(result):
 
 def format_counter64_value(result):
     """ Format value for counter64 type """
-    return format_counter_value(result, limit=2**64 - 1)
+    return format_counter_value(result, limit=2 ** 64 - 1)
 
 
-def format_counter_value(result, limit=2**32 - 1):
+def format_counter_value(result, limit=2 ** 32 - 1):
     """ Format value for counter type """
     # NOTE Handle limit ??
     return float(result['value'])
@@ -265,6 +265,8 @@ def parse_args(cmd_args):
             # Size of requests groups
             "request_group_size": 64,
             "no_concurrency": False,
+            "maximise-datasources": None,
+            "maximise-datasources-value": None,
             # Hidden option
             "real_check": False,
             }
@@ -272,7 +274,7 @@ def parse_args(cmd_args):
     # Handle options
     try:
         options, _ = getopt.getopt(cmd_args,
-                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:r',
+                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:d:v:r',
                                    ['host-name=', 'host-address=', 'service=',
                                     'community=', 'snmp-version=', 'port=',
                                     'timeout=',
@@ -282,7 +284,7 @@ def parse_args(cmd_args):
                                     'triggergroup=',
                                     'use-getbulk=', 'max-rep-map=',
                                     'request-group-size=', 'no-concurrency=',
-                                    'real-check',
+                                    'maximise-datasources=', 'maximise-datasources-value=', 'real-check',
                                     ]
                                    )
     except getopt.GetoptError as err:
@@ -350,11 +352,17 @@ def parse_args(cmd_args):
                 args['no_concurrency'] = False
                 logger.warning('[SnmpBooster] [code 0803] Bad '
                                'request_group_size: setting to False (0)')
+
+        elif option_name in ("-d", "--maximise-datasources"):
+            args['maximise-datasources'] = value.split(',')
+
+        elif option_name in ("-v", "--maximise-datasources-value"):
+            args['maximise-datasources-value'] = value.split(',')
         # Hidden option
         elif option_name in ("-r", "--real-check"):
             args['real_check'] = True
-
-    # If a valut is set to "None" we convert it to None
+       
+    # If a value is set to "None" we convert it to None
     nullable_args = ['mapping',
                      'mapping_name',
                      'instance',
@@ -379,13 +387,25 @@ def parse_args(cmd_args):
             raise Exception(error_message)
 
     # Check if we have all arguments to map instance
-    if args['instance_name'] != '' and args['instance_name'] is not None and (args['mapping'] is None and args['mapping_name'] is None):
+    if args['instance_name'] != '' and args['instance_name'] is not None and (
+                    args['mapping'] is None and args['mapping_name'] is None):
         error_message = ("We need to find an instance from a mapping table, "
                          "but mapping and mapping-name arguments are not "
                          "defined.")
         raise Exception(error_message)
 
+    if args['maximise-datasources'] or args['maximise-datasources-value']:
+        if (args['maximise-datasources'] is None or
+                    args['maximise-datasources-value'] is None or
+                    len(args['maximise-datasources']) != len(args['maximise-datasources-value'])):
+
+            error_message = "the number of maximise-datasources and maximise-datasources-values are not the same"
+            raise Exception(error_message)
     return args
+
+
+REGEX_OID = re.compile('\.\d+(\.\d+)*')
+REGEX_DS_ATTRIBUTE = re.compile('ds_*')
 
 
 def dict_serialize(serv, mac_resol, datasource):
@@ -424,6 +444,11 @@ def dict_serialize(serv, mac_resol, datasource):
     # check_interval
     tmp_dict['check_interval'] = serv.check_interval
 
+    #create a dict of maximise-datasources:maximise-datasources-value
+    dict_max = {}
+    if command_args['maximise-datasources'] and command_args ['maximise-datasources-value']:
+        dict_max = dict(zip(command_args['maximise-datasources'], command_args ['maximise-datasources-value']))
+
     # Get mapping table
     if 'MAP' not in datasource:
         raise Exception("MAP section is missing in the datasource files")
@@ -439,7 +464,7 @@ def dict_serialize(serv, mac_resol, datasource):
     if 'DSTEMPLATE' not in datasource:
         raise Exception("DSTEMPLATE section is missing in the "
                         "datasource files")
-    tmp_dict['ds'] = {}
+    tmp_dict['ds'] = OrderedDict()
 
     ds_list = datasource.get('DSTEMPLATE').get(tmp_dict['dstemplate'])
     if ds_list is None:
@@ -461,12 +486,23 @@ def dict_serialize(serv, mac_resol, datasource):
         raise Exception("Bad format: DS %s in datasource files" % str(ds_list))
 
     # Get default values from DATASOURCE root
-    default_ds_type = datasource.get('DATASOURCE').get("ds_type", "TEXT")
-    default_ds_min_oid_value = datasource.get('DATASOURCE').get("ds_min_oid_value", None)
 
+    the_datasource = datasource.get('DATASOURCE')
+
+    default_ds_type = the_datasource.get("ds_type", "TEXT")
+    default_ds_min_oid_value = the_datasource.get("ds_min_oid_value", None)
+
+    for key, value in the_datasource.items():
+        if isinstance(value, (str, unicode)):
+            if not REGEX_OID.match(value) and not REGEX_DS_ATTRIBUTE.match(key):
+                raise Exception("OID for %s isn't valid: %r" % (key, value))
+
+        if isinstance(value, dict):
+            if '-' in key:
+                raise Exception("Ds_name  %s isn't valid (contain -)" % key)
 
     for ds_name in ds_list:
-        ds_data = datasource.get('DATASOURCE').get(ds_name)
+        ds_data = the_datasource.get(ds_name)
         if ds_data is None:
             raise Exception("ds %s is missing in datasource filess" % ds_name)
 
@@ -484,6 +520,12 @@ def dict_serialize(serv, mac_resol, datasource):
                      "ds_min_oid",
                      ]:
             ds_data.setdefault(name, None)
+
+        # If we have 'maximise-datasources-value' for the current ds_name, we set ds_max_oid to None
+        # And we set our max value to ds_max_oid_value
+        if dict_max.get(ds_name, None):
+            ds_data["ds_max_oid"] = None
+            ds_data['ds_max_oid_value'] = dict_max[ds_name]
 
         # Add computed_value for max and min
         for max_min in ['ds_max_oid_value', 'ds_min_oid_value']:
