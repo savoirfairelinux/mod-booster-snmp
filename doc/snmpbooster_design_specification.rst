@@ -28,7 +28,6 @@ Design specification summary
 - STATUS - DESIGN SPEC USABILITY
 
   * [Done] Usage documentation
-  * [xxxx] SkonfUI and Discovery usage documentation
   * [xxxx] Provide sample configuration packs in Shinken
   * [Done] Provide sample config.ini with examples of all types of data
 
@@ -61,9 +60,10 @@ Design specification summary
   * [Done] Set Snmp DSTEMPLATE as a check runtime option
   * [Done] Set Snmp TRIGGERGROUP as a check runtime option
   * [Done] Set Snmp COMMUNITY as a check runtime option
+  * [Done] Set SNmp DS Max as a check runtime option
   * [Done] Use Snmp version 2c GetBulk
-  * [xxxx] Support Snmp version 2c GetNext if GetBulk is not supported
-  * [xxxx] Support Snmp version 1 GetNext
+  * [Done] Support Snmp version 2c GetNext if GetBulk is not supported
+  * [Done] Support Snmp version 1 GetNext
   * [xxxx] Set Snmp Timeout as a check runtime option, instead of a hardcoded value at 5 seconds
 
 - STATUS - DESIGN SPEC MAINTAINABILITY
@@ -74,7 +74,7 @@ Design specification summary
   * [xxxx] Unit tests with at least 80% coverage
   * [xxxx] Unit tests integrated with Shinken test suite
   * [Done] Code hosted on github
-  * [xxxx] configuration validity and integrity checking of all INI files
+  * [Done] configuration validity and integrity checking of all INI files
   * [xxxx] Pep8 compliant
   * [xxxx] Pylint pass
 
@@ -86,20 +86,28 @@ genDevConfig Plugins - Compatibility status with SnmpBooster
 
   * [Done] Avaya ES switches
   * [Done] Avaya ERS routing switches
+  * [Done] Accedian performance probes
+  * [Done] Alcatel OS64xx
+  * [Done] Alcatel OS68xx, OS69xx
+  * [Done] Alcatel OXE
   * [Done] Cisco 29x0 switches
-  * [Done] MIB-II Interfaces
   * [Done] Cisco PIX/ASA
-  * [Done] JUNOS devices
   * [Done] Cisco IOS routers
+  * [Done] Geist RS-Mini environmental sensors
+  * [Done] IBM IMM and IMM2 modules
+  * [Done] IP Forward
+  * [InProgress] PaloAlto
+  * [Done] JUNOS devices
+  * [Done] MIB-II Interfaces
+  * [Done] TrippLite NET and NET2 modules
   * [Done] NetSNMP unix hosts ** Validation required**
   * [Done] Packeteer devices ** Validation required**
   * [Done] Sensatronics devices ** Validation required**
   * [Done] Foundry devices ** Validation required**
   * [Done] Packeteer devices ** Validation required**
   * [Done] Cisco CSS ** Validation required**
-  * [InProgress] New Cisco Access points
 
-- STATUS - Other maintained Plugins
+- STATUS - 
 
 .. tip::
 
