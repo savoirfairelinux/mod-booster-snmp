@@ -15,13 +15,13 @@ The SnmpBooster module allows Shinken Pollers to directly manage SNMP data acqui
 Why use it
 ----------
 
-The SnmpBooster module is designed to be very efficient and scalable. It has a very flexible configuration method to make it easy to use with Shinken Monitoring Packs and Shinken discovery runners like genDevConfig.
+The SnmpBooster module is designed to be efficient and scalable. It has a flexible configuration method to make it easy to use with Shinken Monitoring Packs and the Shinken configuration generator genDevConfig.
 
 This acquisition module was professionally designed and developed.
 
-It is meant to be used by the very capable discovery engine genDevConfig (**v3.0.5 and newer**)  originally developed for the Cricket SNMP monitoring tool and converted for use with Shinken.
+It is meant to be used by the discovery engine genDevConfig (**v3.0.5 and newer**)  originally developed for the Cricket SNMP monitoring tool and converted for use with Shinken.
 
-It is one of the very few serious SNMP v2c implementation making use of SnmpGetBulk type requests.
+It is the only scalable SNMP v2c implementation for Shinken.
 
 How does it work
 ================
@@ -54,11 +54,17 @@ Shinken Integration
 Performance
 -----------
 
-SnmpBooster uses SNMP v2c getbulk for high efficiency, unless forced to use SNMP v2c get-next or SNMPv1 get-next. GetBulk uses a single request PDU to ask for multiple OIDs or even entire tables, instead of sending one request PDU per OID. 
+SnmpBooster uses SNMP v2c getbulk or snmpgetnext for high efficiency. GetBulk and snmp get-next use a single request PDU to ask for multiple OIDs or even entire tables, instead of sending one request PDU per OID. 
 
 For example: *A typical 24 port network switch with two uplinks might use 375 OIDS (8 OIDs per interface, plus general OIDs for chassis health, memory, cpu, fans, etc.). SnmpBooster will only require around 4 request PDUs instead of 375 request PDUs. Each PDU is a request packet which takes time to create, send get processed and return. More timeouts to manage, more connections, more impact on the remote device and more latency means much fewer checks per second.*
 
-The SnmpBooster module supports automatic instance mapping for OIDs. (Ex. Based on the interface name it will figure out that the SNMP index(or instance) is 136. This is automatically handled by genDevConfig and SnmpBooster, no user input required. :-)
+SNMP Requests are multithreaded and each thread is responsible for gathering all data associated with a device.
+
+SNMP Booster respectes all Shinken processing like retries, downtimes, etc for each monitored service. 
+
+A Redis data store is used to store collected data. All services associated to the same device will get their data from the Redis store. When data needs to be refreshed a single thread is chosen to contact the actual device to update the cache.
+
+The SnmpBooster module supports automatic instance mapping for OIDs as well as static instances. (Ex. Based on the interface name it will figure out that the SNMP index(or instance) is 136. This is automatically handled by genDevConfig and SnmpBooster, no user input required. :-)
 
 The generic SNMP configuration information is stored in the Shinken SnmpBooster INI files. There is a Defaults_unified.ini and a series of other Defaults files, one per discovery plugin for genDevConfig.
 
@@ -92,6 +98,7 @@ The first location is the host and service Shinken configuration (You need to ge
   * A static SNMP instance could be referred to in the Service definition
   * An SNMP instance MAP function could be referred to in the Service definition
   * A TRIGGERGROUP could be refered to in the Service definition
+  * A DS max could be refered to in the Service definition
 
 The second location is SNMP Defaults.* templates. (Here you can create new devices or add new data sources)
 
@@ -109,7 +116,7 @@ The second location is SNMP Defaults.* templates. (Here you can create new devic
   * Define triggers and associate them with a TRIGGERGROUP name that can be applied to a Shinken Service
 
 
-A final location containes rules to build your Shinken configuration.
+A final location contains rules to build your Shinken configuration.
 
   * genDevConfig plugins create Shinken configurations
 
@@ -128,9 +135,4 @@ Troubleshooting
 ===============
 
 :ref:`SnmpBooster troubleshooting <snmpbooster_troubleshooting>`
-
-Graph templates
-===============
-
-These are .graph files defined in your Shinken configuration directory. Refer to the Shinken graphite templates(Not yet created) or PNP4Nagios how-to documentation. The graph templates are independent from SnmpBooster and provide templates for any collected data from Shinken.
 
