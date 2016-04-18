@@ -1,3 +1,9 @@
+shinken-mod-snmpbooster (2.0-2) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Flavien Peyre <flavien.peyre@savoirfairelinux.com>  Mon, 18 Apr 2016 13:38:33 -0400
+
 shinken-mod-snmpbooster (2.0-1) unstable; urgency=medium
 
   * New upstream release
