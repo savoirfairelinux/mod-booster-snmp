@@ -79,7 +79,9 @@ def get_trigger_result(service):
         # If one is true, then we are in critical
         # Second we launch warning triggers for each datasource
         # If one is true, then we are in waring
-        for error_name in ['critical', 'warning']:
+        # Third we launch unknown triggers for each datasource
+        # If one is true, then we are in unknown
+        for error_name in ['critical', 'warning', 'unknown']:
             # Browse all triggers
             for trigger in service['triggers'].values():
                 rpn_list = []
