@@ -99,6 +99,7 @@ genDevConfig Plugins - Compatibility status with SnmpBooster
   * [InProgress] PaloAlto
   * [Done] JUNOS devices
   * [Done] MIB-II Interfaces
+  * [Done] Spectracom SecureSync NTP server
   * [Done] TrippLite NET and NET2 modules
   * [Done] NetSNMP unix hosts ** Validation required**
   * [Done] Packeteer devices ** Validation required**
