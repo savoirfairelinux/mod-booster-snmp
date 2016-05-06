@@ -105,7 +105,15 @@ def rpn_calculator(rpn_list):
             el1, el2 = stack.pop(), stack.pop()
             el3 = getattr(operator, element)(el2, el1)
         else:
-            el3 = float(element)
+            try:
+                el3 = float(element)
+            except ValueError as e:
+                if element.lower().strip() == 'false':
+                    el3 = False
+                elif element.lower().strip() == 'true':
+                    el3 = True
+                else:
+                    raise e
         stack.append(el3)
 
     assert len(stack) <= 1
