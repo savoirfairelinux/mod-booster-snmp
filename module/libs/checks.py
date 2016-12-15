@@ -137,7 +137,10 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
             mapping_task['host'] = snmp_info.address
             # Get concurrency
             mapping_task['no_concurrency'] = serv.get('no_concurrency', False)
-            mapping_task['data'] = {"authData": cmdgen.CommunityData(communityIndex=snmp_info.community, communityName=snmp_info.community, mpModel=int(snmp_info.version)-1),
+            mapping_task['data'] = {"authData": cmdgen.CommunityData(communityIndex=snmp_info.community,
+                                                                     communityName=snmp_info.community,
+                                                                     mpModel=int(snmp_info.version)-1
+                                                                     ),
                                     "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address,
                                                                                   snmp_info.port),
                                                                                  timeout=serv['timeout'],
@@ -200,7 +203,10 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
     for oids in splitted_oids_list:
         get_task = {}
         # Add community, address, port and oids
-        get_task['data'] = {"authData": cmdgen.CommunityData(communityIndex=arguments.get('community'), communityName=arguments.get('community'), mpModel=int(arguments.get('version', 2))-1),
+        get_task['data'] = {"authData": cmdgen.CommunityData(communityIndex=arguments.get('community'),
+                                                             communityName=arguments.get('community'),
+                                                             mpModel=int(arguments.get('version', 2))-1
+                                                             ),
                             "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),
                                                                           arguments.get('port')),
                                                                           timeout=serv['timeout'],
