@@ -260,6 +260,7 @@ def parse_args(cmd_args):
             "version": '2c',
             "port": 161,
             "timeout": 5,
+            "retry": 1,
             # Datasource options
             "dstemplate": None,
             "instance": None,
@@ -282,10 +283,10 @@ def parse_args(cmd_args):
     # Handle options
     try:
         options, _ = getopt.getopt(cmd_args,
-                                   'H:A:S:C:V:P:s:t:i:n:m:N:T:b:M:R:g:c:d:v:r',
+                                   'H:A:S:C:V:P:s:e:t:i:n:m:N:T:b:M:R:g:c:d:v:r',
                                    ['host-name=', 'host-address=', 'service=',
                                     'community=', 'snmp-version=', 'port=',
-                                    'timeout=',
+                                    'timeout=', 'retry=',
                                     'dstemplate=', 'instance=',
                                     'instance-name=',
                                     'mapping=', 'mapping-name=',
@@ -299,6 +300,8 @@ def parse_args(cmd_args):
         error_message = str(err)
         raise Exception(error_message)
 
+    snmp_version_to_int = {'1': 1, '2': 2, '2c': 2, '3': 3}
+
     for option_name, value in options:
         # Standard options
         if option_name in ("-H", "--host-name"):
@@ -311,11 +314,13 @@ def parse_args(cmd_args):
         elif option_name in ("-C", "--community"):
             args['community'] = value
         elif option_name in ("-V", "--snmp-version"):
-            args['version'] = value
+            args['version'] = snmp_version_to_int[value]
         elif option_name in ("-P", "--port"):
             args['port'] = value
         elif option_name in ("-s", "--timeout"):
             args['timeout'] = int(value)
+        elif option_name in ("-e", "--retry"):
+            args['retry'] = int(value)
         # Datasource options
         elif option_name in ("-t", "--dstemplate"):
             args['dstemplate'] = value

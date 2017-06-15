@@ -144,7 +144,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                                     "transportTarget": cmdgen.UdpTransportTarget((snmp_info.address,
                                                                                   snmp_info.port),
                                                                                  timeout=serv['timeout'],
-                                                                                 retries=0,
+                                                                                 retries=serv['retry'],
                                                                                  ),
                                     "varNames": (str(snmp_info.mapping[1:]), ),
                                     }
@@ -210,7 +210,7 @@ def check_snmp(check, arguments, db_client, task_queue, result_queue):
                             "transportTarget": cmdgen.UdpTransportTarget((arguments.get('address'),
                                                                           arguments.get('port')),
                                                                           timeout=serv['timeout'],
-                                                                          retries=0,
+                                                                          retries=arguments.get('retry'),
                                                                           ),
                             "varNames": [str(oid[1:]) for oid in oids.keys()],
                             }
