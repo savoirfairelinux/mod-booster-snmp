@@ -216,6 +216,9 @@ Parameters for check_snmp_booster command
 -s, --timeout
   SNMP request timeout; Default: `5` (seconds)
 
+-e, --retry
+  SNMP request retry; Default: `1`
+
 -t, --dstemplate
   dstemplate name; Example: `standard-interface`; (**mandatory**)
 
